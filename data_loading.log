@@ -1,0 +1,378 @@
+[2026-01-08 07:20:27] ================================================================================
+[2026-01-08 07:20:27] NEW DATA LOADING SESSION
+[2026-01-08 07:20:27] ================================================================================
+[2026-01-08 07:20:28] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-08 07:20:28] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-08 07:20:28] SUCCESS: Parsed dates in ROM.csv
+[2026-01-08 07:20:28] SUCCESS: All ROM values valid
+[2026-01-08 07:20:28] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-08 07:20:28] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-08 07:20:28] SUCCESS: Parsed dates in Energy.csv
+[2026-01-08 07:20:28] SUCCESS: Applied year-specific emission factors
+[2026-01-08 07:20:28] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-08 07:20:29] SUCCESS: Loaded display NGA factors
+[2026-01-08 07:20:29] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-08 07:25:53] ================================================================================
+[2026-01-08 07:25:53] NEW DATA LOADING SESSION
+[2026-01-08 07:25:53] ================================================================================
+[2026-01-08 07:25:54] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-08 07:25:54] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-08 07:25:54] SUCCESS: Parsed dates in ROM.csv
+[2026-01-08 07:25:54] SUCCESS: All ROM values valid
+[2026-01-08 07:25:54] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-08 07:25:54] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-08 07:25:54] SUCCESS: Parsed dates in Energy.csv
+[2026-01-08 07:25:54] SUCCESS: Applied year-specific emission factors
+[2026-01-08 07:25:54] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-08 07:25:55] SUCCESS: Loaded display NGA factors
+[2026-01-08 07:25:55] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-08 07:26:04] ================================================================================
+[2026-01-08 07:26:04] NEW DATA LOADING SESSION
+[2026-01-08 07:26:04] ================================================================================
+[2026-01-08 07:26:05] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-08 07:26:05] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-08 07:26:05] SUCCESS: Parsed dates in ROM.csv
+[2026-01-08 07:26:05] SUCCESS: All ROM values valid
+[2026-01-08 07:26:05] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-08 07:26:05] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-08 07:26:05] SUCCESS: Parsed dates in Energy.csv
+[2026-01-08 07:26:06] SUCCESS: Applied year-specific emission factors
+[2026-01-08 07:26:06] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-08 07:26:06] SUCCESS: Loaded display NGA factors
+[2026-01-08 07:26:06] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-08 07:27:06] ================================================================================
+[2026-01-08 07:27:06] NEW DATA LOADING SESSION
+[2026-01-08 07:27:06] ================================================================================
+[2026-01-08 07:27:07] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-08 07:27:07] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-08 07:27:07] SUCCESS: Parsed dates in ROM.csv
+[2026-01-08 07:27:07] SUCCESS: All ROM values valid
+[2026-01-08 07:27:07] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-08 07:27:07] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-08 07:27:07] SUCCESS: Parsed dates in Energy.csv
+[2026-01-08 07:27:08] SUCCESS: Applied year-specific emission factors
+[2026-01-08 07:27:08] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-08 07:27:08] SUCCESS: Loaded display NGA factors
+[2026-01-08 07:27:08] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-08 07:39:55] ================================================================================
+[2026-01-08 07:39:55] NEW DATA LOADING SESSION
+[2026-01-08 07:39:55] ================================================================================
+[2026-01-08 07:39:56] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-08 07:39:56] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-08 07:39:56] SUCCESS: Parsed dates in ROM.csv
+[2026-01-08 07:39:56] SUCCESS: All ROM values valid
+[2026-01-08 07:39:56] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-08 07:39:56] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-08 07:39:56] SUCCESS: Parsed dates in Energy.csv
+[2026-01-08 07:39:56] SUCCESS: Applied year-specific emission factors
+[2026-01-08 07:39:56] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-08 07:39:57] SUCCESS: Loaded display NGA factors
+[2026-01-08 07:39:57] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-08 07:46:10] ================================================================================
+[2026-01-08 07:46:10] NEW DATA LOADING SESSION
+[2026-01-08 07:46:10] ================================================================================
+[2026-01-08 07:46:12] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-08 07:46:12] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-08 07:46:12] SUCCESS: Parsed dates in ROM.csv
+[2026-01-08 07:46:12] SUCCESS: All ROM values valid
+[2026-01-08 07:46:12] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-08 07:46:12] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-08 07:46:12] SUCCESS: Parsed dates in Energy.csv
+[2026-01-08 07:46:12] SUCCESS: Applied year-specific emission factors
+[2026-01-08 07:46:12] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-08 07:46:13] SUCCESS: Loaded display NGA factors
+[2026-01-08 07:46:13] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-08 07:53:52] ================================================================================
+[2026-01-08 07:53:52] NEW DATA LOADING SESSION
+[2026-01-08 07:53:52] ================================================================================
+[2026-01-08 07:53:53] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-08 07:53:53] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-08 07:53:53] SUCCESS: Parsed dates in ROM.csv
+[2026-01-08 07:53:53] SUCCESS: All ROM values valid
+[2026-01-08 07:53:53] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-08 07:53:53] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-08 07:53:53] SUCCESS: Parsed dates in Energy.csv
+[2026-01-08 07:53:53] SUCCESS: Applied year-specific emission factors
+[2026-01-08 07:53:53] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-08 07:53:54] SUCCESS: Loaded display NGA factors
+[2026-01-08 07:53:54] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-08 08:17:08] ================================================================================
+[2026-01-08 08:17:08] NEW DATA LOADING SESSION
+[2026-01-08 08:17:08] ================================================================================
+[2026-01-08 08:17:09] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-08 08:17:09] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-08 08:17:09] SUCCESS: Parsed dates in ROM.csv
+[2026-01-08 08:17:09] SUCCESS: All ROM values valid
+[2026-01-08 08:17:09] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-08 08:17:09] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-08 08:17:09] SUCCESS: Parsed dates in Energy.csv
+[2026-01-08 08:17:10] SUCCESS: Applied year-specific emission factors
+[2026-01-08 08:17:10] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-08 08:17:10] SUCCESS: Loaded display NGA factors
+[2026-01-08 08:17:10] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-08 08:24:40] ================================================================================
+[2026-01-08 08:24:40] NEW DATA LOADING SESSION
+[2026-01-08 08:24:40] ================================================================================
+[2026-01-08 08:24:41] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-08 08:24:41] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-08 08:24:41] SUCCESS: Parsed dates in ROM.csv
+[2026-01-08 08:24:41] SUCCESS: All ROM values valid
+[2026-01-08 08:24:41] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-08 08:24:41] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-08 08:24:41] SUCCESS: Parsed dates in Energy.csv
+[2026-01-08 08:24:41] SUCCESS: Applied year-specific emission factors
+[2026-01-08 08:24:41] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-08 08:24:42] SUCCESS: Loaded display NGA factors
+[2026-01-08 08:24:42] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-08 08:41:25] ================================================================================
+[2026-01-08 08:41:25] NEW DATA LOADING SESSION
+[2026-01-08 08:41:25] ================================================================================
+[2026-01-08 08:41:27] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-08 08:41:27] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-08 08:41:27] SUCCESS: Parsed dates in ROM.csv
+[2026-01-08 08:41:27] SUCCESS: All ROM values valid
+[2026-01-08 08:41:27] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-08 08:41:27] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-08 08:41:27] SUCCESS: Parsed dates in Energy.csv
+[2026-01-08 08:41:27] SUCCESS: Applied year-specific emission factors
+[2026-01-08 08:41:27] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-08 08:41:27] SUCCESS: Loaded display NGA factors
+[2026-01-08 08:41:27] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-08 08:44:17] ================================================================================
+[2026-01-08 08:44:17] NEW DATA LOADING SESSION
+[2026-01-08 08:44:17] ================================================================================
+[2026-01-08 08:44:18] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-08 08:44:18] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-08 08:44:18] SUCCESS: Parsed dates in ROM.csv
+[2026-01-08 08:44:18] SUCCESS: All ROM values valid
+[2026-01-08 08:44:18] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-08 08:44:18] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-08 08:44:18] SUCCESS: Parsed dates in Energy.csv
+[2026-01-08 08:44:18] SUCCESS: Applied year-specific emission factors
+[2026-01-08 08:44:18] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-08 08:44:19] SUCCESS: Loaded display NGA factors
+[2026-01-08 08:44:19] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-08 08:48:25] ================================================================================
+[2026-01-08 08:48:25] NEW DATA LOADING SESSION
+[2026-01-08 08:48:25] ================================================================================
+[2026-01-08 08:48:27] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-08 08:48:27] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-08 08:48:27] SUCCESS: Parsed dates in ROM.csv
+[2026-01-08 08:48:27] SUCCESS: All ROM values valid
+[2026-01-08 08:48:27] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-08 08:48:27] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-08 08:48:27] SUCCESS: Parsed dates in Energy.csv
+[2026-01-08 08:48:27] SUCCESS: Applied year-specific emission factors
+[2026-01-08 08:48:27] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-08 08:48:28] SUCCESS: Loaded display NGA factors
+[2026-01-08 08:48:28] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-12 06:49:58] ================================================================================
+[2026-01-12 06:49:58] NEW DATA LOADING SESSION
+[2026-01-12 06:49:58] ================================================================================
+[2026-01-12 06:50:00] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-12 06:50:00] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-12 06:50:00] SUCCESS: Parsed dates in ROM.csv
+[2026-01-12 06:50:00] SUCCESS: All ROM values valid
+[2026-01-12 06:50:00] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-12 06:50:00] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-12 06:50:00] SUCCESS: Parsed dates in Energy.csv
+[2026-01-12 06:50:00] SUCCESS: Applied year-specific emission factors
+[2026-01-12 06:50:00] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-12 06:50:01] SUCCESS: Loaded display NGA factors
+[2026-01-12 06:50:01] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-12 06:57:07] ================================================================================
+[2026-01-12 06:57:07] NEW DATA LOADING SESSION
+[2026-01-12 06:57:07] ================================================================================
+[2026-01-12 06:57:09] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-12 06:57:09] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-12 06:57:09] SUCCESS: Parsed dates in ROM.csv
+[2026-01-12 06:57:09] SUCCESS: All ROM values valid
+[2026-01-12 06:57:09] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-12 06:57:09] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-12 06:57:09] SUCCESS: Parsed dates in Energy.csv
+[2026-01-12 06:57:09] SUCCESS: Applied year-specific emission factors
+[2026-01-12 06:57:09] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-12 06:57:10] SUCCESS: Loaded display NGA factors
+[2026-01-12 06:57:10] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-12 08:11:45] ================================================================================
+[2026-01-12 08:11:45] NEW DATA LOADING SESSION
+[2026-01-12 08:11:45] ================================================================================
+[2026-01-12 08:11:46] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-12 08:11:46] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-12 08:11:46] SUCCESS: Parsed dates in ROM.csv
+[2026-01-12 08:11:46] SUCCESS: All ROM values valid
+[2026-01-12 08:11:46] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-12 08:11:46] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-12 08:11:46] SUCCESS: Parsed dates in Energy.csv
+[2026-01-12 08:11:47] SUCCESS: Applied year-specific emission factors
+[2026-01-12 08:11:47] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-12 08:11:47] SUCCESS: Loaded display NGA factors
+[2026-01-12 08:11:47] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-12 08:13:17] ================================================================================
+[2026-01-12 08:13:17] NEW DATA LOADING SESSION
+[2026-01-12 08:13:17] ================================================================================
+[2026-01-12 08:13:17] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-12 08:13:17] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-12 08:13:17] SUCCESS: Parsed dates in ROM.csv
+[2026-01-12 08:13:17] SUCCESS: All ROM values valid
+[2026-01-12 08:13:17] SUCCESS: ROM.csv processed: FY2021-2026, 6 years
+[2026-01-12 08:13:17] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-12 08:13:17] SUCCESS: Parsed dates in Energy.csv
+[2026-01-12 08:13:18] SUCCESS: Applied year-specific emission factors
+[2026-01-12 08:13:18] SUCCESS: Energy.csv processed: FY2020-2026, 7 years
+[2026-01-12 08:13:19] SUCCESS: Loaded display NGA factors
+[2026-01-12 08:13:19] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-12 11:22:10] ================================================================================
+[2026-01-12 11:22:10] NEW DATA LOADING SESSION
+[2026-01-12 11:22:10] ================================================================================
+[2026-01-12 11:22:12] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-12 11:22:12] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-12 11:22:12] SUCCESS: Parsed dates in ROM.csv
+[2026-01-12 11:22:12] SUCCESS: All ROM values valid
+[2026-01-12 11:22:12] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-12 11:22:12] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-12 11:22:12] SUCCESS: Parsed dates in Energy.csv
+[2026-01-12 11:22:13] SUCCESS: Applied year-specific emission factors
+[2026-01-12 11:22:13] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-12 11:22:14] SUCCESS: Loaded display NGA factors
+[2026-01-12 11:22:14] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-12 11:32:41] ================================================================================
+[2026-01-12 11:32:41] NEW DATA LOADING SESSION
+[2026-01-12 11:32:41] ================================================================================
+[2026-01-12 11:32:42] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-12 11:32:42] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-12 11:32:42] SUCCESS: Parsed dates in ROM.csv
+[2026-01-12 11:32:42] SUCCESS: All ROM values valid
+[2026-01-12 11:32:42] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-12 11:32:42] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-12 11:32:42] SUCCESS: Parsed dates in Energy.csv
+[2026-01-12 11:32:42] SUCCESS: Applied year-specific emission factors
+[2026-01-12 11:32:42] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-12 11:32:43] SUCCESS: Loaded display NGA factors
+[2026-01-12 11:32:43] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-12 11:36:57] ================================================================================
+[2026-01-12 11:36:57] NEW DATA LOADING SESSION
+[2026-01-12 11:36:57] ================================================================================
+[2026-01-12 11:36:59] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-12 11:36:59] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-12 11:36:59] SUCCESS: Parsed dates in ROM.csv
+[2026-01-12 11:36:59] SUCCESS: All ROM values valid
+[2026-01-12 11:36:59] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-12 11:36:59] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-12 11:36:59] SUCCESS: Parsed dates in Energy.csv
+[2026-01-12 11:37:00] SUCCESS: Applied year-specific emission factors
+[2026-01-12 11:37:00] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-12 11:37:01] SUCCESS: Loaded display NGA factors
+[2026-01-12 11:37:01] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-12 11:48:59] ================================================================================
+[2026-01-12 11:48:59] NEW DATA LOADING SESSION
+[2026-01-12 11:48:59] ================================================================================
+[2026-01-12 11:49:00] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-12 11:49:00] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-12 11:49:00] SUCCESS: Parsed dates in ROM.csv
+[2026-01-12 11:49:00] SUCCESS: All ROM values valid
+[2026-01-12 11:49:00] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-12 11:49:00] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-12 11:49:00] SUCCESS: Parsed dates in Energy.csv
+[2026-01-12 11:49:01] SUCCESS: Applied year-specific emission factors
+[2026-01-12 11:49:01] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-12 11:49:02] SUCCESS: Loaded display NGA factors
+[2026-01-12 11:49:02] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-12 11:50:30] ================================================================================
+[2026-01-12 11:50:30] NEW DATA LOADING SESSION
+[2026-01-12 11:50:30] ================================================================================
+[2026-01-12 11:50:31] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-12 11:50:31] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-12 11:50:31] SUCCESS: Parsed dates in ROM.csv
+[2026-01-12 11:50:31] SUCCESS: All ROM values valid
+[2026-01-12 11:50:31] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-12 11:50:31] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-12 11:50:31] SUCCESS: Parsed dates in Energy.csv
+[2026-01-12 11:50:32] SUCCESS: Applied year-specific emission factors
+[2026-01-12 11:50:32] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-12 11:50:33] SUCCESS: Loaded display NGA factors
+[2026-01-12 11:50:33] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-12 11:54:58] ================================================================================
+[2026-01-12 11:54:58] NEW DATA LOADING SESSION
+[2026-01-12 11:54:58] ================================================================================
+[2026-01-12 11:54:59] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-12 11:54:59] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-12 11:54:59] SUCCESS: Parsed dates in ROM.csv
+[2026-01-12 11:54:59] SUCCESS: All ROM values valid
+[2026-01-12 11:54:59] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-12 11:54:59] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-12 11:54:59] SUCCESS: Parsed dates in Energy.csv
+[2026-01-12 11:55:00] SUCCESS: Applied year-specific emission factors
+[2026-01-12 11:55:00] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-12 11:55:01] SUCCESS: Loaded display NGA factors
+[2026-01-12 11:55:01] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-12 12:01:32] ================================================================================
+[2026-01-12 12:01:32] NEW DATA LOADING SESSION
+[2026-01-12 12:01:32] ================================================================================
+[2026-01-12 12:01:33] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-12 12:01:33] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-12 12:01:33] SUCCESS: Parsed dates in ROM.csv
+[2026-01-12 12:01:33] SUCCESS: All ROM values valid
+[2026-01-12 12:01:33] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-12 12:01:33] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-12 12:01:33] SUCCESS: Parsed dates in Energy.csv
+[2026-01-12 12:01:33] SUCCESS: Applied year-specific emission factors
+[2026-01-12 12:01:33] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-12 12:01:34] SUCCESS: Loaded display NGA factors
+[2026-01-12 12:01:34] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-12 12:06:58] ================================================================================
+[2026-01-12 12:06:58] NEW DATA LOADING SESSION
+[2026-01-12 12:06:58] ================================================================================
+[2026-01-12 12:06:59] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-12 12:06:59] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-12 12:06:59] SUCCESS: Parsed dates in ROM.csv
+[2026-01-12 12:06:59] SUCCESS: All ROM values valid
+[2026-01-12 12:06:59] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-12 12:06:59] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-12 12:06:59] SUCCESS: Parsed dates in Energy.csv
+[2026-01-12 12:06:59] SUCCESS: Applied year-specific emission factors
+[2026-01-12 12:06:59] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-12 12:07:00] SUCCESS: Loaded display NGA factors
+[2026-01-12 12:07:00] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-12 12:07:15] ================================================================================
+[2026-01-12 12:07:15] NEW DATA LOADING SESSION
+[2026-01-12 12:07:15] ================================================================================
+[2026-01-12 12:07:16] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-12 12:07:16] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-12 12:07:16] SUCCESS: Parsed dates in ROM.csv
+[2026-01-12 12:07:16] SUCCESS: All ROM values valid
+[2026-01-12 12:07:16] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-12 12:07:16] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-12 12:07:16] SUCCESS: Parsed dates in Energy.csv
+[2026-01-12 12:07:17] SUCCESS: Applied year-specific emission factors
+[2026-01-12 12:07:17] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-12 12:07:17] SUCCESS: Loaded display NGA factors
+[2026-01-12 12:07:17] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-12 12:10:05] ================================================================================
+[2026-01-12 12:10:05] NEW DATA LOADING SESSION
+[2026-01-12 12:10:05] ================================================================================
+[2026-01-12 12:10:13] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-12 12:10:13] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-12 12:10:13] SUCCESS: Parsed dates in ROM.csv
+[2026-01-12 12:10:13] SUCCESS: All ROM values valid
+[2026-01-12 12:10:13] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-12 12:10:13] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-12 12:10:13] SUCCESS: Parsed dates in Energy.csv
+[2026-01-12 12:10:15] SUCCESS: Applied year-specific emission factors
+[2026-01-12 12:10:15] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-12 12:10:21] SUCCESS: Loaded display NGA factors
+[2026-01-12 12:10:21] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-12 12:13:31] ================================================================================
+[2026-01-12 12:13:31] NEW DATA LOADING SESSION
+[2026-01-12 12:13:31] ================================================================================
+[2026-01-12 12:13:33] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-12 12:13:33] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-12 12:13:33] SUCCESS: Parsed dates in ROM.csv
+[2026-01-12 12:13:33] SUCCESS: All ROM values valid
+[2026-01-12 12:13:33] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-12 12:13:33] SUCCESS: Loaded Energy.csv: 1088 rows
+[2026-01-12 12:13:33] SUCCESS: Parsed dates in Energy.csv
+[2026-01-12 12:13:33] SUCCESS: Applied year-specific emission factors
+[2026-01-12 12:13:33] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
+[2026-01-12 12:13:34] SUCCESS: Loaded display NGA factors
+[2026-01-12 12:13:34] DATA LOADING COMPLETE - NO ERRORS
