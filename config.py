@@ -88,11 +88,11 @@ def get_fy_description(fy_start_month=None):
     end_name = get_fy_month_name(end_month)
 
     if fy_start_month == 1:
-        return f"Calendar Year ({start_name}â€“{end_name})"
+        return f"Calendar Year ({start_name}—{end_name})"
     elif fy_start_month == 7:
-        return f"NGER Financial Year ({start_name}â€“{end_name})"
+        return f"NGER Financial Year ({start_name}—{end_name})"
     else:
-        return f"Custom Fiscal Year ({start_name}â€“{end_name})"
+        return f"Custom Fiscal Year ({start_name}—{end_name})"
 
 # =============================================================================
 # SAFEGUARD MECHANISM PARAMETERS

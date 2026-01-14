@@ -819,3 +819,108 @@ Emissions Summary by FY:
 [2026-01-14 15:21:34] SUCCESS: Total Scope 3: 221340 tCO₂-e
 [2026-01-14 15:21:35] SUCCESS: Loaded display NGA factors
 [2026-01-14 15:21:35] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 15:25:06] ================================================================================
+[2026-01-14 15:25:06] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-14 15:25:06] ================================================================================
+[2026-01-14 15:25:07] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 15:25:07] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 15:25:07] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 15:25:07] SUCCESS: All ROM values valid
+[2026-01-14 15:25:07] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 15:25:08] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-14 15:25:08] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-14 15:25:08] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-14 15:25:08] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-14 15:25:08] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-14 15:25:08] SUCCESS: Applied year-specific emission factors
+[2026-01-14 15:25:08] SUCCESS: Calculated emissions for all fuel types
+[2026-01-14 15:25:08] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-14 15:25:08] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-14 15:25:08] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-14 15:25:08] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-14 15:25:09] SUCCESS: Loaded display NGA factors
+[2026-01-14 15:25:09] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 15:25:50] ================================================================================
+[2026-01-14 15:25:50] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-14 15:25:50] ================================================================================
+[2026-01-14 15:25:52] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 15:25:52] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 15:25:52] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 15:25:52] SUCCESS: All ROM values valid
+[2026-01-14 15:25:52] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 15:25:52] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-14 15:25:52] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-14 15:25:52] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-14 15:25:52] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-14 15:25:52] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-14 15:25:52] SUCCESS: Applied year-specific emission factors
+[2026-01-14 15:25:52] SUCCESS: Calculated emissions for all fuel types
+[2026-01-14 15:25:52] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-14 15:25:52] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-14 15:25:52] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-14 15:25:52] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-14 15:25:54] SUCCESS: Loaded display NGA factors
+[2026-01-14 15:25:54] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 15:26:20] ================================================================================
+[2026-01-14 15:26:20] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-14 15:26:20] ================================================================================
+[2026-01-14 15:26:22] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 15:26:22] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 15:26:22] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 15:26:22] SUCCESS: All ROM values valid
+[2026-01-14 15:26:22] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 15:26:22] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-14 15:26:22] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-14 15:26:22] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-14 15:26:22] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-14 15:26:22] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-14 15:26:23] SUCCESS: Applied year-specific emission factors
+[2026-01-14 15:26:23] SUCCESS: Calculated emissions for all fuel types
+[2026-01-14 15:26:23] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-14 15:26:23] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-14 15:26:23] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-14 15:26:23] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-14 15:26:24] SUCCESS: Loaded display NGA factors
+[2026-01-14 15:26:24] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-15 07:25:44] ================================================================================
+[2026-01-15 07:25:44] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-15 07:25:44] ================================================================================
+[2026-01-15 07:25:45] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-15 07:25:45] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-15 07:25:45] SUCCESS: Parsed dates in ROM.csv
+[2026-01-15 07:25:45] SUCCESS: All ROM values valid
+[2026-01-15 07:25:45] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-15 07:25:45] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-15 07:25:45] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-15 07:25:45] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-15 07:25:45] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-15 07:25:45] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-15 07:25:45] SUCCESS: Applied year-specific emission factors
+[2026-01-15 07:25:45] SUCCESS: Calculated emissions for all fuel types
+[2026-01-15 07:25:45] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-15 07:25:45] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-15 07:25:45] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-15 07:25:45] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-15 07:25:46] SUCCESS: Loaded display NGA factors
+[2026-01-15 07:25:46] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-15 07:32:33] ================================================================================
+[2026-01-15 07:32:33] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-15 07:32:33] ================================================================================
+[2026-01-15 07:32:34] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-15 07:32:34] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-15 07:32:34] SUCCESS: Parsed dates in ROM.csv
+[2026-01-15 07:32:34] SUCCESS: All ROM values valid
+[2026-01-15 07:32:34] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-15 07:32:35] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-15 07:32:35] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-15 07:32:35] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-15 07:32:35] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-15 07:32:35] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-15 07:32:35] SUCCESS: Applied year-specific emission factors
+[2026-01-15 07:32:35] SUCCESS: Calculated emissions for all fuel types
+[2026-01-15 07:32:35] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-15 07:32:35] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-15 07:32:35] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-15 07:32:35] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-15 07:32:36] SUCCESS: Loaded display NGA factors
+[2026-01-15 07:32:36] DATA LOADING COMPLETE - NO ERRORS

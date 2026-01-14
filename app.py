@@ -51,7 +51,7 @@ st.title("🏭 Ravenswood Gold Mine - Safeguard Mechanism Model")
 st.caption("Emissions tracking and Safeguard Mechanism compliance projections")
 
 # SIDEBAR - Configuration
-st.sidebar.header("âš™ï¸Â Configuration")
+st.sidebar.header("⚙️ Configuration")
 # Fiscal Year Configuration
 st.sidebar.subheader("📅 Fiscal Year")
 
@@ -94,7 +94,7 @@ baseline_intensity = st.sidebar.number_input(
     format="%.6f",
     help="Approved FSEI from Clean Energy Regulator EID determination"
 )
-st.sidebar.caption(f"FSEI ROM: {FSEI_ROM} tCOâ‚‚-e/t | FSEI Elec: {FSEI_ELEC} tCOâ‚‚-e/MWh")
+st.sidebar.caption(f"FSEI ROM: {FSEI_ROM} tCO₂-e/t | FSEI Elec: {FSEI_ELEC} tCO₂-e/MWh")
 st.sidebar.caption(f"Baseline declining at {DECLINE_RATE * 100:.1f}% p.a. from FY{DECLINE_FROM}")
 
 # Projection Period
@@ -143,7 +143,7 @@ st.sidebar.caption(f"Projection: FY{start_fy}—FY{end_fy}")
 # Carbon Credit Market
 st.sidebar.subheader("Carbon Credit Market")
 carbon_credit_price = st.sidebar.number_input(
-    "SMC Credit Price ($/tCOâ‚‚-e)",
+    "SMC Credit Price ($/tCO₂-e)",
     value=float(DEFAULT_CARBON_CREDIT_PRICE),
     min_value=0.0,
     step=5.0,
@@ -173,7 +173,7 @@ tax_start_fy = st.sidebar.number_input(
 )
 
 tax_rate = st.sidebar.number_input(
-    "Initial Tax Rate ($/tCOâ‚‚-e)",
+    "Initial Tax Rate ($/tCO₂-e)",
     value=float(DEFAULT_TAX_RATE),
     min_value=0.0,
     step=5.0,
@@ -202,7 +202,7 @@ grid_connected_fy = st.sidebar.number_input(
     help="Year when grid electricity becomes available (diesel generation stops)"
 )
 
-st.sidebar.caption(f"Grid connection: FY{grid_connected_fy} (diesel generation â†’ grid electricity)")
+st.sidebar.caption(f"Grid connection: FY{grid_connected_fy} (diesel generation → grid electricity)")
 
 # TABS - Main Navigation
 tab1, tab2, tab3, tab4 = st.tabs([
