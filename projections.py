@@ -1,7 +1,9 @@
 """
 projections.py
 Scenario projections and safeguard mechanism modeling
-Last updated: 2026-01-07 16:45 AEST
+Last updated: 2026-01-14 15:45 AEST
+
+Now uses detailed fuel breakdown: Total_Scope1_tCO2e, Total_Scope2_tCO2e, Total_Scope3_tCO2e
 """
 
 import pandas as pd
@@ -183,10 +185,10 @@ def build_projection(fuel_summary, elec_summary, rom_annual, start_fy, end_fy,
             'FY': f"FY{fy}",
             'Source': source,
             'Phase': phase.title(),
-            'Mining': 'âœ“' if mining_active else '',
-            'Processing': 'âœ“' if processing_active else '',
-            'Rehabilitation': 'âœ“' if rehabilitation_active and not processing_active else '',
-            'Grid': 'âœ“' if has_grid else '',
+            'Mining': 'Ã¢Å“â€œ' if mining_active else '',
+            'Processing': 'Ã¢Å“â€œ' if processing_active else '',
+            'Rehabilitation': 'Ã¢Å“â€œ' if rehabilitation_active and not processing_active else '',
+            'Grid': 'Ã¢Å“â€œ' if has_grid else '',
             'ROM_Mt': rom_tonnes / 1e6,
             'ROM_Source': 'Actual' if fy in rom_by_fy else 'Projected',
             'Site_MWh': baseline_mwh,
@@ -281,9 +283,9 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
     for fy in energy_df['FY'].unique():
         fy_data = energy_df[energy_df['FY'] == fy]
         actual_emissions_by_year[fy] = {
-            'scope1': fy_data['Fuel_tCO2e_S1'].sum(),
-            'scope2': fy_data['Grid_tCO2e_S2'].sum(),
-            'scope3': fy_data['Fuel_tCO2e_S3'].sum() + fy_data['Grid_tCO2e_S3'].sum(),
+            'scope1': fy_data['Total_Scope1_tCO2e'].sum(),
+            'scope2': fy_data['Total_Scope2_tCO2e'].sum(),
+            'scope3': fy_data['Total_Scope3_tCO2e'].sum(),
             'site_mwh': fy_data['SitePower_MWh'].sum()
         }
 
@@ -301,17 +303,26 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
     baseline_data['Category'] = baseline_data['Costcentre'].map(CATEGORY_MAP)
 
     by_cc = baseline_data.groupby('Costcentre').agg({
-        'Fuel': 'sum',
-        'Fuel_kL': 'sum',
-        'Fuel_tCO2e_S1': 'sum',
-        'Fuel_tCO2e_S3': 'sum',
-        'GridPower': 'sum',
+        'Diesel_Electricity_L': 'sum',
+        'Diesel_Transport_L': 'sum',
+        'Diesel_Stationary_L': 'sum',
+        'Diesel_Explosives_L': 'sum',
+        'Diesel_Total_kL': 'sum',
+        'GridPower_kWh': 'sum',
         'GridPower_MWh': 'sum',
-        'Grid_tCO2e_S2': 'sum',
-        'Grid_tCO2e_S3': 'sum',
-        'SitePower': 'sum',
-        'SitePower_MWh': 'sum'
+        'SitePower_kWh': 'sum',
+        'SitePower_MWh': 'sum',
+        'Total_Scope1_tCO2e': 'sum',
+        'Total_Scope2_tCO2e': 'sum',
+        'Total_Scope3_tCO2e': 'sum'
     }).reset_index()
+
+    # Create simplified columns for display
+    by_cc['Fuel'] = (by_cc['Diesel_Electricity_L'] + by_cc['Diesel_Transport_L'] +
+                     by_cc['Diesel_Stationary_L'] + by_cc['Diesel_Explosives_L'])
+    by_cc['Fuel_kL'] = by_cc['Diesel_Total_kL']
+    by_cc['GridPower'] = by_cc['GridPower_kWh']
+    by_cc['SitePower'] = by_cc['SitePower_kWh']
 
     # Average across the baseline years (2 years)
     num_years = len(baseline_years)
@@ -325,10 +336,10 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
     print(f"Using FY{baseline_years[0]}-{baseline_years[-1]} average as baseline (post-expansion)")
 
     # Sum by category
-    power_baseline = by_cc[by_cc['Category'] == 'Power']['Fuel_tCO2e_S1'].sum()
-    mining_baseline = by_cc[by_cc['Category'] == 'Mining']['Fuel_tCO2e_S1'].sum()
-    processing_baseline = by_cc[by_cc['Category'] == 'Processing']['Fuel_tCO2e_S1'].sum()
-    fixed_baseline = by_cc[by_cc['Category'] == 'Fixed']['Fuel_tCO2e_S1'].sum()
+    power_baseline = by_cc[by_cc['Category'] == 'Power']['Total_Scope1_tCO2e'].sum()
+    mining_baseline = by_cc[by_cc['Category'] == 'Mining']['Total_Scope1_tCO2e'].sum()
+    processing_baseline = by_cc[by_cc['Category'] == 'Processing']['Total_Scope1_tCO2e'].sum()
+    fixed_baseline = by_cc[by_cc['Category'] == 'Fixed']['Total_Scope1_tCO2e'].sum()
 
     print(f"Baseline averages (FY{baseline_years[0]}-{baseline_years[-1]}):")
     print(f"  Power: {power_baseline:,.0f} tCO2e")
@@ -519,7 +530,7 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
                 final_decline_factor = (1 - DECLINE_RATE) ** years_total
                 baseline_intensity_value = baseline_intensity_raw * final_decline_factor
 
-            # Production-adjusted baseline: baseline intensity Ã— actual ROM
+            # Production-adjusted baseline: baseline intensity Ãƒâ€” actual ROM
             baseline_emissions = baseline_intensity_value * rom_tonnes
 
             # Actual emission intensity

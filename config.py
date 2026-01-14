@@ -88,11 +88,11 @@ def get_fy_description(fy_start_month=None):
     end_name = get_fy_month_name(end_month)
 
     if fy_start_month == 1:
-        return f"Calendar Year ({start_name}–{end_name})"
+        return f"Calendar Year ({start_name}â€“{end_name})"
     elif fy_start_month == 7:
-        return f"NGER Financial Year ({start_name}–{end_name})"
+        return f"NGER Financial Year ({start_name}â€“{end_name})"
     else:
-        return f"Custom Fiscal Year ({start_name}–{end_name})"
+        return f"Custom Fiscal Year ({start_name}â€“{end_name})"
 
 # =============================================================================
 # SAFEGUARD MECHANISM PARAMETERS
@@ -147,6 +147,14 @@ CATEGORY_MAP = {
     'Exploration and Development': 'Fixed',
     'Environment': 'Fixed',
     'Rehabilitation': 'Fixed',
+    'Gold Room': 'Processing',
+    'Village and Housing': 'Fixed',
+    'Leach & Adsorption': 'Processing',
+    'Laboratory': 'Processing',
+    'Supp Crushing Mobile Equipment': 'Processing',
+    'Stores & Supply': 'Fixed',
+    'Mobile Equipment Workshop': 'Fixed',
+    'Infrastructure': 'Fixed',
 }
 
 # NGER purpose classification (determines emission factor table)
@@ -173,6 +181,14 @@ NGER_PURPOSE_MAP = {
     'Environment': 'stationary',
     'Blasting': 'explosives',
     'Rehabilitation': 'stationary',
+    'Gold Room': 'stationary',
+    'Village and Housing': 'stationary',
+    'Leach & Adsorption': 'stationary',
+    'Laboratory': 'stationary',
+    'Supp Crushing Mobile Equipment': 'stationary',
+    'Stores & Supply': 'stationary',
+    'Mobile Equipment Workshop': 'stationary',
+    'Infrastructure': 'stationary',
 }
 
 # =============================================================================
@@ -195,12 +211,12 @@ DEFAULT_START_FY = 2021
 # =============================================================================
 
 # Carbon Credit Market
-DEFAULT_CARBON_CREDIT_PRICE = 35.0  # $/tCOâ‚‚-e
+DEFAULT_CARBON_CREDIT_PRICE = 35.0  # $/tCOÃ¢â€šâ€š-e
 DEFAULT_CREDIT_ESCALATION = 0.03    # 3% per annum
 
 # Carbon Tax Scenario
 DEFAULT_TAX_START_FY = 2030
-DEFAULT_TAX_RATE = 15.0             # $/tCOâ‚‚-e initial rate
+DEFAULT_TAX_RATE = 15.0             # $/tCOÃ¢â€šâ€š-e initial rate
 DEFAULT_TAX_ESCALATION = 0.02       # 2% per annum
 
 # =============================================================================
@@ -213,8 +229,8 @@ DEFAULT_GRID_CONNECTION_FY = 2027   # Year grid electricity becomes available (d
 # INDUSTRY BENCHMARKS (from Safeguard Rule)
 # =============================================================================
 
-DEFAULT_INDUSTRY_EI_ROM = 0.00859   # Industry default tCOâ‚‚-e/t ROM
-DEFAULT_INDUSTRY_EI_ELEC = 0.539    # Industry default tCOâ‚‚-e/MWh
+DEFAULT_INDUSTRY_EI_ROM = 0.00859   # Industry default tCOÃ¢â€šâ€š-e/t ROM
+DEFAULT_INDUSTRY_EI_ELEC = 0.539    # Industry default tCOÃ¢â€šâ€š-e/MWh
 
 # Phase 1: Active Mining (up to End of Mining FY)
 # All cost centres operate at 100%
@@ -241,6 +257,14 @@ PHASE_MINING = {
     'Exploration and Development': 1.00,
     'Environment': 1.00,
     'Rehabilitation': 1.00,
+    'Gold Room': 1.00,
+    'Village and Housing': 1.00,
+    'Leach & Adsorption': 1.00,
+    'Laboratory': 1.00,
+    'Supp Crushing Mobile Equipment': 1.00,
+    'Stores & Supply': 1.00,
+    'Mobile Equipment Workshop': 1.00,
+    'Infrastructure': 1.00,
 }
 
 # Phase 2: Processing Only (after End of Mining, before End of Processing)
@@ -268,6 +292,14 @@ PHASE_PROCESSING = {
     'Exploration and Development': 0.00,  # Ceased
     'Environment': 0.50,                # Reduced monitoring
     'Rehabilitation': 1.00,             # Active rehabilitation
+    'Gold Room': 1.00,                  # Processing continues
+    'Village and Housing': 1.00,        # Ongoing operations
+    'Leach & Adsorption': 1.00,         # Processing continues
+    'Laboratory': 1.00,                 # Ongoing analysis
+    'Supp Crushing Mobile Equipment': 0.00,  # Reduced
+    'Stores & Supply': 1.00,            # Ongoing operations
+    'Mobile Equipment Workshop': 1.00,  # Ongoing maintenance
+    'Infrastructure': 1.00,             # Ongoing operations
 }
 
 # Phase 3: Rehabilitation Only (after End of Processing)
@@ -295,6 +327,14 @@ PHASE_REHABILITATION = {
     'Exploration and Development': 0.00,
     'Environment': 0.25,                # Ongoing monitoring
     'Rehabilitation': 1.00,             # Active rehabilitation
+    'Gold Room': 0.00,                  # Processing ceased
+    'Village and Housing': 0.10,        # Minimal
+    'Leach & Adsorption': 0.00,         # Processing ceased
+    'Laboratory': 0.10,                 # Minimal environmental testing
+    'Supp Crushing Mobile Equipment': 0.00,  # Ceased
+    'Stores & Supply': 0.10,            # Minimal supplies
+    'Mobile Equipment Workshop': 0.10,  # Minimal maintenance
+    'Infrastructure': 0.10,             # Minimal upkeep
 }
 
 # Phase profile lookup
@@ -376,11 +416,79 @@ SCOPE_NAMES = {
 }
 
 # =============================================================================
+# NGA EMISSION FACTORS (2025)
+# =============================================================================
+# National Greenhouse Account emission factors
+# Source: nationalgreenhouseaccountfactors2025.xlsx
+
+# Energy content factors (GJ/unit)
+ENERGY_CONTENT = {
+    'diesel_gj_per_kl': 38.6,
+    'lpg_gj_per_kl': 25.7,
+    'petroleum_oil_gj_per_kl': 38.8,
+    'petroleum_grease_gj_per_kl': 38.8,
+    'acetylene_gj_per_m3': 0.0393,
+    'gasoline_gj_per_kl': 34.2,
+}
+
+# Conversion factors
+CONVERSIONS = {
+    'lpg_density': 0.51,        # kg/L
+    'grease_density': 0.9,      # kg/L (approx)
+}
+
+# Diesel emission factors by purpose (kg CO2-e/GJ)
+DIESEL_FACTORS = {
+    'electricity_generation': {
+        'scope1_co2': 69.9,
+        'scope1_ch4': 0.1,
+        'scope1_n2o': 0.2,
+        'scope1_total': 70.2,
+    },
+    'transport': {
+        'scope1_co2': 69.9,
+        'scope1_ch4': 0.01,  # Lower CH4 for modern transport
+        'scope1_n2o': 0.5,   # Higher N2O for transport
+        'scope1_total': 70.41,
+    },
+    'stationary': {
+        'scope1_co2': 69.9,
+        'scope1_ch4': 0.1,
+        'scope1_n2o': 0.2,
+        'scope1_total': 70.2,
+    },
+    'explosives': {  # ANFO combustion
+        'scope1_co2': 69.9,
+        'scope1_ch4': 0.1,
+        'scope1_n2o': 0.2,
+        'scope1_total': 70.2,
+    },
+    'scope3': 17.3,  # kg CO2-e/GJ (same for all diesel uses)
+}
+
+# LPG emission factors (kg CO2-e/GJ)
+LPG_FACTORS = {
+    'scope1': 60.6,
+    'scope3': 20.2,
+}
+
+# Petroleum products emission factors (kg CO2-e/GJ)
+PETROLEUM_FACTORS = {
+    'oils_scope3': 18.0,
+    'greases_scope3': 18.0,
+}
+
+# Gaseous fuels emission factors (kg CO2-e/GJ)
+GASEOUS_FACTORS = {
+    'acetylene_scope1': 51.53,  # "Gaseous fossil fuels other than..."
+}
+
+# =============================================================================
 # FILE PATHS
 # =============================================================================
 
 DEFAULT_PATHS = {
-    'energy': 'Energy.csv',
+    'energy': 'Energy.xlsx',
     'rom': 'ROM.csv',
     'nga': 'national-greenhouse-account-factors-2025.xlsx'
 }

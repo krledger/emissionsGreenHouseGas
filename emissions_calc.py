@@ -1,9 +1,10 @@
 """
 emissions_calc.py
 Emissions calculation functions for Ravenswood Gold
-Last updated: 2025-12-23
+Last updated: 2026-01-14 15:30 AEST
 
-Calculates emissions from Energy.csv and ROM.csv
+Calculates emissions from Energy.xlsx (with detailed fuel breakdown) and ROM.csv
+Now uses detailed fuel structure: Diesel by purpose, LPG, oils, greases, gases
 """
 
 import pandas as pd
@@ -33,17 +34,19 @@ def summarise_energy(energy_df, baseline_fy=None, annualize_partial=True):
         fy_data = energy_df[energy_df['FY'] == fy]
         months = fy_data['Month'].nunique()
 
-        # Calculate actual values
-        fuel_litres_actual = fy_data['Fuel'].sum()
-        fuel_kL_actual = fy_data['Fuel_kL'].sum()
-        grid_kwh_actual = fy_data['GridPower'].sum()
+        # Calculate actual values from new detailed structure
+        fuel_litres_actual = (fy_data['Diesel_Electricity_L'].sum() +
+                             fy_data['Diesel_Transport_L'].sum() +
+                             fy_data['Diesel_Stationary_L'].sum() +
+                             fy_data['Diesel_Explosives_L'].sum())
+        fuel_kL_actual = fy_data['Diesel_Total_kL'].sum()
+        grid_kwh_actual = fy_data['GridPower_kWh'].sum()
         grid_mwh_actual = fy_data['GridPower_MWh'].sum()
-        site_kwh_actual = fy_data['SitePower'].sum()
+        site_kwh_actual = fy_data['SitePower_kWh'].sum()
         site_mwh_actual = fy_data['SitePower_MWh'].sum()
-        scope1_actual = fy_data['Fuel_tCO2e_S1'].sum()
-        scope2_actual = fy_data['Grid_tCO2e_S2'].sum()
-        scope3_fuel_actual = fy_data['Fuel_tCO2e_S3'].sum()
-        scope3_grid_actual = fy_data['Grid_tCO2e_S3'].sum()
+        scope1_actual = fy_data['Total_Scope1_tCO2e'].sum()
+        scope2_actual = fy_data['Total_Scope2_tCO2e'].sum()
+        scope3_actual = fy_data['Total_Scope3_tCO2e'].sum()
 
         # Apply annualization if requested and partial year
         if annualize_partial and months < 12 and months > 0:
@@ -57,8 +60,8 @@ def summarise_energy(energy_df, baseline_fy=None, annualize_partial=True):
                 'site_mwh': site_mwh_actual * scale_factor,
                 'scope1_fuel': scope1_actual * scale_factor,
                 'scope2_grid': scope2_actual * scale_factor,
-                'scope3_fuel': scope3_fuel_actual * scale_factor,
-                'scope3_grid': scope3_grid_actual * scale_factor,
+                'scope3_fuel': scope3_actual * scale_factor,  # Now includes all scope 3
+                'scope3_grid': 0,  # Included in scope3_fuel above
                 'months_actual': months,
                 'is_complete': False,
                 'is_annualized': True,
@@ -74,8 +77,8 @@ def summarise_energy(energy_df, baseline_fy=None, annualize_partial=True):
                 'site_mwh': site_mwh_actual,
                 'scope1_fuel': scope1_actual,
                 'scope2_grid': scope2_actual,
-                'scope3_fuel': scope3_fuel_actual,
-                'scope3_grid': scope3_grid_actual,
+                'scope3_fuel': scope3_actual,  # Now includes all scope 3
+                'scope3_grid': 0,  # Included in scope3_fuel above
                 'months_actual': months,
                 'is_complete': months == 12,
                 'is_annualized': False,
@@ -95,18 +98,30 @@ def summarise_energy(energy_df, baseline_fy=None, annualize_partial=True):
     else:
         scale_factor = 1.0
 
-    by_cc = fy_data.groupby('Costcentre').agg({
-        'Fuel': 'sum',
-        'Fuel_kL': 'sum',
-        'Fuel_tCO2e_S1': 'sum',
-        'Fuel_tCO2e_S3': 'sum',
-        'GridPower': 'sum',
+    # Aggregate by cost centre with new column structure
+    agg_dict = {
+        'Diesel_Electricity_L': 'sum',
+        'Diesel_Transport_L': 'sum',
+        'Diesel_Stationary_L': 'sum',
+        'Diesel_Explosives_L': 'sum',
+        'Diesel_Total_kL': 'sum',
+        'GridPower_kWh': 'sum',
         'GridPower_MWh': 'sum',
-        'Grid_tCO2e_S2': 'sum',
-        'Grid_tCO2e_S3': 'sum',
-        'SitePower': 'sum',
-        'SitePower_MWh': 'sum'
-    }).reset_index()
+        'SitePower_kWh': 'sum',
+        'SitePower_MWh': 'sum',
+        'Total_Scope1_tCO2e': 'sum',
+        'Total_Scope2_tCO2e': 'sum',
+        'Total_Scope3_tCO2e': 'sum'
+    }
+
+    by_cc = fy_data.groupby('Costcentre').agg(agg_dict).reset_index()
+
+    # Create simplified column names for backward compatibility
+    by_cc['Fuel'] = (by_cc['Diesel_Electricity_L'] + by_cc['Diesel_Transport_L'] +
+                     by_cc['Diesel_Stationary_L'] + by_cc['Diesel_Explosives_L'])
+    by_cc['Fuel_kL'] = by_cc['Diesel_Total_kL']
+    by_cc['GridPower'] = by_cc['GridPower_kWh']
+    by_cc['SitePower'] = by_cc['SitePower_kWh']
 
     # Apply scale factor to all numeric columns
     numeric_cols = by_cc.select_dtypes(include=['number']).columns
@@ -120,9 +135,9 @@ def summarise_energy(energy_df, baseline_fy=None, annualize_partial=True):
     by_cc['Category'] = by_cc['Costcentre'].map(CATEGORY_MAP).fillna('Fixed')
 
     # Calculate totals
-    by_cc['Total_tCO2e_S1'] = by_cc['Fuel_tCO2e_S1']
-    by_cc['Total_tCO2e_S2'] = by_cc['Grid_tCO2e_S2']
-    by_cc['Total_tCO2e_S3'] = by_cc['Fuel_tCO2e_S3'] + by_cc['Grid_tCO2e_S3']
+    by_cc['Total_tCO2e_S1'] = by_cc['Total_Scope1_tCO2e']
+    by_cc['Total_tCO2e_S2'] = by_cc['Total_Scope2_tCO2e']
+    by_cc['Total_tCO2e_S3'] = by_cc['Total_Scope3_tCO2e']
     by_cc['Total_tCO2e'] = by_cc['Total_tCO2e_S1'] + by_cc['Total_tCO2e_S2'] + by_cc['Total_tCO2e_S3']
 
     # Percentages
@@ -140,7 +155,7 @@ def summarise_energy(energy_df, baseline_fy=None, annualize_partial=True):
     # =======================
 
     mature = energy_df[energy_df['Date'] >= MATURITY_CUTOFF]
-    seasonal_fuel = mature.groupby('Month')['Fuel_kL'].mean().to_dict()
+    seasonal_fuel = mature.groupby('Month')['Diesel_Total_kL'].mean().to_dict()
     seasonal_grid = mature.groupby('Month')['GridPower_MWh'].mean().to_dict()
     seasonal_site = mature.groupby('Month')['SitePower_MWh'].mean().to_dict()
 
@@ -260,13 +275,13 @@ def calculate_emissions(energy_df, fy, rom_tonnes, nga_factors, annualize_partia
     # Count actual months
     months = fy_data['Month'].nunique()
 
-    # Calculate actual values
-    scope1_actual = fy_data['Fuel_tCO2e_S1'].sum()
-    scope2_actual = fy_data['Grid_tCO2e_S2'].sum()
-    scope3_fuel_actual = fy_data['Fuel_tCO2e_S3'].sum()
-    scope3_grid_actual = fy_data['Grid_tCO2e_S3'].sum()
-    scope3_actual = scope3_fuel_actual + scope3_grid_actual
-    fuel_kl_actual = fy_data['Fuel_kL'].sum()
+    # Calculate actual values using new detailed structure
+    scope1_actual = fy_data['Total_Scope1_tCO2e'].sum()
+    scope2_actual = fy_data['Total_Scope2_tCO2e'].sum()
+    scope3_actual = fy_data['Total_Scope3_tCO2e'].sum()
+
+    # Fuel breakdown for reporting
+    fuel_kl_actual = fy_data['Diesel_Total_kL'].sum()
     grid_mwh_actual = fy_data['GridPower_MWh'].sum()
     site_mwh_actual = fy_data['SitePower_MWh'].sum()
 

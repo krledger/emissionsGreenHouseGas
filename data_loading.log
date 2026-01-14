@@ -376,3 +376,341 @@
 [2026-01-12 12:13:33] SUCCESS: Energy.csv processed: FY2020-2025, 6 years
 [2026-01-12 12:13:34] SUCCESS: Loaded display NGA factors
 [2026-01-12 12:13:34] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 14:00:09] ================================================================================
+[2026-01-14 14:00:09] NEW DATA LOADING SESSION
+[2026-01-14 14:00:09] ================================================================================
+[2026-01-14 14:00:11] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 14:00:11] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 14:00:11] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 14:00:11] SUCCESS: All ROM values valid
+[2026-01-14 14:00:11] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 14:00:11] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-14 14:00:11] SUCCESS: Aggregated energy data: 1040 Date/Costcentre combinations
+[2026-01-14 14:00:11] SUCCESS: Extracted year and month from dates
+[2026-01-14 14:00:11] SUCCESS: Applied year-specific emission factors
+[2026-01-14 14:00:11] SUCCESS: Energy.xlsx processed: FY2020-2025, 6 years
+[2026-01-14 14:00:12] SUCCESS: Loaded display NGA factors
+[2026-01-14 14:00:12] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 14:07:18] ================================================================================
+[2026-01-14 14:07:18] NEW DATA LOADING SESSION
+[2026-01-14 14:07:18] ================================================================================
+[2026-01-14 14:07:19] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 14:07:19] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 14:07:19] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 14:07:19] SUCCESS: All ROM values valid
+[2026-01-14 14:07:19] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 14:07:20] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-14 14:07:20] SUCCESS: Aggregated energy data: 1040 Date/Costcentre combinations
+[2026-01-14 14:07:20] SUCCESS: Extracted year and month from dates
+[2026-01-14 14:07:20] SUCCESS: Applied year-specific emission factors
+[2026-01-14 14:07:20] SUCCESS: Energy.xlsx processed: FY2020-2025, 6 years
+[2026-01-14 14:07:21] SUCCESS: Loaded display NGA factors
+[2026-01-14 14:07:21] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 14:07:23] ================================================================================
+[2026-01-14 14:07:23] NEW DATA LOADING SESSION
+[2026-01-14 14:07:23] ================================================================================
+[2026-01-14 14:07:24] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 14:07:24] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 14:07:24] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 14:07:24] SUCCESS: All ROM values valid
+[2026-01-14 14:07:24] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 14:07:25] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-14 14:07:25] SUCCESS: Aggregated energy data: 1040 Date/Costcentre combinations
+[2026-01-14 14:07:25] SUCCESS: Extracted year and month from dates
+[2026-01-14 14:07:25] SUCCESS: Applied year-specific emission factors
+[2026-01-14 14:07:25] SUCCESS: Energy.xlsx processed: FY2020-2025, 6 years
+[2026-01-14 14:07:26] SUCCESS: Loaded display NGA factors
+[2026-01-14 14:07:26] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 14:38:54] ================================================================================
+[2026-01-14 14:38:54] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-14 14:38:54] ================================================================================
+[2026-01-14 14:38:56] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 14:38:56] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 14:38:56] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 14:38:56] SUCCESS: All ROM values valid
+[2026-01-14 14:38:56] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 14:38:56] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-14 14:38:56] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-14 14:38:56] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-14 14:38:56] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-14 14:38:56] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-14 14:38:56] ERROR [UNMAPPED_COSTCENTRES]: Found 8 unmapped cost centres | Details: Cost centres: ['Gold Room', 'Village and Housing', 'Leach & Adsorption', 'Laboratory', 'Supp Crushing Mobile Equipment', 'Stores & Supply', 'Mobile Equipment Workshop', 'Infrastructure']
+[2026-01-14 14:38:56] SUCCESS: Applied year-specific emission factors
+[2026-01-14 14:38:56] SUCCESS: Calculated emissions for all fuel types
+[2026-01-14 14:38:56] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-14 14:38:56] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-14 14:38:56] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-14 14:38:56] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-14 14:38:57] SUCCESS: Loaded display NGA factors
+[2026-01-14 14:38:57] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 14:43:19] ================================================================================
+[2026-01-14 14:43:19] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-14 14:43:19] ================================================================================
+[2026-01-14 14:43:21] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 14:43:21] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 14:43:21] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 14:43:21] SUCCESS: All ROM values valid
+[2026-01-14 14:43:21] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 14:43:21] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-14 14:43:21] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-14 14:43:21] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-14 14:43:21] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-14 14:43:21] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-14 14:43:21] ERROR [UNMAPPED_COSTCENTRES]: Found 8 unmapped cost centres | Details: Cost centres: ['Gold Room', 'Village and Housing', 'Leach & Adsorption', 'Laboratory', 'Supp Crushing Mobile Equipment', 'Stores & Supply', 'Mobile Equipment Workshop', 'Infrastructure']
+[2026-01-14 14:43:22] SUCCESS: Applied year-specific emission factors
+[2026-01-14 14:43:22] SUCCESS: Calculated emissions for all fuel types
+[2026-01-14 14:43:22] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-14 14:43:22] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-14 14:43:22] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-14 14:43:22] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-14 14:43:23] SUCCESS: Loaded display NGA factors
+[2026-01-14 14:43:23] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 14:45:19] ================================================================================
+[2026-01-14 14:45:19] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-14 14:45:19] ================================================================================
+[2026-01-14 14:45:20] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 14:45:20] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 14:45:20] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 14:45:20] SUCCESS: All ROM values valid
+[2026-01-14 14:45:20] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 14:45:21] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-14 14:45:21] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-14 14:45:21] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-14 14:45:21] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-14 14:45:21] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-14 14:45:21] ERROR [UNMAPPED_COSTCENTRES]: Found 8 unmapped cost centres | Details: Cost centres: ['Gold Room', 'Village and Housing', 'Leach & Adsorption', 'Laboratory', 'Supp Crushing Mobile Equipment', 'Stores & Supply', 'Mobile Equipment Workshop', 'Infrastructure']
+[2026-01-14 14:45:21] SUCCESS: Applied year-specific emission factors
+[2026-01-14 14:45:21] SUCCESS: Calculated emissions for all fuel types
+[2026-01-14 14:45:21] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-14 14:45:21] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-14 14:45:21] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-14 14:45:21] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-14 14:45:22] SUCCESS: Loaded display NGA factors
+[2026-01-14 14:45:22] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 14:45:30] ================================================================================
+[2026-01-14 14:45:30] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-14 14:45:30] ================================================================================
+[2026-01-14 14:45:32] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 14:45:32] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 14:45:32] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 14:45:32] SUCCESS: All ROM values valid
+[2026-01-14 14:45:32] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 14:45:33] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-14 14:45:33] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-14 14:45:33] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-14 14:45:33] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-14 14:45:33] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-14 14:45:33] ERROR [UNMAPPED_COSTCENTRES]: Found 8 unmapped cost centres | Details: Cost centres: ['Gold Room', 'Village and Housing', 'Leach & Adsorption', 'Laboratory', 'Supp Crushing Mobile Equipment', 'Stores & Supply', 'Mobile Equipment Workshop', 'Infrastructure']
+[2026-01-14 14:45:33] SUCCESS: Applied year-specific emission factors
+[2026-01-14 14:45:33] SUCCESS: Calculated emissions for all fuel types
+[2026-01-14 14:45:33] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-14 14:45:33] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-14 14:45:33] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-14 14:45:33] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-14 14:45:34] SUCCESS: Loaded display NGA factors
+[2026-01-14 14:45:34] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 14:48:27] ================================================================================
+[2026-01-14 14:48:27] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-14 14:48:27] ================================================================================
+[2026-01-14 14:48:28] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 14:48:28] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 14:48:28] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 14:48:28] SUCCESS: All ROM values valid
+[2026-01-14 14:48:28] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 14:48:28] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-14 14:48:28] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-14 14:48:28] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-14 14:48:29] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-14 14:48:29] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-14 14:48:29] ERROR [UNMAPPED_COSTCENTRES]: Found 8 unmapped cost centres | Details: Cost centres: ['Gold Room', 'Village and Housing', 'Leach & Adsorption', 'Laboratory', 'Supp Crushing Mobile Equipment', 'Stores & Supply', 'Mobile Equipment Workshop', 'Infrastructure']
+[2026-01-14 14:48:29] SUCCESS: Applied year-specific emission factors
+[2026-01-14 14:48:29] SUCCESS: Calculated emissions for all fuel types
+[2026-01-14 14:48:29] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-14 14:48:29] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-14 14:48:29] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-14 14:48:29] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-14 14:48:30] SUCCESS: Loaded display NGA factors
+[2026-01-14 14:48:30] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 14:55:32] ================================================================================
+[2026-01-14 14:55:32] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-14 14:55:32] ================================================================================
+[2026-01-14 14:55:34] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 14:55:34] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 14:55:34] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 14:55:34] SUCCESS: All ROM values valid
+[2026-01-14 14:55:34] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 14:55:34] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-14 14:55:34] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-14 14:55:34] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-14 14:55:34] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-14 14:55:34] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-14 14:55:34] ERROR [UNMAPPED_COSTCENTRES]: Found 8 unmapped cost centres | Details: Cost centres: ['Gold Room', 'Village and Housing', 'Leach & Adsorption', 'Laboratory', 'Supp Crushing Mobile Equipment', 'Stores & Supply', 'Mobile Equipment Workshop', 'Infrastructure']
+[2026-01-14 14:55:34] SUCCESS: Applied year-specific emission factors
+[2026-01-14 14:55:34] SUCCESS: Calculated emissions for all fuel types
+[2026-01-14 14:55:34] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-14 14:55:34] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-14 14:55:34] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-14 14:55:34] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-14 14:55:35] SUCCESS: Loaded display NGA factors
+[2026-01-14 14:55:35] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 14:57:00] ================================================================================
+[2026-01-14 14:57:00] NEW DATA LOADING SESSION
+[2026-01-14 14:57:00] ================================================================================
+[2026-01-14 14:57:02] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 14:57:02] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 14:57:02] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 14:57:02] SUCCESS: All ROM values valid
+[2026-01-14 14:57:02] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 14:57:02] SUCCESS: Loaded Energy.xlsx: 1533 transactions from 'data' sheet
+[2026-01-14 14:57:02] SUCCESS: Loaded InventoryRef: 96 item classifications
+[2026-01-14 14:57:02] SUCCESS: Validated 5 NGER categories
+[2026-01-14 14:57:02]   - Petroleum based greases: 16 items
+[2026-01-14 14:57:02]   - Petroleum based oils: 36 items
+[2026-01-14 14:57:02]   - Other gaseous fossil fuels: 4 items
+[2026-01-14 14:57:02]   - Liquefied petroleum gas: 3 items
+[2026-01-14 14:57:02]   - Diesel oil: 1 items
+[2026-01-14 14:57:02] WARNING [CATEGORY_NAME]: Should be: "Gaseous fossil fuels other than those mentioned in the items above" | Details: Category: Other gaseous fossil fuels
+[2026-01-14 14:57:02] SUCCESS: Merged data with InventoryRef classifications
+[2026-01-14 14:57:02] Reportable items: 1433 transactions (93.5%)
+[2026-01-14 14:57:02] Not reportable: 100 transactions (6.5%)
+[2026-01-14 14:57:02] 
+Breakdown by NGERS Category:
+[2026-01-14 14:57:02]   Diesel oil: 901.0 transactions, 194,437,600 units
+[2026-01-14 14:57:02]   Liquefied petroleum gas: 60.0 transactions, 2,925,657 units
+[2026-01-14 14:57:02]   Other gaseous fossil fuels: 12.0 transactions, 198 units
+[2026-01-14 14:57:02]   Petroleum based greases: 46.0 transactions, 430,398 units
+[2026-01-14 14:57:02]   Petroleum based oils: 63.0 transactions, 44,830 units
+[2026-01-14 14:57:02] SUCCESS: Aggregated to 1119 Date/Costcentre combinations
+[2026-01-14 14:57:02] SUCCESS: Extracted year and month from dates
+[2026-01-14 14:57:02] ERROR [UNMAPPED_COSTCENTRES]: Found 8 unmapped cost centres | Details: Cost centres: ['Gold Room', 'Stores & Supply', 'Leach & Adsorption', 'Laboratory', 'Supp Crushing Mobile Equipment', 'Infrastructure', 'Village and Housing', 'Mobile Equipment Workshop']
+[2026-01-14 14:57:02] SUCCESS: Calculated diesel emissions (purpose-specific factors)
+[2026-01-14 14:57:02] SUCCESS: Calculated LPG emissions
+[2026-01-14 14:57:02] SUCCESS: Calculated petroleum oils emissions (Scope 3 only - lubricants)
+[2026-01-14 14:57:02] SUCCESS: Calculated petroleum greases emissions (Scope 3 only - lubricants)
+[2026-01-14 14:57:02] SUCCESS: Calculated gaseous fuels emissions (acetylene)
+[2026-01-14 14:57:03] SUCCESS: Calculated grid electricity emissions
+[2026-01-14 14:57:03] 
+Emissions Summary by FY:
+[2026-01-14 14:57:03]   FY2020: S1=0, S2=48,814, S3=9,509 tCO2-e
+[2026-01-14 14:57:03]   FY2021: S1=49,806, S2=73,309, S3=26,623 tCO2-e
+[2026-01-14 14:57:03]   FY2022: S1=91,516, S2=123,074, S3=47,908 tCO2-e
+[2026-01-14 14:57:03]   FY2023: S1=118,819, S2=82,033, S3=46,235 tCO2-e
+[2026-01-14 14:57:03]   FY2024: S1=136,490, S2=85,388, S3=45,861 tCO2-e
+[2026-01-14 14:57:03]   FY2025: S1=133,554, S2=75,881, S3=43,397 tCO2-e
+[2026-01-14 14:57:03]   FY2026: S1=0, S2=0, S3=4 tCO2-e
+[2026-01-14 14:57:03] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-14 14:57:04] SUCCESS: Loaded display NGA factors
+[2026-01-14 14:57:04] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 14:57:59] ================================================================================
+[2026-01-14 14:57:59] NEW DATA LOADING SESSION
+[2026-01-14 14:57:59] ================================================================================
+[2026-01-14 14:58:01] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 14:58:01] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 14:58:01] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 14:58:01] SUCCESS: All ROM values valid
+[2026-01-14 14:58:01] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 14:58:02] SUCCESS: Loaded Energy.xlsx: 1533 transactions from 'data' sheet
+[2026-01-14 14:58:02] SUCCESS: Loaded InventoryRef: 96 item classifications
+[2026-01-14 14:58:02] SUCCESS: Validated 5 NGER categories
+[2026-01-14 14:58:02]   - Petroleum based greases: 16 items
+[2026-01-14 14:58:02]   - Petroleum based oils: 36 items
+[2026-01-14 14:58:02]   - Other gaseous fossil fuels: 4 items
+[2026-01-14 14:58:02]   - Liquefied petroleum gas: 3 items
+[2026-01-14 14:58:02]   - Diesel oil: 1 items
+[2026-01-14 14:58:02] WARNING [CATEGORY_NAME]: Should be: "Gaseous fossil fuels other than those mentioned in the items above" | Details: Category: Other gaseous fossil fuels
+[2026-01-14 14:58:02] SUCCESS: Merged data with InventoryRef classifications
+[2026-01-14 14:58:02] Reportable items: 1433 transactions (93.5%)
+[2026-01-14 14:58:02] Not reportable: 100 transactions (6.5%)
+[2026-01-14 14:58:02] 
+Breakdown by NGERS Category:
+[2026-01-14 14:58:02]   Diesel oil: 901.0 transactions, 194,437,600 units
+[2026-01-14 14:58:02]   Liquefied petroleum gas: 60.0 transactions, 2,925,657 units
+[2026-01-14 14:58:02]   Other gaseous fossil fuels: 12.0 transactions, 198 units
+[2026-01-14 14:58:02]   Petroleum based greases: 46.0 transactions, 430,398 units
+[2026-01-14 14:58:02]   Petroleum based oils: 63.0 transactions, 44,830 units
+[2026-01-14 14:58:02] SUCCESS: Aggregated to 1119 Date/Costcentre combinations
+[2026-01-14 14:58:02] SUCCESS: Extracted year and month from dates
+[2026-01-14 14:58:02] ERROR [UNMAPPED_COSTCENTRES]: Found 8 unmapped cost centres | Details: Cost centres: ['Gold Room', 'Stores & Supply', 'Leach & Adsorption', 'Laboratory', 'Supp Crushing Mobile Equipment', 'Infrastructure', 'Village and Housing', 'Mobile Equipment Workshop']
+[2026-01-14 14:58:02] SUCCESS: Calculated diesel emissions (purpose-specific factors)
+[2026-01-14 14:58:02] SUCCESS: Calculated LPG emissions
+[2026-01-14 14:58:02] SUCCESS: Calculated petroleum oils emissions (Scope 3 only - lubricants)
+[2026-01-14 14:58:02] SUCCESS: Calculated petroleum greases emissions (Scope 3 only - lubricants)
+[2026-01-14 14:58:02] SUCCESS: Calculated gaseous fuels emissions (acetylene)
+[2026-01-14 14:58:03] SUCCESS: Calculated grid electricity emissions
+[2026-01-14 14:58:03] 
+Emissions Summary by FY:
+[2026-01-14 14:58:03]   FY2020: S1=0, S2=48,814, S3=9,509 tCO2-e
+[2026-01-14 14:58:03]   FY2021: S1=49,806, S2=73,309, S3=26,623 tCO2-e
+[2026-01-14 14:58:03]   FY2022: S1=91,516, S2=123,074, S3=47,908 tCO2-e
+[2026-01-14 14:58:03]   FY2023: S1=118,819, S2=82,033, S3=46,235 tCO2-e
+[2026-01-14 14:58:03]   FY2024: S1=136,490, S2=85,388, S3=45,861 tCO2-e
+[2026-01-14 14:58:03]   FY2025: S1=133,554, S2=75,881, S3=43,397 tCO2-e
+[2026-01-14 14:58:03]   FY2026: S1=0, S2=0, S3=4 tCO2-e
+[2026-01-14 14:58:03] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-14 14:58:04] SUCCESS: Loaded display NGA factors
+[2026-01-14 14:58:04] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 14:58:57] ================================================================================
+[2026-01-14 14:58:57] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-14 14:58:57] ================================================================================
+[2026-01-14 14:58:59] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 14:58:59] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 14:58:59] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 14:58:59] SUCCESS: All ROM values valid
+[2026-01-14 14:58:59] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 14:59:00] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-14 14:59:00] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-14 14:59:00] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-14 14:59:00] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-14 14:59:00] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-14 14:59:00] ERROR [UNMAPPED_COSTCENTRES]: Found 8 unmapped cost centres | Details: Cost centres: ['Gold Room', 'Village and Housing', 'Leach & Adsorption', 'Laboratory', 'Supp Crushing Mobile Equipment', 'Stores & Supply', 'Mobile Equipment Workshop', 'Infrastructure']
+[2026-01-14 14:59:00] SUCCESS: Applied year-specific emission factors
+[2026-01-14 14:59:00] SUCCESS: Calculated emissions for all fuel types
+[2026-01-14 14:59:00] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-14 14:59:00] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-14 14:59:00] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-14 14:59:00] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-14 14:59:02] SUCCESS: Loaded display NGA factors
+[2026-01-14 14:59:02] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 15:04:47] ================================================================================
+[2026-01-14 15:04:47] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-14 15:04:47] ================================================================================
+[2026-01-14 15:04:48] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 15:04:48] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 15:04:48] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 15:04:48] SUCCESS: All ROM values valid
+[2026-01-14 15:04:48] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 15:04:48] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-14 15:04:48] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-14 15:04:48] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-14 15:04:48] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-14 15:04:48] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-14 15:04:48] ERROR [UNMAPPED_COSTCENTRES]: Found 8 unmapped cost centres | Details: Cost centres: ['Gold Room', 'Village and Housing', 'Leach & Adsorption', 'Laboratory', 'Supp Crushing Mobile Equipment', 'Stores & Supply', 'Mobile Equipment Workshop', 'Infrastructure']
+[2026-01-14 15:04:48] SUCCESS: Applied year-specific emission factors
+[2026-01-14 15:04:48] SUCCESS: Calculated emissions for all fuel types
+[2026-01-14 15:04:48] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-14 15:04:48] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-14 15:04:48] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-14 15:04:48] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-14 15:04:49] SUCCESS: Loaded display NGA factors
+[2026-01-14 15:04:49] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-14 15:14:41] ================================================================================
+[2026-01-14 15:14:41] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-14 15:14:41] ================================================================================
+[2026-01-14 15:14:42] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-14 15:14:42] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-14 15:14:42] SUCCESS: Parsed dates in ROM.csv
+[2026-01-14 15:14:42] SUCCESS: All ROM values valid
+[2026-01-14 15:14:42] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-14 15:14:42] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-14 15:14:42] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-14 15:14:42] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-14 15:14:42] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-14 15:14:42] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-14 15:14:43] SUCCESS: Applied year-specific emission factors
+[2026-01-14 15:14:43] SUCCESS: Calculated emissions for all fuel types
+[2026-01-14 15:14:43] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-14 15:14:43] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-14 15:14:43] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-14 15:14:43] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-14 15:14:43] SUCCESS: Loaded display NGA factors
+[2026-01-14 15:14:43] DATA LOADING COMPLETE - NO ERRORS
