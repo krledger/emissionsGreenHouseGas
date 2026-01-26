@@ -924,3 +924,1845 @@ Emissions Summary by FY:
 [2026-01-15 07:32:35] SUCCESS: Total Scope 3: 221340 tCO₂-e
 [2026-01-15 07:32:36] SUCCESS: Loaded display NGA factors
 [2026-01-15 07:32:36] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-19 10:18:02] ================================================================================
+[2026-01-19 10:18:02] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-19 10:18:02] ================================================================================
+[2026-01-19 10:18:04] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-19 10:18:04] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-19 10:18:04] SUCCESS: Parsed dates in ROM.csv
+[2026-01-19 10:18:04] SUCCESS: All ROM values valid
+[2026-01-19 10:18:04] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-19 10:18:04] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-19 10:18:04] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-19 10:18:04] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-19 10:18:04] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-19 10:18:04] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-19 10:18:05] SUCCESS: Applied year-specific emission factors
+[2026-01-19 10:18:05] SUCCESS: Calculated emissions for all fuel types
+[2026-01-19 10:18:05] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-19 10:18:05] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-19 10:18:05] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-19 10:18:05] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-19 10:18:06] SUCCESS: Loaded display NGA factors
+[2026-01-19 10:18:06] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-19 10:34:33] ================================================================================
+[2026-01-19 10:34:33] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-19 10:34:33] ================================================================================
+[2026-01-19 10:34:34] ================================================================================
+[2026-01-19 10:34:34] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-19 10:34:34] ================================================================================
+[2026-01-19 10:34:34] ================================================================================
+[2026-01-19 10:34:34] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-19 10:34:34] ================================================================================
+[2026-01-19 10:34:34] ================================================================================
+[2026-01-19 10:34:34] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-19 10:34:34] ================================================================================
+[2026-01-19 10:34:34] ================================================================================
+[2026-01-19 10:34:35] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-19 10:34:35] ================================================================================
+[2026-01-19 10:34:35] ================================================================================
+[2026-01-19 10:34:35] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-19 10:34:35] ================================================================================
+[2026-01-19 10:34:35] ================================================================================
+[2026-01-19 10:34:35] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-19 10:34:35] ================================================================================
+[2026-01-19 10:34:35] ================================================================================
+[2026-01-19 10:34:35] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-19 10:34:35] ================================================================================
+[2026-01-19 10:34:36] ================================================================================
+[2026-01-19 10:34:36] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-19 10:34:36] ================================================================================
+[2026-01-19 10:34:37] ================================================================================
+[2026-01-19 10:34:37] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-19 10:34:37] ================================================================================
+[2026-01-19 10:34:37] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-19 10:34:37] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-19 10:34:37] SUCCESS: Parsed dates in ROM.csv
+[2026-01-19 10:34:37] SUCCESS: All ROM values valid
+[2026-01-19 10:34:37] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-19 10:34:38] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-19 10:34:38] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-19 10:34:38] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-19 10:34:38] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-19 10:34:38] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-19 10:34:39] SUCCESS: Applied year-specific emission factors
+[2026-01-19 10:34:39] SUCCESS: Calculated emissions for all fuel types
+[2026-01-19 10:34:39] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-19 10:34:39] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-19 10:34:39] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-19 10:34:39] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-19 10:34:39] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-19 10:34:39] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-19 10:34:39] SUCCESS: Parsed dates in ROM.csv
+[2026-01-19 10:34:39] SUCCESS: All ROM values valid
+[2026-01-19 10:34:39] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-19 10:34:40] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-19 10:34:40] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-19 10:34:40] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-19 10:34:40] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-19 10:34:40] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-19 10:34:40] SUCCESS: Applied year-specific emission factors
+[2026-01-19 10:34:40] SUCCESS: Calculated emissions for all fuel types
+[2026-01-19 10:34:40] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-19 10:34:40] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-19 10:34:40] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-19 10:34:40] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-19 10:34:41] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-19 10:34:41] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-19 10:34:41] SUCCESS: Parsed dates in ROM.csv
+[2026-01-19 10:34:41] SUCCESS: All ROM values valid
+[2026-01-19 10:34:41] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-19 10:34:41] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-19 10:34:41] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-19 10:34:41] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-19 10:34:41] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-19 10:34:41] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-19 10:34:42] SUCCESS: Applied year-specific emission factors
+[2026-01-19 10:34:42] SUCCESS: Calculated emissions for all fuel types
+[2026-01-19 10:34:42] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-19 10:34:42] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-19 10:34:42] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-19 10:34:42] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-19 10:34:42] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-19 10:34:42] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-19 10:34:42] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-19 10:34:42] SUCCESS: Parsed dates in ROM.csv
+[2026-01-19 10:34:42] SUCCESS: All ROM values valid
+[2026-01-19 10:34:42] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-19 10:34:42] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-19 10:34:42] SUCCESS: Parsed dates in ROM.csv
+[2026-01-19 10:34:42] SUCCESS: All ROM values valid
+[2026-01-19 10:34:42] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-19 10:34:42] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-19 10:34:42] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-19 10:34:42] SUCCESS: Parsed dates in ROM.csv
+[2026-01-19 10:34:42] SUCCESS: All ROM values valid
+[2026-01-19 10:34:42] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-19 10:34:43] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-19 10:34:43] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-19 10:34:43] SUCCESS: Parsed dates in ROM.csv
+[2026-01-19 10:34:43] SUCCESS: All ROM values valid
+[2026-01-19 10:34:43] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-19 10:34:43] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-19 10:34:43] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-19 10:34:43] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-19 10:34:43] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-19 10:34:43] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-19 10:34:43] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-19 10:34:43] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-19 10:34:43] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-19 10:34:43] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-19 10:34:43] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-19 10:34:43] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-19 10:34:43] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-19 10:34:44] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-19 10:34:44] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-19 10:34:44] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-19 10:34:44] SUCCESS: Parsed dates in ROM.csv
+[2026-01-19 10:34:44] SUCCESS: Applied year-specific emission factors
+[2026-01-19 10:34:44] SUCCESS: Calculated emissions for all fuel types
+[2026-01-19 10:34:44] SUCCESS: All ROM values valid
+[2026-01-19 10:34:44] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-19 10:34:44] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-19 10:34:44] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-19 10:34:44] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-19 10:34:44] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-19 10:34:44] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-19 10:34:44] SUCCESS: Applied year-specific emission factors
+[2026-01-19 10:34:44] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-19 10:34:44] SUCCESS: Calculated emissions for all fuel types
+[2026-01-19 10:34:44] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-19 10:34:44] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-19 10:34:44] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-19 10:34:44] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-19 10:34:44] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-19 10:34:44] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-19 10:34:44] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-19 10:34:44] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-19 10:34:45] SUCCESS: Applied year-specific emission factors
+[2026-01-19 10:34:45] SUCCESS: Calculated emissions for all fuel types
+[2026-01-19 10:34:45] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-19 10:34:45] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-19 10:34:45] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-19 10:34:45] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-19 10:34:45] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-19 10:34:45] SUCCESS: Applied year-specific emission factors
+[2026-01-19 10:34:45] SUCCESS: Calculated emissions for all fuel types
+[2026-01-19 10:34:45] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-19 10:34:45] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-19 10:34:45] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-19 10:34:45] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-19 10:34:45] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-19 10:34:45] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-19 10:34:45] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-19 10:34:45] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-19 10:34:45] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-19 10:34:46] SUCCESS: Applied year-specific emission factors
+[2026-01-19 10:34:46] SUCCESS: Calculated emissions for all fuel types
+[2026-01-19 10:34:46] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-19 10:34:46] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-19 10:34:46] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-19 10:34:46] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-19 10:34:46] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-19 10:34:46] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-19 10:34:46] SUCCESS: Parsed dates in ROM.csv
+[2026-01-19 10:34:46] SUCCESS: All ROM values valid
+[2026-01-19 10:34:46] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-19 10:34:47] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-19 10:34:47] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-19 10:34:47] SUCCESS: Parsed dates in ROM.csv
+[2026-01-19 10:34:47] SUCCESS: All ROM values valid
+[2026-01-19 10:34:47] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-19 10:34:47] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-19 10:34:47] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-19 10:34:47] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-19 10:34:47] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-19 10:34:47] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-19 10:34:47] SUCCESS: Applied year-specific emission factors
+[2026-01-19 10:34:47] SUCCESS: Calculated emissions for all fuel types
+[2026-01-19 10:34:47] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-19 10:34:47] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-19 10:34:48] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-19 10:34:48] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-19 10:34:48] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-19 10:34:48] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-19 10:34:48] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-19 10:34:48] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-19 10:34:48] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-19 10:34:48] SUCCESS: Applied year-specific emission factors
+[2026-01-19 10:34:48] SUCCESS: Calculated emissions for all fuel types
+[2026-01-19 10:34:48] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-19 10:34:48] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-19 10:34:48] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-19 10:34:48] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-19 10:34:49] SUCCESS: Loaded display NGA factors
+[2026-01-19 10:34:49] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-19 10:34:49] ================================================================================
+[2026-01-19 10:34:49] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-19 10:34:49] ================================================================================
+[2026-01-19 10:34:50] SUCCESS: Loaded display NGA factors
+[2026-01-19 10:34:50] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-19 10:34:51] SUCCESS: Loaded display NGA factors
+[2026-01-19 10:34:51] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-19 10:34:52] SUCCESS: Loaded display NGA factors
+[2026-01-19 10:34:52] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-19 10:34:53] SUCCESS: Loaded display NGA factors
+[2026-01-19 10:34:53] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-19 10:34:53] SUCCESS: Loaded display NGA factors
+[2026-01-19 10:34:53] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-19 10:34:53] SUCCESS: Loaded display NGA factors
+[2026-01-19 10:34:53] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-19 10:34:53] SUCCESS: Loaded display NGA factors
+[2026-01-19 10:34:53] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-19 10:34:53] SUCCESS: Loaded display NGA factors
+[2026-01-19 10:34:53] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-19 10:34:53] SUCCESS: Loaded display NGA factors
+[2026-01-19 10:34:53] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-19 10:34:54] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-19 10:34:54] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-19 10:34:54] SUCCESS: Parsed dates in ROM.csv
+[2026-01-19 10:34:54] SUCCESS: All ROM values valid
+[2026-01-19 10:34:54] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-19 10:34:54] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-19 10:34:54] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-19 10:34:54] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-19 10:34:54] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-19 10:34:54] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-19 10:34:54] SUCCESS: Applied year-specific emission factors
+[2026-01-19 10:34:54] SUCCESS: Calculated emissions for all fuel types
+[2026-01-19 10:34:54] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-19 10:34:54] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-19 10:34:54] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-19 10:34:54] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-19 10:34:55] SUCCESS: Loaded display NGA factors
+[2026-01-19 10:34:55] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-19 10:36:19] ================================================================================
+[2026-01-19 10:36:19] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-19 10:36:19] ================================================================================
+[2026-01-19 10:36:20] ================================================================================
+[2026-01-19 10:36:20] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-19 10:36:20] ================================================================================
+[2026-01-19 10:36:20] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-19 10:36:20] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-19 10:36:20] SUCCESS: Parsed dates in ROM.csv
+[2026-01-19 10:36:20] SUCCESS: All ROM values valid
+[2026-01-19 10:36:20] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-19 10:36:20] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-19 10:36:20] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-19 10:36:20] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-19 10:36:20] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-19 10:36:21] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-19 10:36:21] SUCCESS: Applied year-specific emission factors
+[2026-01-19 10:36:21] SUCCESS: Calculated emissions for all fuel types
+[2026-01-19 10:36:21] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-19 10:36:21] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-19 10:36:21] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-19 10:36:21] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-19 10:36:22] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-19 10:36:22] SUCCESS: Loaded ROM.csv: 59 rows
+[2026-01-19 10:36:22] SUCCESS: Parsed dates in ROM.csv
+[2026-01-19 10:36:22] SUCCESS: All ROM values valid
+[2026-01-19 10:36:22] SUCCESS: ROM.csv processed: FY2021-2025, 5 years
+[2026-01-19 10:36:22] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-19 10:36:22] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-19 10:36:22] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-19 10:36:22] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-19 10:36:22] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-19 10:36:22] SUCCESS: Applied year-specific emission factors
+[2026-01-19 10:36:22] SUCCESS: Calculated emissions for all fuel types
+[2026-01-19 10:36:22] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-19 10:36:22] SUCCESS: Total Scope 1: 532825 tCO₂-e
+[2026-01-19 10:36:22] SUCCESS: Total Scope 2: 488499 tCO₂-e
+[2026-01-19 10:36:22] SUCCESS: Total Scope 3: 221340 tCO₂-e
+[2026-01-19 10:36:23] SUCCESS: Loaded display NGA factors
+[2026-01-19 10:36:23] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-19 10:36:23] SUCCESS: Loaded display NGA factors
+[2026-01-19 10:36:23] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-22 15:07:42] ================================================================================
+[2026-01-22 15:07:42] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-22 15:07:42] ================================================================================
+[2026-01-22 15:07:50] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-22 15:07:50] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2022', '2023', '2024', '2025']
+[2026-01-22 15:07:51] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-22 15:07:51] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-22 15:07:51] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-22 15:07:51] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-22 15:07:51] SUCCESS: Combined ROM data: 46 total records
+[2026-01-22 15:07:51] SUCCESS: Parsed dates in ROM data
+[2026-01-22 15:07:51] SUCCESS: All ROM values valid
+[2026-01-22 15:07:51] SUCCESS: ROM data processed: FY2022-2025, 4 years
+[2026-01-22 15:07:52] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-22 15:07:52] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-22 15:07:52] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-22 15:07:52] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-22 15:07:53] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-22 15:07:54] SUCCESS: Applied year-specific emission factors
+[2026-01-22 15:07:54] SUCCESS: Calculated emissions for all fuel types
+[2026-01-22 15:07:55] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-22 15:07:55] SUCCESS: Total Scope 1: 532825 tCOâ‚‚-e
+[2026-01-22 15:07:55] SUCCESS: Total Scope 2: 488499 tCOâ‚‚-e
+[2026-01-22 15:07:55] SUCCESS: Total Scope 3: 221340 tCOâ‚‚-e
+[2026-01-22 15:07:59] SUCCESS: Loaded display NGA factors
+[2026-01-22 15:07:59] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-22 15:09:39] ================================================================================
+[2026-01-22 15:09:39] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-22 15:09:39] ================================================================================
+[2026-01-22 15:09:42] ================================================================================
+[2026-01-22 15:09:42] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-22 15:09:42] ================================================================================
+[2026-01-22 15:09:45] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-22 15:09:45] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2022', '2023', '2024', '2025']
+[2026-01-22 15:09:45] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-22 15:09:46] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-22 15:09:46] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-22 15:09:46] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-22 15:09:46] SUCCESS: Combined ROM data: 46 total records
+[2026-01-22 15:09:46] SUCCESS: Parsed dates in ROM data
+[2026-01-22 15:09:46] SUCCESS: All ROM values valid
+[2026-01-22 15:09:46] SUCCESS: ROM data processed: FY2022-2025, 4 years
+[2026-01-22 15:09:47] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-22 15:09:47] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-22 15:09:47] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-22 15:09:48] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-22 15:09:48] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-22 15:09:49] SUCCESS: Applied year-specific emission factors
+[2026-01-22 15:09:49] SUCCESS: Calculated emissions for all fuel types
+[2026-01-22 15:09:49] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-22 15:09:49] SUCCESS: Total Scope 1: 532825 tCOâ‚‚-e
+[2026-01-22 15:09:49] SUCCESS: Total Scope 2: 488499 tCOâ‚‚-e
+[2026-01-22 15:09:49] SUCCESS: Total Scope 3: 221340 tCOâ‚‚-e
+[2026-01-22 15:09:50] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-22 15:09:50] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2022', '2023', '2024', '2025']
+[2026-01-22 15:09:50] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-22 15:09:51] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-22 15:09:51] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-22 15:09:51] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-22 15:09:51] SUCCESS: Combined ROM data: 46 total records
+[2026-01-22 15:09:51] SUCCESS: Parsed dates in ROM data
+[2026-01-22 15:09:51] SUCCESS: All ROM values valid
+[2026-01-22 15:09:51] SUCCESS: ROM data processed: FY2022-2025, 4 years
+[2026-01-22 15:09:52] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-22 15:09:52] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-22 15:09:52] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-22 15:09:52] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-22 15:09:52] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-22 15:09:53] SUCCESS: Applied year-specific emission factors
+[2026-01-22 15:09:53] SUCCESS: Calculated emissions for all fuel types
+[2026-01-22 15:09:53] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-22 15:09:53] SUCCESS: Total Scope 1: 532825 tCOâ‚‚-e
+[2026-01-22 15:09:53] SUCCESS: Total Scope 2: 488499 tCOâ‚‚-e
+[2026-01-22 15:09:53] SUCCESS: Total Scope 3: 221340 tCOâ‚‚-e
+[2026-01-22 15:09:55] SUCCESS: Loaded display NGA factors
+[2026-01-22 15:09:55] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-22 15:09:56] SUCCESS: Loaded display NGA factors
+[2026-01-22 15:09:56] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-22 15:23:35] ================================================================================
+[2026-01-22 15:23:35] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-22 15:23:35] ================================================================================
+[2026-01-22 15:23:35] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-22 15:23:35] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2022', '2023', '2024', '2025']
+[2026-01-22 15:23:35] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-22 15:23:35] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-22 15:23:35] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-22 15:23:35] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-22 15:23:35] SUCCESS: Combined ROM data: 46 total records
+[2026-01-22 15:23:35] SUCCESS: Parsed dates in ROM data
+[2026-01-22 15:23:35] SUCCESS: All ROM values valid
+[2026-01-22 15:23:35] SUCCESS: ROM data processed: FY2022-2025, 4 years
+[2026-01-22 15:23:35] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-22 15:23:36] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-22 15:23:36] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-22 15:23:36] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-22 15:23:36] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-22 15:23:36] SUCCESS: Applied year-specific emission factors
+[2026-01-22 15:23:36] SUCCESS: Calculated emissions for all fuel types
+[2026-01-22 15:23:36] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-22 15:23:36] SUCCESS: Total Scope 1: 532825 tCOâ‚‚-e
+[2026-01-22 15:23:36] SUCCESS: Total Scope 2: 488499 tCOâ‚‚-e
+[2026-01-22 15:23:36] SUCCESS: Total Scope 3: 221340 tCOâ‚‚-e
+[2026-01-22 15:23:37] SUCCESS: Loaded display NGA factors
+[2026-01-22 15:23:37] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-22 15:23:39] ================================================================================
+[2026-01-22 15:23:39] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-22 15:23:39] ================================================================================
+[2026-01-22 15:23:39] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-22 15:23:39] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2022', '2023', '2024', '2025']
+[2026-01-22 15:23:39] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-22 15:23:39] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-22 15:23:39] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-22 15:23:39] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-22 15:23:39] SUCCESS: Combined ROM data: 46 total records
+[2026-01-22 15:23:39] SUCCESS: Parsed dates in ROM data
+[2026-01-22 15:23:39] SUCCESS: All ROM values valid
+[2026-01-22 15:23:39] SUCCESS: ROM data processed: FY2022-2025, 4 years
+[2026-01-22 15:23:39] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-22 15:23:39] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-22 15:23:39] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-22 15:23:39] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-22 15:23:40] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-22 15:23:40] SUCCESS: Applied year-specific emission factors
+[2026-01-22 15:23:40] SUCCESS: Calculated emissions for all fuel types
+[2026-01-22 15:23:40] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-22 15:23:40] SUCCESS: Total Scope 1: 532825 tCOâ‚‚-e
+[2026-01-22 15:23:40] SUCCESS: Total Scope 2: 488499 tCOâ‚‚-e
+[2026-01-22 15:23:40] SUCCESS: Total Scope 3: 221340 tCOâ‚‚-e
+[2026-01-22 15:23:41] SUCCESS: Loaded display NGA factors
+[2026-01-22 15:23:41] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-22 15:35:30] ================================================================================
+[2026-01-22 15:35:30] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-22 15:35:30] ================================================================================
+[2026-01-22 15:35:31] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-22 15:35:31] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2022', '2023', '2024', '2025']
+[2026-01-22 15:35:31] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-22 15:35:31] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-22 15:35:31] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-22 15:35:31] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-22 15:35:31] SUCCESS: Combined ROM data: 46 total records
+[2026-01-22 15:35:31] SUCCESS: Parsed dates in ROM data
+[2026-01-22 15:35:31] SUCCESS: All ROM values valid
+[2026-01-22 15:35:31] SUCCESS: ROM data processed: FY2022-2025, 4 years
+[2026-01-22 15:35:31] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-22 15:35:31] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-22 15:35:31] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-22 15:35:31] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-22 15:35:31] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-22 15:35:32] SUCCESS: Applied year-specific emission factors
+[2026-01-22 15:35:32] SUCCESS: Calculated emissions for all fuel types
+[2026-01-22 15:35:32] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-22 15:35:32] SUCCESS: Total Scope 1: 532825 tCOâ‚‚-e
+[2026-01-22 15:35:32] SUCCESS: Total Scope 2: 488499 tCOâ‚‚-e
+[2026-01-22 15:35:32] SUCCESS: Total Scope 3: 221340 tCOâ‚‚-e
+[2026-01-22 15:35:32] ================================================================================
+[2026-01-22 15:35:32] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-22 15:35:32] ================================================================================
+[2026-01-22 15:35:33] SUCCESS: Loaded display NGA factors
+[2026-01-22 15:35:33] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-22 15:35:33] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-22 15:35:33] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2022', '2023', '2024', '2025']
+[2026-01-22 15:35:33] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-22 15:35:33] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-22 15:35:33] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-22 15:35:33] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-22 15:35:33] SUCCESS: Combined ROM data: 46 total records
+[2026-01-22 15:35:33] SUCCESS: Parsed dates in ROM data
+[2026-01-22 15:35:33] SUCCESS: All ROM values valid
+[2026-01-22 15:35:33] SUCCESS: ROM data processed: FY2022-2025, 4 years
+[2026-01-22 15:35:33] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-22 15:35:33] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-22 15:35:33] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-22 15:35:33] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-22 15:35:33] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-23 15:46:06] ================================================================================
+[2026-01-23 15:46:06] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-23 15:46:06] ================================================================================
+[2026-01-23 15:46:07] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-23 15:46:07] ERROR [FILE_READ_ERROR]: Error reading ROM.csv: 'utf-8' codec can't decode byte 0xc7 in position 15: invalid continuation byte
+[2026-01-23 15:46:07] ERROR [ROM_LOAD_FAILED]: Failed to load ROM data: 'utf-8' codec can't decode byte 0xc7 in position 15: invalid continuation byte
+[2026-01-23 15:46:36] ================================================================================
+[2026-01-23 15:46:36] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-23 15:46:36] ================================================================================
+[2026-01-23 15:46:37] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-23 15:46:37] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2022', '2023', '2024', '2025']
+[2026-01-23 15:46:37] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-23 15:46:37] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-23 15:46:37] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-23 15:46:37] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-23 15:46:37] SUCCESS: Combined ROM data: 46 total records
+[2026-01-23 15:46:37] SUCCESS: Parsed dates in ROM data
+[2026-01-23 15:46:37] SUCCESS: All ROM values valid
+[2026-01-23 15:46:37] SUCCESS: ROM data processed: FY2022-2025, 4 years
+[2026-01-23 15:46:37] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-23 15:46:37] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-23 15:46:37] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-23 15:46:37] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-23 15:46:37] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-23 15:46:37] SUCCESS: Applied year-specific emission factors
+[2026-01-23 15:46:37] SUCCESS: Calculated emissions for all fuel types
+[2026-01-23 15:46:37] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-23 15:46:37] SUCCESS: Total Scope 1: 532825 tCOâ‚‚-e
+[2026-01-23 15:46:37] SUCCESS: Total Scope 2: 488499 tCOâ‚‚-e
+[2026-01-23 15:46:37] SUCCESS: Total Scope 3: 221340 tCOâ‚‚-e
+[2026-01-23 15:46:38] SUCCESS: Loaded display NGA factors
+[2026-01-23 15:46:38] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-23 16:39:08] ================================================================================
+[2026-01-23 16:39:08] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-23 16:39:08] ================================================================================
+[2026-01-23 16:39:09] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-23 16:39:09] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2022', '2023', '2024', '2025']
+[2026-01-23 16:39:09] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-23 16:39:09] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-23 16:39:09] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-23 16:39:09] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-23 16:39:09] SUCCESS: Combined ROM data: 46 total records
+[2026-01-23 16:39:09] SUCCESS: Parsed dates in ROM data
+[2026-01-23 16:39:09] SUCCESS: All ROM values valid
+[2026-01-23 16:39:09] SUCCESS: ROM data processed: FY2022-2025, 4 years
+[2026-01-23 16:39:09] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-23 16:39:09] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-23 16:39:09] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-23 16:39:09] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-23 16:39:09] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-23 16:39:09] SUCCESS: Applied year-specific emission factors
+[2026-01-23 16:39:10] SUCCESS: Calculated emissions for all fuel types
+[2026-01-23 16:39:10] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-23 16:39:10] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-23 16:39:10] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-23 16:39:10] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-23 16:39:10] SUCCESS: Loaded display NGA factors
+[2026-01-23 16:39:10] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-23 16:40:38] ================================================================================
+[2026-01-23 16:40:38] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-23 16:40:38] ================================================================================
+[2026-01-23 16:40:39] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-23 16:40:39] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2022', '2023', '2024', '2025']
+[2026-01-23 16:40:39] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-23 16:40:39] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-23 16:40:39] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-23 16:40:39] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-23 16:40:39] SUCCESS: Combined ROM data: 46 total records
+[2026-01-23 16:40:39] SUCCESS: Parsed dates in ROM data
+[2026-01-23 16:40:39] SUCCESS: All ROM values valid
+[2026-01-23 16:40:39] SUCCESS: ROM data processed: FY2022-2025, 4 years
+[2026-01-23 16:40:39] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-23 16:40:39] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-23 16:40:39] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-23 16:40:39] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-23 16:40:39] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-23 16:40:39] SUCCESS: Applied year-specific emission factors
+[2026-01-23 16:40:39] SUCCESS: Calculated emissions for all fuel types
+[2026-01-23 16:40:39] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-23 16:40:39] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-23 16:40:39] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-23 16:40:39] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-23 16:40:40] SUCCESS: Loaded display NGA factors
+[2026-01-23 16:40:40] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-23 16:40:41] ================================================================================
+[2026-01-23 16:40:41] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-23 16:40:41] ================================================================================
+[2026-01-23 16:40:42] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-23 16:40:42] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2022', '2023', '2024', '2025']
+[2026-01-23 16:40:42] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-23 16:40:42] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-23 16:40:42] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-23 16:40:42] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-23 16:40:42] SUCCESS: Combined ROM data: 46 total records
+[2026-01-23 16:40:42] SUCCESS: Parsed dates in ROM data
+[2026-01-23 16:40:42] SUCCESS: All ROM values valid
+[2026-01-23 16:40:42] SUCCESS: ROM data processed: FY2022-2025, 4 years
+[2026-01-23 16:40:42] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-23 16:40:42] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-23 16:40:42] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-23 16:40:42] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-23 16:40:42] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-23 16:40:43] SUCCESS: Applied year-specific emission factors
+[2026-01-23 16:40:43] SUCCESS: Calculated emissions for all fuel types
+[2026-01-23 16:40:43] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-23 16:40:43] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-23 16:40:43] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-23 16:40:43] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-23 16:40:43] SUCCESS: Loaded display NGA factors
+[2026-01-23 16:40:43] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-23 16:47:25] ================================================================================
+[2026-01-23 16:47:25] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-23 16:47:25] ================================================================================
+[2026-01-23 16:47:25] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-23 16:47:26] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2022', '2023', '2024', '2025']
+[2026-01-23 16:47:26] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-23 16:47:26] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-23 16:47:26] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-23 16:47:26] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-23 16:47:26] SUCCESS: Combined ROM data: 46 total records
+[2026-01-23 16:47:26] SUCCESS: Parsed dates in ROM data
+[2026-01-23 16:47:26] SUCCESS: All ROM values valid
+[2026-01-23 16:47:26] SUCCESS: ROM data processed: FY2022-2025, 4 years
+[2026-01-23 16:47:26] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-23 16:47:26] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-23 16:47:26] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-23 16:47:26] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-23 16:47:26] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-23 16:47:26] SUCCESS: Applied year-specific emission factors
+[2026-01-23 16:47:26] SUCCESS: Calculated emissions for all fuel types
+[2026-01-23 16:47:26] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-23 16:47:26] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-23 16:47:26] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-23 16:47:26] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-23 16:47:27] SUCCESS: Loaded display NGA factors
+[2026-01-23 16:47:27] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 07:03:21] ================================================================================
+[2026-01-27 07:03:21] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 07:03:21] ================================================================================
+[2026-01-27 07:03:22] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 07:03:22] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2022', '2023', '2024', '2025']
+[2026-01-27 07:03:22] SUCCESS: Extracted 24 ROM records from sheet '2022'
+[2026-01-27 07:03:22] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 07:03:22] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 07:03:22] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 07:03:22] ERROR [ROM_EXTRACTION_ERROR]: Error extracting ROM data: '<' not supported between instances of 'datetime.datetime' and 'str'
+[2026-01-27 07:03:22] ERROR [ROM_LOAD_FAILED]: Failed to load ROM data: '<' not supported between instances of 'datetime.datetime' and 'str'
+[2026-01-27 07:11:35] ================================================================================
+[2026-01-27 07:11:35] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 07:11:35] ================================================================================
+[2026-01-27 07:11:36] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 07:11:36] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 07:11:36] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 07:11:36] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 07:11:36] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 07:11:36] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 07:11:36] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 07:11:36] ERROR [ROM_EXTRACTION_ERROR]: Error extracting ROM data: '<' not supported between instances of 'str' and 'Timestamp'
+[2026-01-27 07:11:36] ERROR [ROM_LOAD_FAILED]: Failed to load ROM data: '<' not supported between instances of 'str' and 'Timestamp'
+[2026-01-27 07:37:49] ================================================================================
+[2026-01-27 07:37:49] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 07:37:49] ================================================================================
+[2026-01-27 07:37:50] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 07:37:50] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 07:37:50] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 07:37:50] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 07:37:50] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 07:37:50] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 07:37:50] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 07:37:50] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 07:37:50] SUCCESS: Parsed dates in ROM data
+[2026-01-27 07:37:50] SUCCESS: All ROM values valid
+[2026-01-27 07:37:50] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 07:37:51] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 07:37:51] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 07:37:51] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 07:37:51] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 07:37:51] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 07:37:51] SUCCESS: Applied year-specific emission factors
+[2026-01-27 07:37:51] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 07:37:51] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 07:37:51] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:37:51] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:37:51] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:37:52] SUCCESS: Loaded display NGA factors
+[2026-01-27 07:37:52] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 07:40:25] ================================================================================
+[2026-01-27 07:40:25] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 07:40:25] ================================================================================
+[2026-01-27 07:40:26] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 07:40:26] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 07:40:26] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 07:40:26] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 07:40:26] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 07:40:26] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 07:40:26] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 07:40:26] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 07:40:26] SUCCESS: Parsed dates in ROM data
+[2026-01-27 07:40:26] SUCCESS: All ROM values valid
+[2026-01-27 07:40:26] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 07:40:26] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 07:40:26] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 07:40:26] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 07:40:26] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 07:40:26] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 07:40:27] SUCCESS: Applied year-specific emission factors
+[2026-01-27 07:40:27] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 07:40:27] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 07:40:27] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:40:27] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:40:27] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:40:28] SUCCESS: Loaded display NGA factors
+[2026-01-27 07:40:28] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 07:40:36] ================================================================================
+[2026-01-27 07:40:36] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 07:40:36] ================================================================================
+[2026-01-27 07:40:37] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 07:40:37] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 07:40:37] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 07:40:37] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 07:40:37] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 07:40:37] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 07:40:37] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 07:40:37] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 07:40:37] SUCCESS: Parsed dates in ROM data
+[2026-01-27 07:40:37] SUCCESS: All ROM values valid
+[2026-01-27 07:40:37] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 07:40:37] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 07:40:37] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 07:40:37] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 07:40:37] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 07:40:37] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 07:40:38] SUCCESS: Applied year-specific emission factors
+[2026-01-27 07:40:38] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 07:40:38] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 07:40:38] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:40:38] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:40:38] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:40:38] SUCCESS: Loaded display NGA factors
+[2026-01-27 07:40:38] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 07:40:44] ================================================================================
+[2026-01-27 07:40:44] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 07:40:44] ================================================================================
+[2026-01-27 07:40:45] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 07:40:45] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 07:40:45] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 07:40:45] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 07:40:45] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 07:40:45] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 07:40:45] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 07:40:45] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 07:40:45] SUCCESS: Parsed dates in ROM data
+[2026-01-27 07:40:45] SUCCESS: All ROM values valid
+[2026-01-27 07:40:45] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 07:40:45] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 07:40:45] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 07:40:45] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 07:40:45] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 07:40:45] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 07:40:46] SUCCESS: Applied year-specific emission factors
+[2026-01-27 07:40:46] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 07:40:46] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 07:40:46] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:40:46] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:40:46] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:40:46] SUCCESS: Loaded display NGA factors
+[2026-01-27 07:40:46] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 07:40:54] ================================================================================
+[2026-01-27 07:40:54] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 07:40:54] ================================================================================
+[2026-01-27 07:40:55] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 07:40:55] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 07:40:55] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 07:40:55] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 07:40:55] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 07:40:55] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 07:40:55] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 07:40:55] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 07:40:55] SUCCESS: Parsed dates in ROM data
+[2026-01-27 07:40:55] SUCCESS: All ROM values valid
+[2026-01-27 07:40:55] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 07:40:55] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 07:40:55] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 07:40:55] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 07:40:55] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 07:40:55] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 07:40:56] SUCCESS: Applied year-specific emission factors
+[2026-01-27 07:40:56] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 07:40:56] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 07:40:56] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:40:56] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:40:56] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:40:57] SUCCESS: Loaded display NGA factors
+[2026-01-27 07:40:57] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 07:45:17] ================================================================================
+[2026-01-27 07:45:17] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 07:45:17] ================================================================================
+[2026-01-27 07:45:18] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 07:45:18] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 07:45:18] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 07:45:18] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 07:45:18] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 07:45:18] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 07:45:18] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 07:45:18] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 07:45:18] SUCCESS: Parsed dates in ROM data
+[2026-01-27 07:45:18] SUCCESS: All ROM values valid
+[2026-01-27 07:45:18] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 07:45:18] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 07:45:18] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 07:45:18] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 07:45:18] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 07:45:18] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 07:45:19] SUCCESS: Applied year-specific emission factors
+[2026-01-27 07:45:19] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 07:45:19] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 07:45:19] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:45:19] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:45:19] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:45:20] SUCCESS: Loaded display NGA factors
+[2026-01-27 07:45:20] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 07:45:23] ================================================================================
+[2026-01-27 07:45:23] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 07:45:23] ================================================================================
+[2026-01-27 07:45:24] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 07:45:24] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 07:45:24] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 07:45:24] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 07:45:24] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 07:45:24] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 07:45:24] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 07:45:24] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 07:45:24] SUCCESS: Parsed dates in ROM data
+[2026-01-27 07:45:24] SUCCESS: All ROM values valid
+[2026-01-27 07:45:24] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 07:45:24] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 07:45:24] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 07:45:24] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 07:45:24] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 07:45:24] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 07:45:24] SUCCESS: Applied year-specific emission factors
+[2026-01-27 07:45:24] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 07:45:24] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 07:45:24] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:45:24] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:45:24] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 07:45:25] SUCCESS: Loaded display NGA factors
+[2026-01-27 07:45:25] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:06:50] ================================================================================
+[2026-01-27 08:06:50] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:06:50] ================================================================================
+[2026-01-27 08:06:51] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:06:51] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:06:51] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:06:51] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:06:51] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:06:51] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:06:51] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:06:51] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:06:51] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:06:51] SUCCESS: All ROM values valid
+[2026-01-27 08:06:51] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 08:06:52] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:06:52] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:06:52] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:06:52] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:06:52] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:06:52] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:06:52] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:06:52] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:06:52] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:06:52] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:06:52] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:06:53] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:06:53] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:06:53] ================================================================================
+[2026-01-27 08:06:53] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:06:53] ================================================================================
+[2026-01-27 08:06:53] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:06:53] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:06:53] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:06:53] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:06:53] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:06:53] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:06:53] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:06:53] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:06:53] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:06:53] SUCCESS: All ROM values valid
+[2026-01-27 08:06:53] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 08:06:54] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:06:54] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:06:54] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:06:54] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:06:54] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:06:54] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:06:54] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:06:54] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:06:54] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:06:54] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:06:54] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:06:54] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:06:54] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:06:54] ================================================================================
+[2026-01-27 08:06:54] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:06:54] ================================================================================
+[2026-01-27 08:06:55] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:06:55] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:06:55] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:06:55] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:06:55] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:06:55] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:06:55] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:06:55] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:06:55] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:06:55] SUCCESS: All ROM values valid
+[2026-01-27 08:06:55] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 08:06:55] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:06:55] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:06:55] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:06:55] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:06:55] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:06:56] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:06:56] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:06:56] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:06:56] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:06:56] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:06:56] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:06:56] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:06:56] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:14:51] ================================================================================
+[2026-01-27 08:14:51] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:14:51] ================================================================================
+[2026-01-27 08:14:52] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:14:52] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:14:52] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:14:52] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:14:52] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:14:52] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:14:52] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:14:52] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:14:52] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:14:52] SUCCESS: All ROM values valid
+[2026-01-27 08:14:52] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 08:14:53] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:14:53] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:14:53] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:14:53] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:14:53] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:14:53] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:14:53] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:14:53] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:14:53] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:14:53] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:14:53] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:14:54] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:14:54] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:14:54] ================================================================================
+[2026-01-27 08:14:54] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:14:54] ================================================================================
+[2026-01-27 08:14:54] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:14:54] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:14:54] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:14:54] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:14:54] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:14:54] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:14:55] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:14:55] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:14:55] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:14:55] SUCCESS: All ROM values valid
+[2026-01-27 08:14:55] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 08:14:55] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:14:55] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:14:55] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:14:55] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:14:55] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:14:55] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:14:55] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:14:55] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:14:55] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:14:55] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:14:55] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:14:56] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:14:56] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:18:57] ================================================================================
+[2026-01-27 08:18:57] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:18:57] ================================================================================
+[2026-01-27 08:18:58] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:18:58] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:18:58] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:18:58] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:18:59] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:18:59] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:18:59] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:18:59] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:18:59] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:18:59] SUCCESS: All ROM values valid
+[2026-01-27 08:18:59] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 08:18:59] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:18:59] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:18:59] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:18:59] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:18:59] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:18:59] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:18:59] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:18:59] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:18:59] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:18:59] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:18:59] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:19:00] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:19:00] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:20:01] ================================================================================
+[2026-01-27 08:20:01] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:20:01] ================================================================================
+[2026-01-27 08:20:02] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:20:02] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:20:02] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:20:02] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:20:02] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:20:02] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:20:02] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:20:02] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:20:02] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:20:02] SUCCESS: All ROM values valid
+[2026-01-27 08:20:02] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 08:20:02] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:20:02] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:20:02] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:20:02] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:20:02] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:20:03] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:20:03] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:20:03] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:20:03] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:20:03] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:20:03] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:20:03] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:20:03] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:20:03] ================================================================================
+[2026-01-27 08:20:03] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:20:03] ================================================================================
+[2026-01-27 08:20:04] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:20:04] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:20:04] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:20:04] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:20:04] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:20:04] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:20:04] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:20:04] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:20:04] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:20:04] SUCCESS: All ROM values valid
+[2026-01-27 08:20:04] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 08:20:04] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:20:04] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:20:04] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:20:04] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:20:04] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:20:04] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:20:04] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:20:04] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:20:04] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:20:04] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:20:04] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:20:05] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:20:05] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:22:33] ================================================================================
+[2026-01-27 08:22:33] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:22:33] ================================================================================
+[2026-01-27 08:22:34] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:22:34] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:22:34] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:22:34] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:22:34] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:22:34] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:22:34] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:22:34] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:22:34] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:22:34] SUCCESS: All ROM values valid
+[2026-01-27 08:22:34] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 08:22:34] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:22:34] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:22:34] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:22:34] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:22:34] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:22:34] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:22:34] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:22:34] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:22:34] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:22:34] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:22:34] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:22:35] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:22:35] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:22:35] ================================================================================
+[2026-01-27 08:22:35] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:22:35] ================================================================================
+[2026-01-27 08:22:35] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:22:35] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:22:36] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:22:36] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:22:36] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:22:36] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:22:36] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:22:36] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:22:36] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:22:36] SUCCESS: All ROM values valid
+[2026-01-27 08:22:36] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 08:22:36] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:22:36] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:22:36] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:22:36] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:22:36] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:22:36] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:22:36] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:22:36] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:22:36] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:22:36] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:22:36] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:22:37] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:22:37] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:31:22] ================================================================================
+[2026-01-27 08:31:22] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:31:22] ================================================================================
+[2026-01-27 08:31:23] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:31:23] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:31:23] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:31:23] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:31:23] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:31:23] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:31:23] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:31:23] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:31:23] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:31:23] SUCCESS: All ROM values valid
+[2026-01-27 08:31:23] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 08:31:23] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:31:23] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:31:23] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:31:23] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:31:23] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:31:23] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:31:23] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:31:23] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:31:23] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:31:23] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:31:23] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:31:24] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:31:24] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:31:24] ================================================================================
+[2026-01-27 08:31:24] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:31:24] ================================================================================
+[2026-01-27 08:31:25] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:31:25] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:31:25] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:31:25] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:31:25] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:31:25] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:31:25] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:31:25] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:31:25] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:31:25] SUCCESS: All ROM values valid
+[2026-01-27 08:31:25] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 08:31:25] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:31:25] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:31:25] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:31:25] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:31:25] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:31:25] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:31:25] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:31:25] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:31:25] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:31:25] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:31:25] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:31:26] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:31:26] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:36:12] ================================================================================
+[2026-01-27 08:36:12] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:36:12] ================================================================================
+[2026-01-27 08:36:13] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:36:13] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:36:13] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:36:13] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:36:13] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:36:13] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:36:13] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:36:13] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:36:13] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:36:13] SUCCESS: All ROM values valid
+[2026-01-27 08:36:13] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 08:36:13] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:36:13] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:36:13] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:36:13] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:36:13] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:36:14] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:36:14] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:36:14] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:36:14] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:36:14] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:36:14] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:36:14] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:36:14] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:36:14] ================================================================================
+[2026-01-27 08:36:14] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:36:14] ================================================================================
+[2026-01-27 08:36:15] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:36:15] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:36:15] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:36:15] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:36:15] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:36:15] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:36:15] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:36:15] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:36:15] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:36:15] SUCCESS: All ROM values valid
+[2026-01-27 08:36:15] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 08:36:15] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:36:15] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:36:15] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:36:15] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:36:15] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:36:16] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:36:16] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:36:16] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:36:16] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:36:16] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:36:16] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:36:17] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:36:17] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:40:00] ================================================================================
+[2026-01-27 08:40:00] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:40:00] ================================================================================
+[2026-01-27 08:40:01] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:40:01] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:40:01] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:40:01] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:40:01] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:40:01] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:40:01] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:40:01] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:40:01] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:40:01] SUCCESS: All ROM values valid
+[2026-01-27 08:40:01] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 08:40:01] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:40:01] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:40:01] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:40:01] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:40:01] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:40:01] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:40:01] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:40:01] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:40:01] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:40:01] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:40:01] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:40:02] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:40:02] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:40:02] ================================================================================
+[2026-01-27 08:40:02] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:40:02] ================================================================================
+[2026-01-27 08:40:03] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:40:03] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:40:03] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:40:03] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:40:03] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:40:03] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:40:03] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:40:03] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:40:03] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:40:03] SUCCESS: All ROM values valid
+[2026-01-27 08:40:03] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 08:40:03] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:40:03] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:40:03] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:40:03] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:40:03] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:40:04] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:40:04] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:40:04] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:40:04] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:40:04] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:40:04] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:40:05] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:40:05] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:47:10] ================================================================================
+[2026-01-27 08:47:10] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:47:10] ================================================================================
+[2026-01-27 08:47:11] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:47:11] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:47:11] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:47:11] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:47:11] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:47:11] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:47:11] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:47:11] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:47:11] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:47:11] SUCCESS: All ROM values valid
+[2026-01-27 08:47:11] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 08:47:12] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:47:12] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:47:12] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:47:12] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:47:12] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:47:12] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:47:12] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:47:12] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:47:12] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:47:12] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:47:12] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:47:13] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:47:13] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:47:13] ================================================================================
+[2026-01-27 08:47:13] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:47:13] ================================================================================
+[2026-01-27 08:47:14] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:47:14] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:47:14] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:47:14] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:47:14] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:47:14] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:47:14] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:47:14] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:47:14] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:47:14] SUCCESS: All ROM values valid
+[2026-01-27 08:47:14] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 08:47:14] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:47:14] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:47:14] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:47:14] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:47:14] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:47:15] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:47:15] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:47:15] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:47:15] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:47:15] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:47:15] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:47:15] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:47:15] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:47:22] ================================================================================
+[2026-01-27 08:47:22] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:47:22] ================================================================================
+[2026-01-27 08:47:23] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:47:23] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:47:23] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:47:23] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:47:23] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:47:23] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:47:23] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:47:23] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:47:23] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:47:23] SUCCESS: All ROM values valid
+[2026-01-27 08:47:23] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 08:47:23] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:47:23] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:47:23] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:47:23] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:47:23] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:47:23] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:47:23] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:47:23] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:47:23] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:47:23] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:47:23] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:47:24] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:47:24] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:47:24] ================================================================================
+[2026-01-27 08:47:24] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:47:24] ================================================================================
+[2026-01-27 08:47:25] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:47:25] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:47:25] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:47:25] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:47:25] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:47:25] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:47:25] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:47:25] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:47:25] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:47:25] SUCCESS: All ROM values valid
+[2026-01-27 08:47:25] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 08:47:25] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:47:25] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:47:25] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:47:25] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:47:25] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:47:25] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:47:25] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:47:25] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:47:25] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:47:25] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:47:25] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:47:26] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:47:26] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:48:24] ================================================================================
+[2026-01-27 08:48:24] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:48:24] ================================================================================
+[2026-01-27 08:48:25] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:48:25] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:48:25] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:48:25] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:48:25] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:48:25] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:48:25] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:48:25] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:48:25] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:48:25] SUCCESS: All ROM values valid
+[2026-01-27 08:48:25] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 08:48:25] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:48:25] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:48:25] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:48:26] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:48:26] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:48:26] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:48:26] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:48:26] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:48:26] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:48:26] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:48:26] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:48:27] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:48:27] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:48:27] ================================================================================
+[2026-01-27 08:48:27] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:48:27] ================================================================================
+[2026-01-27 08:48:27] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:48:27] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:48:27] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:48:27] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:48:27] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:48:27] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:48:27] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:48:27] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:48:27] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:48:27] SUCCESS: All ROM values valid
+[2026-01-27 08:48:27] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 08:48:28] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:48:28] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:48:28] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:48:28] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:48:28] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:48:28] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:48:28] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:48:28] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:48:28] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:48:28] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:48:28] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:48:29] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:48:29] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:51:45] ================================================================================
+[2026-01-27 08:51:45] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:51:45] ================================================================================
+[2026-01-27 08:51:46] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:51:46] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:51:46] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:51:46] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:51:46] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:51:46] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:51:46] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:51:46] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:51:46] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:51:46] SUCCESS: All ROM values valid
+[2026-01-27 08:51:46] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 08:51:46] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:51:46] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:51:46] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:51:46] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:51:47] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:51:47] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:51:47] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:51:47] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:51:47] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:51:47] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:51:47] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:51:48] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:51:48] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:51:48] ================================================================================
+[2026-01-27 08:51:48] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:51:48] ================================================================================
+[2026-01-27 08:51:49] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:51:49] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:51:49] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:51:49] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:51:49] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:51:49] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:51:49] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:51:49] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:51:49] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:51:49] SUCCESS: All ROM values valid
+[2026-01-27 08:51:49] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 08:51:49] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:51:49] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:51:49] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:51:49] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:51:49] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:51:50] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:51:50] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:51:50] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:51:50] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:51:50] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:51:50] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:51:51] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:51:51] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:53:17] ================================================================================
+[2026-01-27 08:53:17] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:53:17] ================================================================================
+[2026-01-27 08:53:18] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:53:18] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:53:18] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:53:18] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:53:18] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:53:18] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:53:18] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:53:18] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:53:18] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:53:18] SUCCESS: All ROM values valid
+[2026-01-27 08:53:18] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 08:53:18] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:53:18] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:53:18] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:53:18] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:53:18] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:53:18] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:53:18] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:53:18] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:53:18] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:53:18] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:53:18] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:53:19] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:53:19] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:53:19] ================================================================================
+[2026-01-27 08:53:19] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:53:19] ================================================================================
+[2026-01-27 08:53:20] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:53:20] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:53:20] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:53:20] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:53:20] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:53:20] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:53:20] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:53:20] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:53:20] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:53:20] SUCCESS: All ROM values valid
+[2026-01-27 08:53:20] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 08:53:20] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:53:20] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:53:20] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:53:20] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:53:20] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:53:21] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:53:21] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:53:21] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:53:21] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:53:21] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:53:21] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:53:21] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:53:21] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:57:07] ================================================================================
+[2026-01-27 08:57:07] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:57:07] ================================================================================
+[2026-01-27 08:57:08] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:57:08] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:57:08] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:57:08] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:57:08] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:57:08] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:57:08] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:57:08] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:57:08] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:57:08] SUCCESS: All ROM values valid
+[2026-01-27 08:57:08] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 08:57:08] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:57:08] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:57:08] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:57:08] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:57:08] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:57:08] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:57:08] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:57:08] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:57:08] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:57:08] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:57:08] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:57:09] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:57:09] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 08:57:09] ================================================================================
+[2026-01-27 08:57:09] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 08:57:09] ================================================================================
+[2026-01-27 08:57:10] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 08:57:10] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 08:57:10] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 08:57:10] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 08:57:10] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 08:57:10] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 08:57:10] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 08:57:10] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 08:57:10] SUCCESS: Parsed dates in ROM data
+[2026-01-27 08:57:10] SUCCESS: All ROM values valid
+[2026-01-27 08:57:10] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 08:57:10] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 08:57:10] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 08:57:10] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 08:57:10] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 08:57:10] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 08:57:10] SUCCESS: Applied year-specific emission factors
+[2026-01-27 08:57:10] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 08:57:10] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 08:57:10] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:57:10] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:57:10] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 08:57:11] SUCCESS: Loaded display NGA factors
+[2026-01-27 08:57:11] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 09:00:16] ================================================================================
+[2026-01-27 09:00:16] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 09:00:16] ================================================================================
+[2026-01-27 09:00:17] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 09:00:17] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 09:00:17] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 09:00:17] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 09:00:17] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 09:00:17] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 09:00:17] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 09:00:17] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 09:00:17] SUCCESS: Parsed dates in ROM data
+[2026-01-27 09:00:17] SUCCESS: All ROM values valid
+[2026-01-27 09:00:17] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 09:00:17] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 09:00:17] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 09:00:17] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 09:00:17] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 09:00:17] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 09:00:18] SUCCESS: Applied year-specific emission factors
+[2026-01-27 09:00:18] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 09:00:18] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 09:00:18] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:18] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:18] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:18] SUCCESS: Loaded display NGA factors
+[2026-01-27 09:00:18] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 09:00:18] ================================================================================
+[2026-01-27 09:00:18] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 09:00:18] ================================================================================
+[2026-01-27 09:00:19] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 09:00:19] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 09:00:19] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 09:00:19] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 09:00:19] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 09:00:19] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 09:00:19] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 09:00:19] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 09:00:19] SUCCESS: Parsed dates in ROM data
+[2026-01-27 09:00:19] SUCCESS: All ROM values valid
+[2026-01-27 09:00:19] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 09:00:20] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 09:00:20] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 09:00:20] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 09:00:20] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 09:00:20] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 09:00:20] SUCCESS: Applied year-specific emission factors
+[2026-01-27 09:00:20] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 09:00:20] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 09:00:20] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:20] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:20] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:21] SUCCESS: Loaded display NGA factors
+[2026-01-27 09:00:21] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 09:00:31] ================================================================================
+[2026-01-27 09:00:31] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 09:00:31] ================================================================================
+[2026-01-27 09:00:32] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 09:00:32] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 09:00:32] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 09:00:32] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 09:00:32] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 09:00:32] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 09:00:32] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 09:00:32] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 09:00:32] SUCCESS: Parsed dates in ROM data
+[2026-01-27 09:00:32] SUCCESS: All ROM values valid
+[2026-01-27 09:00:32] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 09:00:33] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 09:00:33] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 09:00:33] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 09:00:33] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 09:00:33] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 09:00:33] SUCCESS: Applied year-specific emission factors
+[2026-01-27 09:00:33] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 09:00:33] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 09:00:33] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:33] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:33] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:34] SUCCESS: Loaded display NGA factors
+[2026-01-27 09:00:34] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 09:00:34] ================================================================================
+[2026-01-27 09:00:34] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 09:00:34] ================================================================================
+[2026-01-27 09:00:34] ================================================================================
+[2026-01-27 09:00:34] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 09:00:34] ================================================================================
+[2026-01-27 09:00:36] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 09:00:36] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 09:00:36] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 09:00:36] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 09:00:36] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 09:00:36] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 09:00:36] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 09:00:36] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 09:00:36] SUCCESS: Parsed dates in ROM data
+[2026-01-27 09:00:36] SUCCESS: All ROM values valid
+[2026-01-27 09:00:36] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 09:00:36] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 09:00:36] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 09:00:36] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 09:00:36] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 09:00:36] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 09:00:36] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 09:00:36] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 09:00:36] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 09:00:36] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 09:00:36] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 09:00:36] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 09:00:36] SUCCESS: Applied year-specific emission factors
+[2026-01-27 09:00:36] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 09:00:36] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 09:00:37] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:37] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 09:00:37] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:37] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 09:00:37] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:37] SUCCESS: Parsed dates in ROM data
+[2026-01-27 09:00:37] SUCCESS: All ROM values valid
+[2026-01-27 09:00:37] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 09:00:37] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 09:00:37] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 09:00:37] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 09:00:37] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 09:00:37] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 09:00:37] SUCCESS: Applied year-specific emission factors
+[2026-01-27 09:00:37] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 09:00:37] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 09:00:37] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:37] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:37] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:38] SUCCESS: Loaded display NGA factors
+[2026-01-27 09:00:38] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 09:00:39] SUCCESS: Loaded display NGA factors
+[2026-01-27 09:00:39] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 09:00:39] ================================================================================
+[2026-01-27 09:00:39] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 09:00:39] ================================================================================
+[2026-01-27 09:00:39] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 09:00:39] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 09:00:39] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 09:00:39] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 09:00:39] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 09:00:40] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 09:00:40] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 09:00:40] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 09:00:40] SUCCESS: Parsed dates in ROM data
+[2026-01-27 09:00:40] SUCCESS: All ROM values valid
+[2026-01-27 09:00:40] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 09:00:40] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 09:00:40] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 09:00:40] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 09:00:40] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 09:00:40] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 09:00:40] SUCCESS: Applied year-specific emission factors
+[2026-01-27 09:00:40] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 09:00:40] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 09:00:40] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:40] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:40] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:00:41] SUCCESS: Loaded display NGA factors
+[2026-01-27 09:00:41] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 09:10:31] ================================================================================
+[2026-01-27 09:10:31] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 09:10:31] ================================================================================
+[2026-01-27 09:10:31] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 09:10:31] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 09:10:31] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 09:10:32] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 09:10:32] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 09:10:32] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 09:10:32] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 09:10:32] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 09:10:32] SUCCESS: Parsed dates in ROM data
+[2026-01-27 09:10:32] SUCCESS: All ROM values valid
+[2026-01-27 09:10:32] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 09:10:32] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 09:10:32] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 09:10:32] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 09:10:32] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 09:10:32] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 09:10:32] SUCCESS: Applied year-specific emission factors
+[2026-01-27 09:10:32] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 09:10:32] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 09:10:32] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:10:32] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:10:32] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:10:33] SUCCESS: Loaded display NGA factors
+[2026-01-27 09:10:33] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 09:10:33] ================================================================================
+[2026-01-27 09:10:33] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 09:10:33] ================================================================================
+[2026-01-27 09:10:33] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 09:10:33] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 09:10:33] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 09:10:33] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 09:10:33] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 09:10:34] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 09:10:34] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 09:10:34] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 09:10:34] SUCCESS: Parsed dates in ROM data
+[2026-01-27 09:10:34] SUCCESS: All ROM values valid
+[2026-01-27 09:10:34] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 09:10:34] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 09:10:34] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 09:10:34] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 09:10:34] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 09:10:34] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 09:10:34] SUCCESS: Applied year-specific emission factors
+[2026-01-27 09:10:34] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 09:10:34] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 09:10:34] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:10:34] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:10:34] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:10:34] SUCCESS: Loaded display NGA factors
+[2026-01-27 09:10:34] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 09:11:45] ================================================================================
+[2026-01-27 09:11:45] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 09:11:45] ================================================================================
+[2026-01-27 09:11:46] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 09:11:46] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 09:11:46] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 09:11:46] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 09:11:46] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 09:11:46] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 09:11:46] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 09:11:46] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 09:11:46] SUCCESS: Parsed dates in ROM data
+[2026-01-27 09:11:46] SUCCESS: All ROM values valid
+[2026-01-27 09:11:46] SUCCESS: ROM data processed: FY2021-2025, 5 years
+[2026-01-27 09:11:46] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 09:11:46] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 09:11:46] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 09:11:46] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 09:11:46] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 09:11:46] SUCCESS: Applied year-specific emission factors
+[2026-01-27 09:11:46] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 09:11:46] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 09:11:46] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:11:46] SUCCESS: Total Scope 2: 488499 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:11:46] SUCCESS: Total Scope 3: 221340 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:11:47] SUCCESS: Loaded display NGA factors
+[2026-01-27 09:11:47] DATA LOADING COMPLETE - NO ERRORS
+[2026-01-27 09:11:47] ================================================================================
+[2026-01-27 09:11:47] NEW DATA LOADING SESSION - ENHANCED WITH FUEL BREAKDOWN
+[2026-01-27 09:11:47] ================================================================================
+[2026-01-27 09:11:48] SUCCESS: Loaded NGA factors for years: [2021, 2022, 2023, 2024, 2025]
+[2026-01-27 09:11:48] SUCCESS: Loaded PhysicalsActual.xlsx with sheets: ['2021', '2022', '2023', '2024', '2025']
+[2026-01-27 09:11:48] SUCCESS: Extracted 12 ROM records from sheet '2021'
+[2026-01-27 09:11:48] SUCCESS: Extracted 12 ROM records from sheet '2022'
+[2026-01-27 09:11:48] SUCCESS: Extracted 12 ROM records from sheet '2023'
+[2026-01-27 09:11:48] SUCCESS: Extracted 12 ROM records from sheet '2024'
+[2026-01-27 09:11:48] SUCCESS: Extracted 10 ROM records from sheet '2025'
+[2026-01-27 09:11:48] SUCCESS: Combined ROM data: 58 total records
+[2026-01-27 09:11:48] SUCCESS: Parsed dates in ROM data
+[2026-01-27 09:11:48] SUCCESS: All ROM values valid
+[2026-01-27 09:11:48] SUCCESS: ROM data processed: FY2021-2026, 6 years
+[2026-01-27 09:11:48] SUCCESS: Loaded Energy.xlsx: 1533 rows from 'data' sheet
+[2026-01-27 09:11:48] SUCCESS: Merged with InventoryRef: 1533 records
+[2026-01-27 09:11:48] SUCCESS: Separated fuel types: Diesel=901, LPG=60, Oils=63, Greases=46, Gases=12
+[2026-01-27 09:11:48] SUCCESS: Split diesel by purpose: Electricity=2, Transport=305, Stationary=475, Explosives=119
+[2026-01-27 09:11:48] SUCCESS: Merged all fuel types: 1119 Date/Costcentre combinations
+[2026-01-27 09:11:48] SUCCESS: Applied year-specific emission factors
+[2026-01-27 09:11:48] SUCCESS: Calculated emissions for all fuel types
+[2026-01-27 09:11:48] SUCCESS: Energy.xlsx processed: FY2020-2026, 7 years
+[2026-01-27 09:11:48] SUCCESS: Total Scope 1: 532825 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:11:48] SUCCESS: Total Scope 2: 482762 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:11:48] SUCCESS: Total Scope 3: 217765 tCOÃ¢â€šâ€š-e
+[2026-01-27 09:11:49] SUCCESS: Loaded display NGA factors
+[2026-01-27 09:11:49] DATA LOADING COMPLETE - NO ERRORS

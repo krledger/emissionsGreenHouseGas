@@ -1,7 +1,7 @@
 """
 app.py
 Streamlit UI for Ravenswood Gold Safeguard Mechanism Model
-Last updated: 2026-01-07 15:00 AEST
+Last updated: 2026-01-27 17:00 AEST
 
 Run with: streamlit run app.py
 """
@@ -53,14 +53,12 @@ st.caption("Emissions tracking and Safeguard Mechanism compliance projections")
 # SIDEBAR - Configuration
 st.sidebar.header("⚙️ Configuration")
 # Fiscal Year Configuration
-st.sidebar.subheader("📅 Fiscal Year")
+st.sidebar.subheader("📆 Fiscal Year")
 
 # Month options
 month_options = {
     1: "January (Calendar Year)",
-    7: "July (NGER Financial Year)",
-    4: "April",
-    10: "October"
+    7: "July (NGER Financial Year)"
 }
 
 # Initialize session state for FY start month
@@ -82,20 +80,27 @@ st.session_state.fy_start_month = selected_month
 # Display fiscal year description
 fy_desc = get_fy_description(selected_month)
 end_month = get_fy_end_month(selected_month)
-st.sidebar.caption(f"**{fy_desc}**")
-st.sidebar.caption(f"FY ends: {get_fy_month_name(end_month)}")
+
+
+st.sidebar.caption("⚠️ Safeguard tab always uses NGER FY (July—June)")
 st.sidebar.markdown("---")
 
-# Baseline Intensity
+# Baseline Emission Intensity (Dual FSEI)
 st.sidebar.subheader("Baseline Emission Intensity")
-baseline_intensity = st.sidebar.number_input(
-    "FSEI (Facility Specific Emission Intensity)",
+fsei_rom = st.sidebar.number_input(
+    "FSEI ROM (tCO₂-e/t ore)",
     value=float(FSEI_ROM),
-    format="%.6f",
-    help="Approved FSEI from Clean Energy Regulator EID determination"
+    format="%.4f",
+    help="Facility Specific Emission Intensity for ROM production"
 )
-st.sidebar.caption(f"FSEI ROM: {FSEI_ROM} tCO₂-e/t | FSEI Elec: {FSEI_ELEC} tCO₂-e/MWh")
-st.sidebar.caption(f"Baseline declining at {DECLINE_RATE * 100:.1f}% p.a. from FY{DECLINE_FROM}")
+fsei_elec = st.sidebar.number_input(
+    "FSEI Electricity (tCO₂-e/MWh)",
+    value=float(FSEI_ELEC),
+    format="%.4f",
+    help="Facility Specific Emission Intensity for on-site diesel generation"
+)
+st.sidebar.caption(f"Baseline = (ROM × {fsei_rom:.4f}) + (Site MWh × {fsei_elec:.4f})")
+st.sidebar.caption(f"Declining at {DECLINE_RATE * 100:.1f}% p.a. from FY{DECLINE_FROM}—FY{DECLINE_TO}")
 
 # Projection Period
 st.sidebar.subheader("Projection Period")
@@ -138,7 +143,7 @@ end_rehabilitation_fy = st.sidebar.number_input(
 # End FY is the rehabilitation end year
 end_fy = end_rehabilitation_fy
 
-st.sidebar.caption(f"Projection: FY{start_fy}—FY{end_fy}")
+
 
 # Carbon Credit Market
 st.sidebar.subheader("Carbon Credit Market")
@@ -159,7 +164,7 @@ credit_escalation = st.sidebar.slider(
     help="Annual increase in carbon credit prices"
 ) / 100
 
-st.sidebar.caption(f"Starting ${carbon_credit_price:.0f}/t, escalating {credit_escalation*100:.1f}% p.a.")
+
 
 # Carbon Tax Settings
 st.sidebar.subheader("Carbon Tax Scenario")
@@ -189,7 +194,7 @@ tax_escalation = st.sidebar.slider(
     help="Annual increase in carbon tax rate"
 ) / 100
 
-st.sidebar.caption(f"Tax from FY{tax_start_fy} @ ${tax_rate:.0f}/t, escalating {tax_escalation*100:.1f}% p.a.")
+
 
 # Grid Connection
 st.sidebar.subheader("Grid Connection")
@@ -202,7 +207,7 @@ grid_connected_fy = st.sidebar.number_input(
     help="Year when grid electricity becomes available (diesel generation stops)"
 )
 
-st.sidebar.caption(f"Grid connection: FY{grid_connected_fy} (diesel generation → grid electricity)")
+
 
 # TABS - Main Navigation
 tab1, tab2, tab3, tab4 = st.tabs([
@@ -245,6 +250,14 @@ if missing_files:
 # Load all data
 with st.spinner('Loading data...'):
     rom_df, energy_df, nga_factors = load_all_data(DEFAULT_PATHS, st.session_state.fy_start_month)
+
+    # Load separate NGER FY data for Safeguard tab (always July-June)
+    from config import NGER_FY_START_MONTH
+    if st.session_state.fy_start_month != NGER_FY_START_MONTH:
+        rom_df_nger, energy_df_nger, _ = load_all_data(DEFAULT_PATHS, NGER_FY_START_MONTH)
+    else:
+        rom_df_nger = rom_df
+        energy_df_nger = energy_df
 
 # Log viewer function with modal dialog
 @st.dialog("📋 Data Loading Log", width="large")
@@ -300,18 +313,18 @@ with st.sidebar:
 
 # Render each tab
 with tab1:
-    render_ghg_tab(rom_df, energy_df, nga_factors, baseline_intensity,
+    render_ghg_tab(rom_df, energy_df, nga_factors, fsei_rom, fsei_elec,
                    start_fy, end_fy, grid_connected_fy,
                    end_mining_fy, end_processing_fy, end_rehabilitation_fy)
 
 with tab2:
-    render_safeguard_tab(rom_df, energy_df, nga_factors, baseline_intensity,
+    render_safeguard_tab(rom_df_nger, energy_df_nger, nga_factors, fsei_rom, fsei_elec,
                         start_fy, end_fy, grid_connected_fy,
                         end_mining_fy, end_processing_fy, end_rehabilitation_fy,
                         carbon_credit_price)
 
 with tab3:
-    render_carbon_tax_tab(rom_df, energy_df, nga_factors, baseline_intensity,
+    render_carbon_tax_tab(rom_df, energy_df, nga_factors, fsei_rom, fsei_elec,
                          start_fy, end_fy, grid_connected_fy,
                          end_mining_fy, end_processing_fy, end_rehabilitation_fy,
                          carbon_credit_price, credit_escalation,
@@ -322,4 +335,4 @@ with tab4:
 
 # FOOTER
 st.markdown("---")
-st.caption("Ravenswood Gold Mine | Safeguard Mechanism Model | Last updated: 2026-01-07")
+st.caption("Ravenswood Gold Mine | Safeguard Mechanism Model | Last updated: 2026-01-23")

@@ -1,7 +1,7 @@
 """
-data_loader_enhanced.py
+data_loader.py
 Enhanced data loading with detailed fuel breakdown for NGERS compliance
-Last updated: 2026-01-14 15:00 AEST
+Last updated: 2026-01-22 10:30 AEST
 
 Loads Energy.xlsx with detailed fuel type tracking:
 - Diesel by purpose (electricity, transport, stationary, explosives)
@@ -9,6 +9,10 @@ Loads Energy.xlsx with detailed fuel type tracking:
 - Petroleum oils and greases
 - Gaseous fossil fuels
 - Grid and site electricity
+
+Loads ROM data from PhysicalsActual.xlsx:
+- Extracts "Ore Mined t - Total" metric from all year sheets
+- Combines data from 2022, 2023, 2024, 2025 sheets
 
 Uses year-specific NGA emission factors (2021-2025)
 """
@@ -36,12 +40,12 @@ def log_error(error_type, message, details=None):
     if details:
         log_msg += f" | Details: {details}"
     log_to_file(log_msg)
-    print(f"❌ {log_msg}", file=sys.stderr)
+    print(f"Ã¢ÂÅ’ {log_msg}", file=sys.stderr)
 
 def log_success(message):
     """Log successful operation"""
     log_to_file(f"SUCCESS: {message}")
-    print(f"✓ {message}")
+    print(f"Ã¢Å“â€œ {message}")
 
 def start_loading_session():
     """Start a new loading session in log"""
@@ -391,9 +395,9 @@ def load_energy_data(filepath, nga_by_year, fy_start_month=1):
 
         # Log summary
         log_success(f"Energy.xlsx processed: FY{df['FY'].min()}-{df['FY'].max()}, {df['FY'].nunique()} years")
-        log_success(f"Total Scope 1: {df['Total_Scope1_tCO2e'].sum():.0f} tCO₂-e")
-        log_success(f"Total Scope 2: {df['Total_Scope2_tCO2e'].sum():.0f} tCO₂-e")
-        log_success(f"Total Scope 3: {df['Total_Scope3_tCO2e'].sum():.0f} tCO₂-e")
+        log_success(f"Total Scope 1: {df['Total_Scope1_tCO2e'].sum():.0f} tCOÃ¢â€šâ€š-e")
+        log_success(f"Total Scope 2: {df['Total_Scope2_tCO2e'].sum():.0f} tCOÃ¢â€šâ€š-e")
+        log_success(f"Total Scope 3: {df['Total_Scope3_tCO2e'].sum():.0f} tCOÃ¢â€šâ€š-e")
 
         return df
 
@@ -403,42 +407,77 @@ def load_energy_data(filepath, nga_by_year, fy_start_month=1):
 
 
 def load_rom_data(filepath, fy_start_month=1):
-    """Load and process ROM production data
+    """Load and process ROM production data from PhysicalsActual.xlsx
 
     Args:
-        filepath: Path to ROM.csv
+        filepath: Path to PhysicalsActual.xlsx
         fy_start_month: Fiscal year start month (1=Jan, 7=Jul, etc.)
 
     Returns:
         DataFrame with Date, Year, Month, FY, ROM (tonnes)
     """
     try:
-        df = pd.read_csv(filepath, encoding='utf-8-sig')
-        log_success(f"Loaded ROM.csv: {len(df)} rows")
+        xl_file = pd.ExcelFile(filepath)
+        log_success(f"Loaded PhysicalsActual.xlsx with sheets: {xl_file.sheet_names}")
     except FileNotFoundError:
-        log_error('FILE_NOT_FOUND', f'ROM.csv not found at {filepath}')
+        log_error('FILE_NOT_FOUND', f'PhysicalsActual.xlsx not found at {filepath}')
         raise
     except Exception as e:
-        log_error('FILE_READ_ERROR', f'Error reading ROM.csv: {str(e)}')
+        log_error('FILE_READ_ERROR', f'Error reading PhysicalsActual.xlsx: {str(e)}')
         raise
-
-    df.columns = df.columns.str.strip()
 
     try:
-        df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
+        all_data = []
+
+        for sheet in xl_file.sheet_names:
+            df_sheet = pd.read_excel(filepath, sheet_name=sheet)
+
+            mined_data = df_sheet[df_sheet['Metric'] == 'Ore Mined t - Total'][['Date', 'Value']].copy()
+
+            if not mined_data.empty:
+                all_data.append(mined_data)
+                log_success(f"Extracted {len(mined_data)} ROM records from sheet '{sheet}'")
+
+        if not all_data:
+            log_error('NO_ROM_DATA', 'No "Ore Mined t - Total" data found in any sheet')
+            raise ValueError('No ROM data found in PhysicalsActual.xlsx')
+
+        df = pd.concat(all_data, ignore_index=True)
+        df = df.rename(columns={'Value': 'ROM'})
+
+        log_success(f"Combined ROM data: {len(df)} total records")
+
+    except Exception as e:
+        log_error('ROM_EXTRACTION_ERROR', f'Error extracting ROM data: {str(e)}')
+        raise
+
+    try:
+        # Convert Date to datetime BEFORE sorting to avoid mixed type comparison
+        # Use errors='raise' to fail fast on invalid dates rather than silently converting to NaT
+        df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='raise')
+        
+        # Check for any null dates after conversion
+        null_dates = df['Date'].isna().sum()
+        if null_dates > 0:
+            invalid_rows = df[df['Date'].isna()]
+            log_error('INVALID_DATES', f'Found {null_dates} rows with invalid dates',
+                      f'Sample invalid dates: {invalid_rows["Date"].head().tolist()}')
+            raise ValueError(f'Found {null_dates} rows with invalid/unparseable dates in ROM data')
+        
+        # Now safe to sort - all dates are guaranteed to be Timestamps
+        df = df.sort_values('Date').reset_index(drop=True)
+        
         df['Year'] = df['Date'].dt.year
         df['Month'] = df['Date'].dt.month
-        log_success("Parsed dates in ROM.csv")
+        log_success("Parsed dates in ROM data")
     except Exception as e:
-        log_error('DATE_PARSE_ERROR', f'Error parsing dates in ROM.csv: {str(e)}',
-                  f'Sample dates: {df["Date"].head().tolist()}')
+        log_error('DATE_PARSE_ERROR', f'Error parsing dates in ROM data: {str(e)}',
+                      f'Sample dates: {df["Date"].head().tolist()}')
         raise
 
     df['FY'] = df.apply(lambda r: calculate_fy(r['Year'], r['Month'], fy_start_month), axis=1)
 
     try:
-        rom_col = [c for c in df.columns if 'ROM' in c.upper()][0]
-        df['ROM'] = df[rom_col].str.replace(',', '').str.strip()
         df['ROM'] = pd.to_numeric(df['ROM'], errors='coerce')
 
         missing = df['ROM'].isna().sum()
@@ -451,7 +490,7 @@ def load_rom_data(filepath, fy_start_month=1):
         log_error('ROM_PARSE_ERROR', f'Error parsing ROM values: {str(e)}')
         raise
 
-    log_success(f"ROM.csv processed: FY{df['FY'].min()}-{df['FY'].max()}, {df['FY'].nunique()} years")
+    log_success(f"ROM data processed: FY{df['FY'].min()}-{df['FY'].max()}, {df['FY'].nunique()} years")
 
     return df[['Date', 'Year', 'Month', 'FY', 'ROM']]
 

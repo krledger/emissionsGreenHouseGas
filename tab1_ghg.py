@@ -1,7 +1,7 @@
 """
 tab1_ghg.py
 Total GHG Emissions Tab with Plotly charts
-Last updated: 2026-01-08 10:00 AEST
+Last updated: 2026-01-23 17:00 AEST
 """
 
 import streamlit as st
@@ -12,10 +12,10 @@ from plotly.subplots import make_subplots
 
 from emissions_calc import calculate_emissions
 from projections import build_projection_simple
-from config import COLORS, SCOPE_NAMES
+from config import COLORS, SCOPE_NAMES, DEFAULT_DISPLAY_YEAR
 
 
-def render_ghg_tab(rom_df, energy_df, nga_factors, baseline_intensity,
+def render_ghg_tab(rom_df, energy_df, nga_factors, fsei_rom, fsei_elec,
                    start_fy, end_fy, grid_connected_fy,
                    end_mining_fy, end_processing_fy, end_rehabilitation_fy):
     """Render the Total GHG Emissions tab"""
@@ -24,7 +24,7 @@ def render_ghg_tab(rom_df, energy_df, nga_factors, baseline_intensity,
     st.caption(f"Projection Period: FY{start_fy}—FY{end_fy} | Mining ends FY{end_mining_fy} | Processing ends FY{end_processing_fy}")
 
     # Year Selection
-    with st.expander("📅 Year Selection", expanded=True):
+    with st.expander("Year Selection", expanded=True):
         col1, col2, col3 = st.columns(3)
 
         years = energy_df['Date'].dt.year.unique()
@@ -34,44 +34,40 @@ def render_ghg_tab(rom_df, energy_df, nga_factors, baseline_intensity,
             selected_fy = st.selectbox(
                 "Display Year (Actuals)",
                 available_fys,
-                index=len(available_fys)-1
+                index=available_fys.index(f"FY{DEFAULT_DISPLAY_YEAR}") if f"FY{DEFAULT_DISPLAY_YEAR}" in available_fys else len(available_fys)-1
             )
 
         with col2:
+            # Set comparison year to selected_fy - 1
+            selected_year = int(selected_fy.replace('FY', ''))
+            prior_fy_default = f'FY{selected_year - 1}'
+
             prior_fy = st.selectbox(
                 "Comparison Year",
                 available_fys,
-                index=max(0, len(available_fys)-2) if len(available_fys) > 1 else 0
+                index=available_fys.index(prior_fy_default) if prior_fy_default in available_fys else max(0, len(available_fys)-2)
             )
 
-        with col3:
-            # ROM Production input
-            rom_year = int(selected_fy.replace('FY', ''))
-            rom_production = rom_df[rom_df['Date'].dt.year == rom_year]['ROM'].sum() if rom_year in rom_df['Date'].dt.year.values else 0
-            rom_mt = st.number_input(
-                f"ROM Production (Mt) - {selected_fy}",
-                value=float(rom_production / 1e6) if rom_production > 0 else 2.5,
-                min_value=0.0,
-                step=0.1,
-                format="%.2f"
-            )
+
 
     # Calculate emissions for selected years
     current_year = int(selected_fy.replace('FY', ''))
     prior_year = int(prior_fy.replace('FY', ''))
 
-    current_emissions = calculate_emissions(energy_df, selected_fy, rom_mt * 1e6, nga_factors)
-
+    # Get ROM from dataframe
+    current_rom = rom_df[rom_df['Date'].dt.year == current_year]['ROM'].sum()
     prior_rom = rom_df[rom_df['Date'].dt.year == prior_year]['ROM'].sum()
+
+    current_emissions = calculate_emissions(energy_df, selected_fy, current_rom, nga_factors)
     prior_emissions = calculate_emissions(energy_df, prior_fy, prior_rom, nga_factors)
 
     # Check for missing data
     if current_emissions is None:
-        st.error(f"⚠️ No emissions data available for {selected_fy}")
+        st.error(f"âš ï¸ No emissions data available for {selected_fy}")
         return
 
     if prior_emissions is None:
-        st.warning(f"⚠️ No emissions data available for {prior_fy} (comparison year)")
+        st.warning(f"âš ï¸ No emissions data available for {prior_fy} (comparison year)")
         # Create a dummy prior with zeros for display
         prior_emissions = {
             'scope1': 0, 'scope2': 0, 'scope3': 0, 'total': 0,
@@ -82,13 +78,11 @@ def render_ghg_tab(rom_df, energy_df, nga_factors, baseline_intensity,
     display_emissions_metrics(current_emissions, prior_emissions, selected_fy, prior_fy)
 
     # Notes
-    st.caption("• Scope 3 emissions calculated using NGA factors: diesel Scope 3 = 0.669 tCO₂-e/kL, grid Scope 3 = 0.09 tCO₂-e/MWh")
-    st.caption("• Grid Integration Impact: Total emissions remain approximately unchanged when grid connected.  Scope 1 decreases (~75,000 tCO₂-e from diesel generation removed) but Scope 2 increases (~60,000 tCO₂-e from grid electricity).  The benefit is reduced Safeguard Mechanism exposure")
 
     # Build projection
     projection = build_projection_simple(
         start_fy, end_fy, rom_df, energy_df, nga_factors,
-        baseline_intensity, grid_connected_fy,
+        fsei_rom, fsei_elec, grid_connected_fy,
         end_mining_fy, end_processing_fy, end_rehabilitation_fy
     )
 

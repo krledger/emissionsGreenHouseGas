@@ -1,7 +1,7 @@
 """
 config.py
 Configuration constants and mappings for Ravenswood Gold emissions model
-Last updated: 2026-01-12 07:30 AEST
+Last updated: 2026-01-22 10:30 AEST
 """
 
 import pandas as pd
@@ -12,6 +12,10 @@ import pandas as pd
 
 # Default fiscal year start month (can be overridden in app)
 DEFAULT_FY_START_MONTH = 1   # January = 1, July = 7
+NGER_FY_START_MONTH = 7      # NGER/Safeguard always uses July-June FY
+# Default year for display in GHG tab
+DEFAULT_DISPLAY_YEAR = 2025  # Year to show by default in year selectors
+
 
 # Common configurations:
 # Calendar year (internal reporting): start_month = 1 (January)
@@ -88,11 +92,11 @@ def get_fy_description(fy_start_month=None):
     end_name = get_fy_month_name(end_month)
 
     if fy_start_month == 1:
-        return f"Calendar Year ({start_name}—{end_name})"
+        return f"Calendar Year ({start_name}ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â{end_name})"
     elif fy_start_month == 7:
-        return f"NGER Financial Year ({start_name}—{end_name})"
+        return f"NGER Financial Year ({start_name}ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â{end_name})"
     else:
-        return f"Custom Fiscal Year ({start_name}—{end_name})"
+        return f"Custom Fiscal Year ({start_name}ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â{end_name})"
 
 # =============================================================================
 # SAFEGUARD MECHANISM PARAMETERS
@@ -211,12 +215,12 @@ DEFAULT_START_FY = 2021
 # =============================================================================
 
 # Carbon Credit Market
-DEFAULT_CARBON_CREDIT_PRICE = 35.0  # $/tCOÃ¢â€šâ€š-e
+DEFAULT_CARBON_CREDIT_PRICE = 35.0  # $/tCOÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡-e
 DEFAULT_CREDIT_ESCALATION = 0.03    # 3% per annum
 
 # Carbon Tax Scenario
 DEFAULT_TAX_START_FY = 2030
-DEFAULT_TAX_RATE = 15.0             # $/tCOÃ¢â€šâ€š-e initial rate
+DEFAULT_TAX_RATE = 15.0             # $/tCOÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡-e initial rate
 DEFAULT_TAX_ESCALATION = 0.02       # 2% per annum
 
 # =============================================================================
@@ -229,8 +233,8 @@ DEFAULT_GRID_CONNECTION_FY = 2027   # Year grid electricity becomes available (d
 # INDUSTRY BENCHMARKS (from Safeguard Rule)
 # =============================================================================
 
-DEFAULT_INDUSTRY_EI_ROM = 0.00859   # Industry default tCOÃ¢â€šâ€š-e/t ROM
-DEFAULT_INDUSTRY_EI_ELEC = 0.539    # Industry default tCOÃ¢â€šâ€š-e/MWh
+DEFAULT_INDUSTRY_EI_ROM = 0.00859   # Industry default tCOÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡-e/t ROM
+DEFAULT_INDUSTRY_EI_ELEC = 0.539    # Industry default tCOÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡-e/MWh
 
 # Phase 1: Active Mining (up to End of Mining FY)
 # All cost centres operate at 100%
@@ -489,6 +493,6 @@ GASEOUS_FACTORS = {
 
 DEFAULT_PATHS = {
     'energy': 'Energy.xlsx',
-    'rom': 'ROM.csv',
+    'rom': 'PhysicalsActual.xlsx',
     'nga': 'national-greenhouse-account-factors-2025.xlsx'
 }

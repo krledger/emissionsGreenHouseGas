@@ -1,7 +1,9 @@
 """
 tab2_safeguard.py
 Safeguard Mechanism Tab with Plotly charts
-Last updated: 2026-01-08 10:00 AEST
+Last updated: 2026-01-27 17:00 AEST
+
+NOTE: This tab ALWAYS uses NGER Financial Year (July-June) as required by legislation.
 """
 
 import streamlit as st
@@ -11,22 +13,25 @@ from plotly.subplots import make_subplots
 import plotly.express as px
 
 from projections import build_projection_simple
-from config import DECLINE_RATE, DECLINE_FROM, DECLINE_TO, COLORS, SCOPE_NAMES
+from config import DECLINE_RATE, DECLINE_FROM, DECLINE_TO, COLORS, SCOPE_NAMES, NGER_FY_START_MONTH
 
 
-def render_safeguard_tab(rom_df, energy_df, nga_factors, baseline_intensity,
+def render_safeguard_tab(rom_df, energy_df, nga_factors, fsei_rom, fsei_elec,
                          start_fy, end_fy, grid_connected_fy,
                          end_mining_fy, end_processing_fy, end_rehabilitation_fy,
                          carbon_credit_price):
-    """Render the Safeguard Mechanism tab"""
+    """Render the Safeguard Mechanism tab
+
+    NOTE: This tab always uses NGER FY (July-June) regardless of sidebar setting.
+    """
 
     st.subheader("Safeguard Mechanism Compliance")
-    st.caption(f"Projection: FY{start_fy}—FY{end_fy} | Baseline decline: {DECLINE_RATE * 100:.1f}% p.a. (FY{DECLINE_FROM}—FY{DECLINE_TO})")
+    # Subtitle removed - not helpful
 
-    # Build projection
+    # Build projection (always uses NGER FY for Safeguard)
     projection = build_projection_simple(
         start_fy, end_fy, rom_df, energy_df, nga_factors,
-        baseline_intensity, grid_connected_fy,
+        fsei_rom, fsei_elec, grid_connected_fy,
         end_mining_fy, end_processing_fy, end_rehabilitation_fy
     )
 
@@ -38,10 +43,10 @@ def render_safeguard_tab(rom_df, energy_df, nga_factors, baseline_intensity,
     display_safeguard_metrics(projection, carbon_credit_price)
 
     # Charts
-    display_safeguard_charts(projection, baseline_intensity, grid_connected_fy)
+    display_safeguard_charts(projection, grid_connected_fy, carbon_credit_price)
 
     # Data table
-    display_safeguard_table(projection, safeguard_threshold)
+    display_safeguard_table(projection, safeguard_threshold, carbon_credit_price)
 
     # Report generation
     display_report_generator(projection)
@@ -68,7 +73,7 @@ def display_safeguard_metrics(projection, carbon_credit_price):
 
         with col2:
             st.metric("Years in Safeguard", f"{years_in_safeguard}")
-            st.caption(f"Scope 1 ≥ 100,000 tCO₂-e")
+            st.caption(f"Scope 1 â‰¥ 100,000 tCO₂-e")
 
         with col3:
             st.metric("Avg Intensity", f"{avg_intensity:.4f} tCO₂-e/t")
@@ -82,8 +87,13 @@ def display_safeguard_metrics(projection, carbon_credit_price):
             st.caption("Entry to exit")
 
 
-def display_safeguard_charts(projection, baseline_intensity, grid_connected_fy):
-    """Display Plotly charts for safeguard compliance"""
+def display_safeguard_charts(projection, grid_connected_fy, carbon_credit_price):
+    """Display Plotly charts for safeguard compliance
+
+    Includes:
+    - Horizontal line at 100,000 tCO2-e threshold
+    - Vertical shading for 10-year grace period from grid connection
+    """
 
     # Don't filter - show ALL years including processing/rehab
     safeguard_df = projection.copy()
@@ -122,7 +132,7 @@ def display_safeguard_charts(projection, baseline_intensity, grid_connected_fy):
             )
 
             st.plotly_chart(fig, width="stretch")
-            st.caption("Grey bars: Run-of-mine ore production by financial year")
+            # Caption removed
 
         # Chart 2: Emissions and Intensity (Dual Axis) - ALL years for bars
         st.subheader("Scope 1 Emissions & Emission Intensity")
@@ -198,6 +208,42 @@ def display_safeguard_charts(projection, baseline_intensity, grid_connected_fy):
             yshift=10
         )
 
+        # Add 100,000 tCO2-e safeguard threshold line (red dashed)
+        # Only span the actual data range, not the full plot width
+        fig.add_trace(
+            go.Scatter(
+                x=safeguard_df['FY'],
+                y=[100000] * len(safeguard_df),
+                mode='lines',
+                line=dict(color='red', width=2, dash='dash'),
+                showlegend=False,
+                hoverinfo='skip',
+                yaxis='y'
+            )
+        )
+
+
+
+        # Add 10-year grace period shading from grid connection
+        grace_period_end = grid_connected_fy + 10
+        fig.add_vrect(
+            x0=f'FY{grid_connected_fy}',
+            x1=f'FY{grace_period_end}',
+            fillcolor='lightgreen',
+            opacity=0.2,
+            layer='below',
+            line_width=0
+        )
+
+        fig.add_annotation(
+            x=f'FY{grid_connected_fy + 5}',
+            y=0.95,
+            yref='paper',
+            text='10-Year Grace Period',
+            showarrow=False,
+            font=dict(color='darkgreen', size=10)
+        )
+
         # Update axes
         fig.update_xaxes(title_text="Financial Year")
         fig.update_yaxes(title_text="Scope 1 Emissions (tCO₂-e)", tickformat=',.0f', secondary_y=False)
@@ -210,41 +256,66 @@ def display_safeguard_charts(projection, baseline_intensity, grid_connected_fy):
         )
 
         st.plotly_chart(fig, width="stretch")
-        st.caption("Light gray bars: Scope 1 emissions | Red line: Actual intensity | Dark gray dashed: Baseline (ROM + Electricity, declining 4.9% p.a.) | Green dot: Grid connection")
+        # Caption removed
 
-        # Chart 3: Cumulative SMC Credits
+        # Chart 3: Cumulative SMC Credits (Dual Axis)
         st.subheader("Cumulative SMC Credits")
 
         # Display credits as positive
         safeguard_df['Credits_Display'] = (-1 * safeguard_df['SMC_Cumulative']).abs()
-        safeguard_df['Annual_Change'] = safeguard_df['SMC_Annual'].abs()
+        safeguard_df['Credits_Value'] = safeguard_df['Credits_Display'] * carbon_credit_price
 
-        fig = go.Figure()
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-        fig.add_trace(go.Bar(
-            x=safeguard_df['FY'],
-            y=safeguard_df['Credits_Display'],
-            name='Cumulative Credits',
-            marker=dict(
-                color=COLORS['credits'],
-                line=dict(width=0)  # No border
+        # Tonnes on primary y-axis (bars)
+        fig.add_trace(
+            go.Bar(
+                x=safeguard_df['FY'],
+                y=safeguard_df['Credits_Display'],
+                name='Credits (tCO₂-e)',
+                marker=dict(
+                    color=COLORS['credits'],
+                    line=dict(width=0)
+                ),
+                hovertemplate='<b>%{x}</b><br>Credits: %{y:,.0f} tCO₂-e<extra></extra>',
+                yaxis='y'
             ),
-            hovertemplate='<b>%{x}</b><br>Cumulative: %{y:,.0f} tCO₂-e<extra></extra>'
-        ))
+            secondary_y=False
+        )
+
+        # Dollars on secondary y-axis (markers with dollar labels)
+        fig.add_trace(
+            go.Scatter(
+                x=safeguard_df['FY'],
+                y=safeguard_df['Credits_Value'],
+                name='Credit Value ($)',
+                mode='markers+text',
+                marker=dict(size=10, color='darkgreen', symbol='circle'),
+                text=safeguard_df['Credits_Value'].apply(lambda x: f'${x/1000000:.2f}M'),
+                textposition='top center',
+                textfont=dict(size=9, color='darkgreen'),
+                hovertemplate='<b>%{x}</b><br>Value: $%{y:,.0f}<extra></extra>',
+                yaxis='y2'
+            ),
+            secondary_y=True
+        )
+
+        # Update axes
+        fig.update_xaxes(title_text="Financial Year")
+        fig.update_yaxes(title_text="Credits (tCO₂-e)", tickformat=',.0f', secondary_y=False)
+        fig.update_yaxes(title_text="Credit Value ($)", tickformat='$,.0f', secondary_y=True)
 
         fig.update_layout(
-            height=300,
-            xaxis_title='Financial Year',
-            yaxis_title='Credits (tCO₂-e)',
-            yaxis_tickformat=',.0f',
-            showlegend=False
+            height=400,
+            hovermode='x unified',
+            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
         )
 
         st.plotly_chart(fig, width="stretch")
-        st.caption("Green bars: Cumulative SMC credits generated by operating below baseline")
+        # Caption removed
 
 
-def display_safeguard_table(projection, safeguard_threshold):
+def display_safeguard_table(projection, safeguard_threshold, carbon_credit_price):
     """Display safeguard compliance table"""
 
     with st.expander("📋 Annual Safeguard Compliance Data", expanded=False):
@@ -259,13 +330,16 @@ def display_safeguard_table(projection, safeguard_threshold):
         sm_display['Actual Int'] = sm_display['Emission_Intensity'].apply(lambda x: f"{x:.4f}" if x > 0 else "—")
         sm_display['Baseline Int'] = sm_display['Baseline_Intensity'].apply(lambda x: f"{x:.4f}" if x > 0 else "—")
         sm_display['Annual SMC'] = sm_display['SMC_Annual'].apply(lambda x: f"{x:+,.0f}")
-        sm_display['Cumulative SMC'] = sm_display['SMC_Cumulative'].apply(lambda x: f"{x:+,.0f}")
-        sm_display['In Safeguard'] = sm_display['In_Safeguard'].apply(lambda x: '✓' if x else '—')
+        sm_display['Cumulative SMC (tCO₂-e)'] = sm_display['SMC_Cumulative'].apply(lambda x: f"{x:+,.0f}")
+        sm_display['Cumulative SMC ($)'] = sm_display['SMC_Cumulative'].apply(
+            lambda x: f"${abs(x) * carbon_credit_price:,.0f}" if x != 0 else "$0"
+        )
+        sm_display['In Safeguard'] = sm_display['In_Safeguard'].apply(lambda x: '✔' if x else '—')
 
         # Data source indicators
         def format_data_source(row):
             if row['Is_Actual']:
-                return '✓ Actual'
+                return '✔ Actual'
             elif row['ROM_Is_Actual'] and not row['Emissions_Is_Actual']:
                 return '⚠ ROM actual, Emissions projected'
             elif not row['ROM_Is_Actual'] and row['Emissions_Is_Actual']:
@@ -276,12 +350,12 @@ def display_safeguard_table(projection, safeguard_threshold):
         sm_display['Data Source'] = sm_display.apply(format_data_source, axis=1)
 
         sm_display = sm_display[['FY', 'Phase', 'Data Source', 'ROM (Mt)', 'Scope 1 (tCO₂-e)', 'Baseline (tCO₂-e)',
-                                'Actual Int', 'Baseline Int', 'Annual SMC', 'Cumulative SMC', 'In Safeguard']]
+                                'Actual Int', 'Baseline Int', 'Annual SMC', 'Cumulative SMC (tCO₂-e)', 'Cumulative SMC ($)', 'In Safeguard']]
 
         st.dataframe(sm_display, width="stretch", hide_index=True)
 
-        st.caption("📌 **Data Source:** ✓ Actual = from ROM.csv & Energy.csv | 📊 Projected = modeled | ⚠ = mixed")
-        st.caption("📌 **In Safeguard:** ✓ = Scope 1 ≥ 100,000 tCO₂-e (subject to Safeguard Mechanism)")
+        st.caption("🌐 **Data Source:** ✔ Actual = from ROM.csv & Energy.csv | 📊 Projected = modeled | ⚠ = mixed")
+        st.caption("🌐 **In Safeguard:** ✔ = Scope 1 â‰¥ 100,000 tCO₂-e (subject to Safeguard Mechanism)")
 
 
 def display_report_generator(projection):

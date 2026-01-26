@@ -1,7 +1,7 @@
 """
 tab3_carbon_tax.py
 Carbon Tax Analysis Tab with Plotly charts
-Last updated: 2026-01-08 10:00 AEST
+Last updated: 2026-01-23 17:00 AEST
 """
 
 import streamlit as st
@@ -13,7 +13,7 @@ from projections import build_projection_simple, carbon_tax_analysis
 from config import COLORS, SCOPE_NAMES
 
 
-def render_carbon_tax_tab(rom_df, energy_df, nga_factors, baseline_intensity,
+def render_carbon_tax_tab(rom_df, energy_df, nga_factors, fsei_rom, fsei_elec,
                           start_fy, end_fy, grid_connected_fy,
                           end_mining_fy, end_processing_fy, end_rehabilitation_fy,
                           carbon_credit_price, credit_escalation,
@@ -28,7 +28,7 @@ def render_carbon_tax_tab(rom_df, energy_df, nga_factors, baseline_intensity,
     # Build projection
     projection = build_projection_simple(
         start_fy, end_fy, rom_df, energy_df, nga_factors,
-        baseline_intensity, grid_connected_fy,
+        fsei_rom, fsei_elec, grid_connected_fy,
         end_mining_fy, end_processing_fy, end_rehabilitation_fy
     )
 
@@ -72,7 +72,9 @@ def display_tax_charts(carbon_tax, projection, carbon_credit_price, credit_escal
                       tax_start_fy, tax_rate, tax_escalation):
     """Display Plotly charts for carbon tax analysis"""
 
-    with st.expander("📈 Credits vs Tax Liability", expanded=True):
+    from plotly.subplots import make_subplots
+
+    with st.expander("📈 Carbon Tax Analysis", expanded=True):
         # Merge tax data with projection data
         tax_df = carbon_tax['df'].copy()
         proj_df = projection[['FY', 'SMC_Annual', 'SMC_Cumulative']].copy()
@@ -84,87 +86,58 @@ def display_tax_charts(carbon_tax, projection, carbon_credit_price, credit_escal
         # Merge
         combined = tax_df.merge(proj_df, on='FY_year', how='left')
 
-        # Calculate cumulative SMC credits (physical quantity)
-        combined['SMC_Credits_Cumulative_tCO2'] = (-1 * combined['SMC_Cumulative']).abs()
-
-        # Calculate SMC credit market value with escalation
-        years_from_start = combined['FY_year'] - combined['FY_year'].min()
-        combined['Credit_Price'] = carbon_credit_price * ((1 + credit_escalation) ** years_from_start)
-        combined['SMC_Credits_Value_M'] = combined['SMC_Credits_Cumulative_tCO2'] * combined['Credit_Price'] / 1e6
-
         # Calculate cumulative tax
         combined['Tax_Cumulative_M'] = combined['Annual_Tax'].cumsum() / 1e6
         combined['Annual_Tax_M'] = combined['Annual_Tax'] / 1e6
 
-        # Chart 1: Cumulative Values - Credits vs Tax
-        st.subheader("Cumulative SMC Credit Value vs Tax Liability")
+        # Chart: Annual Carbon Tax with Cumulative on secondary axis
+        st.subheader("Annual Carbon Tax & Cumulative Liability")
 
-        fig = go.Figure()
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-        fig.add_trace(go.Bar(
-            x=combined['FY_year'],
-            y=combined['SMC_Credits_Value_M'],
-            name='SMC Credit Value',
-            marker=dict(
-                color=COLORS['credits'],
-                line=dict(width=0)
+        # Cumulative tax (bars on primary y-axis)
+        fig.add_trace(
+            go.Bar(
+                x=combined['FY_year'],
+                y=combined['Tax_Cumulative_M'],
+                name='Cumulative Tax',
+                marker=dict(
+                    color='#E8D5B7',  # Light tan/beige
+                    line=dict(width=0)
+                ),
+                hovertemplate='<b>FY%{x}</b><br>Cumulative: $%{y:.2f}M<extra></extra>'
             ),
-            offsetgroup=1,
-            hovertemplate='<b>FY%{x}</b><br>Credit Value: $%{y:.2f}M<extra></extra>'
-        ))
+            secondary_y=False
+        )
 
-        fig.add_trace(go.Bar(
-            x=combined['FY_year'],
-            y=combined['Tax_Cumulative_M'],
-            name='Tax Liability',
-            marker=dict(
-                color=COLORS['deficit'],
-                line=dict(width=0)
+        # Annual tax (line on secondary y-axis)
+        fig.add_trace(
+            go.Scatter(
+                x=combined['FY_year'],
+                y=combined['Annual_Tax_M'],
+                mode='lines+markers',
+                name='Annual Tax',
+                line=dict(color=COLORS['power'], width=3),
+                marker=dict(size=8),
+                hovertemplate='<b>FY%{x}</b><br>Annual: $%{y:.2f}M<br>Rate: $%{customdata:.2f}/t<extra></extra>',
+                customdata=combined['Tax_Rate']
             ),
-            offsetgroup=2,
-            hovertemplate='<b>FY%{x}</b><br>Tax Liability: $%{y:.2f}M<extra></extra>'
-        ))
+            secondary_y=True
+        )
+
+        # Update axes
+        fig.update_xaxes(title_text="Financial Year")
+        fig.update_yaxes(title_text="Cumulative Tax ($M)", tickformat=',.0f', secondary_y=False)
+        fig.update_yaxes(title_text="Annual Tax ($M)", tickformat=',.1f', secondary_y=True)
 
         fig.update_layout(
-            height=350,
-            xaxis_title='Financial Year',
-            yaxis_title='Cumulative Value ($M)',
-            yaxis_tickformat=',.0f',
-            barmode='group',
+            height=400,
             hovermode='x unified',
             legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
         )
 
         st.plotly_chart(fig, width="stretch")
-        st.caption(f"Green: SMC Credit Market Value (starting ${carbon_credit_price:.0f}/t, escalating {credit_escalation*100:.1f}%/yr) | Dark red: Cumulative Tax Liability")
-
-        # Chart 2: Annual Tax Rate
-        st.subheader("Annual Carbon Tax")
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Scatter(
-            x=combined['FY_year'],
-            y=combined['Annual_Tax_M'],
-            mode='lines+markers',
-            name='Annual Tax',
-            line=dict(color=COLORS['power'], width=3),
-            marker=dict(size=8),
-            hovertemplate='<b>FY%{x}</b><br>Tax: $%{y:.2f}M<br>Rate: $%{customdata:.2f}/t<extra></extra>',
-            customdata=combined['Tax_Rate']
-        ))
-
-        fig.update_layout(
-            height=300,
-            xaxis_title='Financial Year',
-            yaxis_title='Annual Tax ($M)',
-            yaxis_tickformat=',.1f',
-            hovermode='x unified',
-            showlegend=False
-        )
-
-        st.plotly_chart(fig, width="stretch")
-        st.caption(f"Amber line: Annual tax liability starting FY{tax_start_fy} at ${tax_rate:.0f}/t, escalating {tax_escalation*100:.1f}%/yr")
+        st.caption(f"Tan bars: Cumulative tax liability | Amber line: Annual tax (starting FY{tax_start_fy} @ ${tax_rate:.0f}/t, escalating {tax_escalation*100:.1f}%/yr)")
 
 
 def display_tax_table(carbon_tax):

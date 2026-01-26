@@ -1,7 +1,7 @@
 """
 projections.py
 Scenario projections and safeguard mechanism modeling
-Last updated: 2026-01-14 15:45 AEST
+Last updated: 2026-01-23 17:00 AEST
 
 Now uses detailed fuel breakdown: Total_Scope1_tCO2e, Total_Scope2_tCO2e, Total_Scope3_tCO2e
 """
@@ -185,10 +185,10 @@ def build_projection(fuel_summary, elec_summary, rom_annual, start_fy, end_fy,
             'FY': f"FY{fy}",
             'Source': source,
             'Phase': phase.title(),
-            'Mining': 'Ã¢Å“â€œ' if mining_active else '',
-            'Processing': 'Ã¢Å“â€œ' if processing_active else '',
-            'Rehabilitation': 'Ã¢Å“â€œ' if rehabilitation_active and not processing_active else '',
-            'Grid': 'Ã¢Å“â€œ' if has_grid else '',
+            'Mining': 'ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“' if mining_active else '',
+            'Processing': 'ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“' if processing_active else '',
+            'Rehabilitation': 'ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“' if rehabilitation_active and not processing_active else '',
+            'Grid': 'ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“' if has_grid else '',
             'ROM_Mt': rom_tonnes / 1e6,
             'ROM_Source': 'Actual' if fy in rom_by_fy else 'Projected',
             'Site_MWh': baseline_mwh,
@@ -252,7 +252,7 @@ def carbon_tax_analysis(projection_df, tax_start_fy, tax_rate, annual_increase):
 
 
 def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
-                            baseline_intensity, grid_connected_fy,
+                            fsei_rom, fsei_elec, grid_connected_fy,
                             end_mining_fy, end_processing_fy, end_rehabilitation_fy):
     """Build emissions projection from raw dataframes (wrapper for tabs)
 
@@ -262,7 +262,8 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
         rom_df: ROM DataFrame from load_rom_data()
         energy_df: Energy DataFrame from load_energy_data()
         nga_factors: NGA factors dict
-        baseline_intensity: Baseline emission intensity
+        fsei_rom: Facility Specific Emission Intensity for ROM (tCO2-e/t)
+        fsei_elec: Facility Specific Emission Intensity for electricity (tCO2-e/MWh)
         grid_connected_fy: Year grid connection occurs (diesel generation stops)
         end_mining_fy: Year mining operations end
         end_processing_fy: Year processing operations end
@@ -359,14 +360,32 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
     # Get actual ROM by year from ROM.csv
     rom_by_year = rom_df.groupby('FY')['ROM'].sum().to_dict()
 
-    # Calculate average for projection years (use recent years)
-    recent_years = rom_df[rom_df['Date'].dt.year >= 2023]
-    if len(recent_years) > 0:
-        avg_rom = recent_years.groupby(rom_df['Date'].dt.year)['ROM'].sum().mean()
+    # Calculate ROM projection using BEST YEAR approach with randomness
+    # Rationale: Use proven capacity from best full year, not average that includes anomalies
+    import numpy as np
+
+    # Get annual ROM totals for full years only (12 months of data)
+    annual_rom = rom_df.groupby('FY').agg({
+        'ROM': 'sum',
+        'Date': 'count'  # Count months
+    }).reset_index()
+    annual_rom.columns = ['FY', 'ROM', 'Months']
+
+    # Filter to full years only (12 months) to avoid partial year anomalies
+    full_years = annual_rom[annual_rom['Months'] >= 12]
+
+    if len(full_years) > 0:
+        # Use BEST full year as baseline capacity (proven achievable)
+        best_rom = full_years['ROM'].max()
+        best_year = full_years.loc[full_years['ROM'].idxmax(), 'FY']
+        print(f"ROM projection: Using best full year FY{best_year} = {best_rom/1e6:.2f} Mt as baseline")
     else:
-        # Fallback to all available data
-        all_rom = rom_df.groupby(rom_df['Date'].dt.year)['ROM'].sum()
-        avg_rom = all_rom.mean() if len(all_rom) > 0 else 2.5e6
+        # Fallback to average if no full years available
+        best_rom = annual_rom['ROM'].mean() if len(annual_rom) > 0 else 9.5e6
+        print(f"ROM projection: No full years available, using average = {best_rom/1e6:.2f} Mt")
+
+    # Set random seed based on start_fy for reproducible but varied projections
+    np.random.seed(start_fy * 100)
 
     results = []
     cumulative_smc = 0
@@ -396,8 +415,9 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
                 rom_tonnes = rom_by_year[fy]
                 rom_is_actual = True
             else:
-                # Use average for future projection
-                rom_tonnes = avg_rom
+                # Use best year with ±10% random variation
+                variation = np.random.uniform(-0.10, 0.10)
+                rom_tonnes = best_rom * (1 + variation)
                 rom_is_actual = False
         else:
             rom_tonnes = 0
@@ -503,13 +523,13 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
         # Baseline calculation - FIXED baseline with production adjustment
         # Baseline should NOT track actual performance
         if rom_tonnes > 0:
-            # Import FSEI values and decline parameters
-            from config import FSEI_ROM, FSEI_ELEC, DECLINE_RATE, DECLINE_FROM, DECLINE_TO
+            # Import decline parameters (FSEI values come from function parameters)
+            from config import DECLINE_RATE, DECLINE_FROM, DECLINE_TO
 
-            # FIXED baseline intensity calculation
+            # FIXED baseline intensity calculation using sidebar FSEI values
             # Uses baseline year's electricity generation, not actual
-            baseline_rom_component = FSEI_ROM
-            baseline_elec_component = (site_baseline_mwh * FSEI_ELEC) / avg_rom
+            baseline_rom_component = fsei_rom
+            baseline_elec_component = (site_baseline_mwh * fsei_elec) / best_rom
 
             # Total baseline intensity (before decline)
             baseline_intensity_raw = baseline_rom_component + baseline_elec_component
@@ -530,7 +550,7 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
                 final_decline_factor = (1 - DECLINE_RATE) ** years_total
                 baseline_intensity_value = baseline_intensity_raw * final_decline_factor
 
-            # Production-adjusted baseline: baseline intensity Ãƒâ€” actual ROM
+            # Production-adjusted baseline: baseline intensity ÃƒÆ’Ã¢â‚¬â€ actual ROM
             baseline_emissions = baseline_intensity_value * rom_tonnes
 
             # Actual emission intensity
