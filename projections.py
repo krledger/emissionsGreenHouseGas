@@ -185,10 +185,10 @@ def build_projection(fuel_summary, elec_summary, rom_annual, start_fy, end_fy,
             'FY': f"FY{fy}",
             'Source': source,
             'Phase': phase.title(),
-            'Mining': 'ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“' if mining_active else '',
-            'Processing': 'ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“' if processing_active else '',
-            'Rehabilitation': 'ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“' if rehabilitation_active and not processing_active else '',
-            'Grid': 'ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“' if has_grid else '',
+            'Mining': 'ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ' if mining_active else '',
+            'Processing': 'ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ' if processing_active else '',
+            'Rehabilitation': 'ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ' if rehabilitation_active and not processing_active else '',
+            'Grid': 'ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ' if has_grid else '',
             'ROM_Mt': rom_tonnes / 1e6,
             'ROM_Source': 'Actual' if fy in rom_by_fy else 'Projected',
             'Site_MWh': baseline_mwh,
@@ -363,6 +363,7 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
     # Calculate ROM projection using BEST YEAR approach with randomness
     # Rationale: Use proven capacity from best full year, not average that includes anomalies
     import numpy as np
+    from config import NGER_FY_START_MONTH
 
     # Get annual ROM totals for full years only (12 months of data)
     annual_rom = rom_df.groupby('FY').agg({
@@ -370,6 +371,9 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
         'Date': 'count'  # Count months
     }).reset_index()
     annual_rom.columns = ['FY', 'ROM', 'Months']
+
+    # Create month count dictionary for checking partial years
+    rom_months = dict(zip(annual_rom['FY'], annual_rom['Months']))
 
     # Filter to full years only (12 months) to avoid partial year anomalies
     full_years = annual_rom[annual_rom['Months'] >= 12]
@@ -383,6 +387,35 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
         # Fallback to average if no full years available
         best_rom = annual_rom['ROM'].mean() if len(annual_rom) > 0 else 9.5e6
         print(f"ROM projection: No full years available, using average = {best_rom/1e6:.2f} Mt")
+
+    # Calculate FY2024 monthly average for projecting partial years
+    # FY2024 is the most reliable baseline (post-expansion, pre-slowdown)
+    # This represents PROVEN CAPABILITY when operations are running well
+    fy2024_data = annual_rom[annual_rom['FY'] == 2024]
+    if len(fy2024_data) > 0 and fy2024_data.iloc[0]['Months'] == 12:
+        fy2024_monthly_avg = fy2024_data.iloc[0]['ROM'] / 12.0
+        print(f"FY2024 baseline: {fy2024_data.iloc[0]['ROM']/1e6:.2f} Mt total, {fy2024_monthly_avg/1e3:.1f}k tonnes/month")
+        print(f"  Using FY2024 average for projections (proven capability)")
+    else:
+        # Fallback to best year monthly average
+        fy2024_monthly_avg = best_rom / 12.0
+        print(f"FY2024 not available, using best year monthly average: {fy2024_monthly_avg/1e3:.1f}k tonnes/month")
+
+    # 10 Mtpa cap (regulatory/operational limit)
+    MTPA_CAP = 10.0e6  # 10 million tonnes per year
+    MONTHLY_CAP = MTPA_CAP / 12.0  # 833,333 tonnes per month
+
+    # Create monthly lookup for actual ROM data
+    # This allows us to distinguish between:
+    # - Months with data showing zero mining (use actual zero)
+    # - Months with no data yet (project using FY2024 baseline)
+    rom_df['Year'] = rom_df['Date'].dt.year
+    rom_df['Month'] = rom_df['Date'].dt.month
+
+    # Create lookup: (Year, Month) -> ROM tonnes
+    rom_monthly_lookup = {}
+    for _, row in rom_df.iterrows():
+        rom_monthly_lookup[(row['Year'], row['Month'])] = row['ROM']
 
     # Set random seed based on start_fy for reproducible but varied projections
     np.random.seed(start_fy * 100)
@@ -407,18 +440,69 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
             phase = 'Closed'
             phase_factor = 0.0
 
-        # ROM production - use ACTUAL data if available, otherwise use projection
+        # ROM production - DYNAMIC PROJECTION with monthly granularity
         rom_is_actual = False
         if phase == 'Mining':
-            if fy in rom_by_year:
-                # Use actual historical data
-                rom_tonnes = rom_by_year[fy]
+            # Build ROM month-by-month for this FY
+            # Safeguard FY runs July-June, so FY2026 = Jul 2025 - Jun 2026
+
+            # Determine which calendar year/months belong to this FY
+            # For NGER FY (July-June): FY2026 spans Jul 2025 (year=2025, month=7) to Jun 2026 (year=2026, month=6)
+            fy_months = []
+            for month_offset in range(12):
+                if NGER_FY_START_MONTH == 7:  # July-June FY
+                    # First 6 months are in year (fy-1), last 6 months are in year (fy)
+                    if month_offset < 6:
+                        # Jul-Dec of previous calendar year
+                        cal_year = fy - 1
+                        cal_month = NGER_FY_START_MONTH + month_offset
+                    else:
+                        # Jan-Jun of current calendar year
+                        cal_year = fy
+                        cal_month = month_offset - 6 + 1
+                else:  # January-December FY
+                    cal_year = fy
+                    cal_month = month_offset + 1
+
+                fy_months.append((cal_year, cal_month))
+
+            # Check which months have actual data vs need projection
+            actual_rom_total = 0
+            projected_rom_total = 0
+            months_with_actual = 0
+            months_needing_projection = 0
+            monthly_breakdown = []
+
+            for cal_year, cal_month in fy_months:
+                if (cal_year, cal_month) in rom_monthly_lookup:
+                    # We have actual data for this month (even if zero)
+                    month_rom = rom_monthly_lookup[(cal_year, cal_month)]
+                    actual_rom_total += month_rom
+                    months_with_actual += 1
+                    monthly_breakdown.append(f"{cal_year}-{cal_month:02d}: {month_rom/1e3:.0f}k (actual)")
+                else:
+                    # No data for this month - project using FY2024 baseline
+                    month_rom = min(fy2024_monthly_avg, MONTHLY_CAP)  # Apply cap
+                    projected_rom_total += month_rom
+                    months_needing_projection += 1
+                    monthly_breakdown.append(f"{cal_year}-{cal_month:02d}: {month_rom/1e3:.0f}k (projected)")
+
+            rom_tonnes = actual_rom_total + projected_rom_total
+
+            # Determine if this is fully actual or partially projected
+            if months_needing_projection == 0:
                 rom_is_actual = True
             else:
-                # Use best year with ±10% random variation
-                variation = np.random.uniform(-0.10, 0.10)
-                rom_tonnes = best_rom * (1 + variation)
                 rom_is_actual = False
+                print(f"\n  FY{fy} ROM Breakdown:")
+                print(f"    {months_with_actual} months actual: {actual_rom_total/1e6:.2f} Mt")
+                print(f"    {months_needing_projection} months projected (FY2024 baseline): {projected_rom_total/1e6:.2f} Mt")
+                print(f"    Total FY{fy}: {rom_tonnes/1e6:.2f} Mt")
+                if months_needing_projection <= 3:  # Show details for near-complete years
+                    print(f"    Missing months:")
+                    for breakdown in monthly_breakdown:
+                        if 'projected' in breakdown:
+                            print(f"      {breakdown}")
         else:
             rom_tonnes = 0
             rom_is_actual = False  # No ROM in processing/rehab
@@ -550,7 +634,7 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
                 final_decline_factor = (1 - DECLINE_RATE) ** years_total
                 baseline_intensity_value = baseline_intensity_raw * final_decline_factor
 
-            # Production-adjusted baseline: baseline intensity ÃƒÆ’Ã¢â‚¬â€ actual ROM
+            # Production-adjusted baseline: baseline intensity ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â actual ROM
             baseline_emissions = baseline_intensity_value * rom_tonnes
 
             # Actual emission intensity
