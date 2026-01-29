@@ -19,7 +19,7 @@ from config import DECLINE_RATE, DECLINE_FROM, DECLINE_TO, COLORS, SCOPE_NAMES, 
 def render_safeguard_tab(rom_df, energy_df, nga_factors, fsei_rom, fsei_elec,
                          start_fy, end_fy, grid_connected_fy,
                          end_mining_fy, end_processing_fy, end_rehabilitation_fy,
-                         carbon_credit_price):
+                         carbon_credit_price, credit_start_fy):
     """Render the Safeguard Mechanism tab
 
     NOTE: This tab always uses NGER FY (July-June) regardless of sidebar setting.
@@ -32,7 +32,8 @@ def render_safeguard_tab(rom_df, energy_df, nga_factors, fsei_rom, fsei_elec,
     projection = build_projection_simple(
         start_fy, end_fy, rom_df, energy_df, nga_factors,
         fsei_rom, fsei_elec, grid_connected_fy,
-        end_mining_fy, end_processing_fy, end_rehabilitation_fy
+        end_mining_fy, end_processing_fy, end_rehabilitation_fy,
+        credit_start_fy
     )
 
     # Calculate safeguard threshold
@@ -73,7 +74,7 @@ def display_safeguard_metrics(projection, carbon_credit_price):
 
         with col2:
             st.metric("Years in Safeguard", f"{years_in_safeguard}")
-            st.caption(f"Scope 1 â‰¥ 100,000 tCO₂-e")
+            st.caption(f"Scope 1 ≥ 100,000 tCO₂-e")
 
         with col3:
             st.metric("Avg Intensity", f"{avg_intensity:.4f} tCO₂-e/t")
@@ -334,12 +335,12 @@ def display_safeguard_table(projection, safeguard_threshold, carbon_credit_price
         sm_display['Cumulative SMC ($)'] = sm_display['SMC_Cumulative'].apply(
             lambda x: f"${abs(x) * carbon_credit_price:,.0f}" if x != 0 else "$0"
         )
-        sm_display['In Safeguard'] = sm_display['In_Safeguard'].apply(lambda x: '✔' if x else '—')
+        sm_display['In Safeguard'] = sm_display['In_Safeguard'].apply(lambda x: '✓' if x else '—')
 
         # Data source indicators
         def format_data_source(row):
             if row['Is_Actual']:
-                return '✔ Actual'
+                return '✓ Actual'
             elif row['ROM_Is_Actual'] and not row['Emissions_Is_Actual']:
                 return '⚠ ROM actual, Emissions projected'
             elif not row['ROM_Is_Actual'] and row['Emissions_Is_Actual']:
@@ -354,8 +355,8 @@ def display_safeguard_table(projection, safeguard_threshold, carbon_credit_price
 
         st.dataframe(sm_display, width="stretch", hide_index=True)
 
-        st.caption("🌐 **Data Source:** ✔ Actual = from ROM.csv & Energy.csv | 📊 Projected = modeled | ⚠ = mixed")
-        st.caption("🌐 **In Safeguard:** ✔ = Scope 1 â‰¥ 100,000 tCO₂-e (subject to Safeguard Mechanism)")
+        st.caption("🌍 **Data Source:** ✓ Actual = from ROM.csv & Energy.csv | 📊 Projected = modeled | ⚠ = mixed")
+        st.caption("🌍 **In Safeguard:** ✓ = Scope 1 ≥ 100,000 tCO₂-e (subject to Safeguard Mechanism)")
 
 
 def display_report_generator(projection):
@@ -397,7 +398,7 @@ def display_report_generator(projection):
                                 file_name=f"Safeguard_Compliance_Report_{report_year}.docx",
                                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                             )
-                        st.success(f"✅ Report generated successfully for {report_year}")
+                        st.success(f"✦ Report generated successfully for {report_year}")
                     else:
                         st.error("Failed to generate report")
 

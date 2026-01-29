@@ -17,7 +17,7 @@ def render_carbon_tax_tab(rom_df, energy_df, nga_factors, fsei_rom, fsei_elec,
                           start_fy, end_fy, grid_connected_fy,
                           end_mining_fy, end_processing_fy, end_rehabilitation_fy,
                           carbon_credit_price, credit_escalation,
-                          tax_start_fy, tax_rate, tax_escalation):
+                          tax_start_fy, tax_rate, tax_escalation, credit_start_fy):
     """Render the Carbon Tax Analysis tab"""
 
     st.subheader("Carbon Tax Analysis")
@@ -29,7 +29,8 @@ def render_carbon_tax_tab(rom_df, energy_df, nga_factors, fsei_rom, fsei_elec,
     projection = build_projection_simple(
         start_fy, end_fy, rom_df, energy_df, nga_factors,
         fsei_rom, fsei_elec, grid_connected_fy,
-        end_mining_fy, end_processing_fy, end_rehabilitation_fy
+        end_mining_fy, end_processing_fy, end_rehabilitation_fy,
+        credit_start_fy
     )
 
     # Calculate carbon tax

@@ -1,14 +1,15 @@
 """
 projections.py
 Scenario projections and safeguard mechanism modeling
-Last updated: 2026-01-23 17:00 AEST
+Last updated: 2026-01-29 14:30 AEST
 
 Now uses detailed fuel breakdown: Total_Scope1_tCO2e, Total_Scope2_tCO2e, Total_Scope3_tCO2e
+Credits only accrue from CREDIT_START_FY onwards
 """
 
 import pandas as pd
 from emissions_calc import calc_baseline, summarise_energy
-from config import POST_GRID_MWH, BASE_MWH, CATEGORY_MAP
+from config import POST_GRID_MWH, BASE_MWH, CATEGORY_MAP, CREDIT_START_FY
 
 
 def build_projection(fuel_summary, elec_summary, rom_annual, start_fy, end_fy,
@@ -167,8 +168,13 @@ def build_projection(fuel_summary, elec_summary, rom_annual, start_fy, end_fy,
         scope3 = fy_scope3_fuel + scope3_elec
 
         total_ghg = fy_scope1 + scope2 + scope3
-        annual_smc = baseline - fy_scope1
-        cumulative_smcs += annual_smc
+
+        # Only calculate credits from CREDIT_START_FY onwards
+        if fy >= CREDIT_START_FY:
+            annual_smc = baseline - fy_scope1
+            cumulative_smcs += annual_smc
+        else:
+            annual_smc = 0
 
         # Data source label
         if fy in rom_by_fy and fy in elec_by_fy:
@@ -185,10 +191,10 @@ def build_projection(fuel_summary, elec_summary, rom_annual, start_fy, end_fy,
             'FY': f"FY{fy}",
             'Source': source,
             'Phase': phase.title(),
-            'Mining': 'ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ' if mining_active else '',
-            'Processing': 'ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ' if processing_active else '',
-            'Rehabilitation': 'ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ' if rehabilitation_active and not processing_active else '',
-            'Grid': 'ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ' if has_grid else '',
+            'Mining': '✓' if mining_active else '',
+            'Processing': '✓' if processing_active else '',
+            'Rehabilitation': '✓' if rehabilitation_active and not processing_active else '',
+            'Grid': '✓' if has_grid else '',
             'ROM_Mt': rom_tonnes / 1e6,
             'ROM_Source': 'Actual' if fy in rom_by_fy else 'Projected',
             'Site_MWh': baseline_mwh,
@@ -253,7 +259,8 @@ def carbon_tax_analysis(projection_df, tax_start_fy, tax_rate, annual_increase):
 
 def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
                             fsei_rom, fsei_elec, grid_connected_fy,
-                            end_mining_fy, end_processing_fy, end_rehabilitation_fy):
+                            end_mining_fy, end_processing_fy, end_rehabilitation_fy,
+                            credit_start_fy=None):
     """Build emissions projection from raw dataframes (wrapper for tabs)
 
     Args:
@@ -268,6 +275,7 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
         end_mining_fy: Year mining operations end
         end_processing_fy: Year processing operations end
         end_rehabilitation_fy: Year rehabilitation activities end
+        credit_start_fy: First FY when credits can be earned (default: use CREDIT_START_FY from config)
 
     Returns:
         DataFrame with annual projections
@@ -279,6 +287,9 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
         - Annual projections do not account for seasonality
         - Future monthly/quarterly reporting may need seasonal adjustments
     """
+    # Use default from config if not specified
+    if credit_start_fy is None:
+        credit_start_fy = CREDIT_START_FY
     # Get historical emissions by year from energy_df
     actual_emissions_by_year = {}
     for fy in energy_df['FY'].unique():
@@ -634,7 +645,7 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
                 final_decline_factor = (1 - DECLINE_RATE) ** years_total
                 baseline_intensity_value = baseline_intensity_raw * final_decline_factor
 
-            # Production-adjusted baseline: baseline intensity ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â actual ROM
+            # Production-adjusted baseline: baseline intensity × actual ROM
             baseline_emissions = baseline_intensity_value * rom_tonnes
 
             # Actual emission intensity
@@ -644,8 +655,12 @@ def build_projection_simple(start_fy, end_fy, rom_df, energy_df, nga_factors,
             baseline_emissions = 0
             baseline_intensity_value = 0
 
-        smc_annual = baseline_emissions - scope1_total
-        cumulative_smc += smc_annual
+        # Only calculate credits from credit_start_fy onwards
+        if fy >= credit_start_fy:
+            smc_annual = baseline_emissions - scope1_total
+            cumulative_smc += smc_annual
+        else:
+            smc_annual = 0
 
         # Check if in safeguard
         in_safeguard = scope1_total >= 100000

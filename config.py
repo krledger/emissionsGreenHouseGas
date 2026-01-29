@@ -1,7 +1,7 @@
 """
 config.py
 Configuration constants and mappings for Ravenswood Gold emissions model
-Last updated: 2026-01-22 10:30 AEST
+Last updated: 2026-01-29 14:45 AEST
 """
 
 import pandas as pd
@@ -92,11 +92,11 @@ def get_fy_description(fy_start_month=None):
     end_name = get_fy_month_name(end_month)
 
     if fy_start_month == 1:
-        return f"Calendar Year ({start_name}ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â{end_name})"
+        return f"Calendar Year ({start_name}—{end_name})"
     elif fy_start_month == 7:
-        return f"NGER Financial Year ({start_name}ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â{end_name})"
+        return f"NGER Financial Year ({start_name}—{end_name})"
     else:
-        return f"Custom Fiscal Year ({start_name}ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â{end_name})"
+        return f"Custom Fiscal Year ({start_name}—{end_name})"
 
 # =============================================================================
 # SAFEGUARD MECHANISM PARAMETERS
@@ -110,6 +110,9 @@ FSEI_ROM = 0.0177   # tCO2-e per tonne ROM ore
 DECLINE_RATE = 0.049    # 4.9% p.a.
 DECLINE_FROM = 2024     # FY baseline decline starts
 DECLINE_TO = 2030       # FY baseline decline ends
+
+# Safeguard Mechanism Credit generation
+CREDIT_START_FY = 2024  # First FY credits can be earned (FY2023-24 = 2024 under NGER July-June)
 
 # =============================================================================
 # PRODUCTION ASSUMPTIONS
@@ -215,12 +218,12 @@ DEFAULT_START_FY = 2021
 # =============================================================================
 
 # Carbon Credit Market
-DEFAULT_CARBON_CREDIT_PRICE = 35.0  # $/tCOÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡-e
+DEFAULT_CARBON_CREDIT_PRICE = 35.0  # $/tCO₂-e
 DEFAULT_CREDIT_ESCALATION = 0.03    # 3% per annum
 
 # Carbon Tax Scenario
 DEFAULT_TAX_START_FY = 2030
-DEFAULT_TAX_RATE = 15.0             # $/tCOÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡-e initial rate
+DEFAULT_TAX_RATE = 15.0             # $/tCO₂-e initial rate
 DEFAULT_TAX_ESCALATION = 0.02       # 2% per annum
 
 # =============================================================================
@@ -233,8 +236,8 @@ DEFAULT_GRID_CONNECTION_FY = 2027   # Year grid electricity becomes available (d
 # INDUSTRY BENCHMARKS (from Safeguard Rule)
 # =============================================================================
 
-DEFAULT_INDUSTRY_EI_ROM = 0.00859   # Industry default tCOÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡-e/t ROM
-DEFAULT_INDUSTRY_EI_ELEC = 0.539    # Industry default tCOÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡-e/MWh
+DEFAULT_INDUSTRY_EI_ROM = 0.00859   # Industry default tCO₂-e/t ROM
+DEFAULT_INDUSTRY_EI_ELEC = 0.539    # Industry default tCO₂-e/MWh
 
 # Phase 1: Active Mining (up to End of Mining FY)
 # All cost centres operate at 100%

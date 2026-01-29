@@ -1,7 +1,7 @@
 """
 app.py
 Streamlit UI for Ravenswood Gold Safeguard Mechanism Model
-Last updated: 2026-01-27 17:00 AEST
+Last updated: 2026-01-29 14:45 AEST
 
 Run with: streamlit run app.py
 """
@@ -15,6 +15,7 @@ from config import (
     DEFAULT_PATHS,
     FSEI_ROM, FSEI_ELEC,
     DECLINE_RATE, DECLINE_FROM, DECLINE_TO,
+    CREDIT_START_FY,
     DEFAULT_START_FY,
     DEFAULT_END_MINING_FY,
     DEFAULT_END_PROCESSING_FY,
@@ -82,7 +83,7 @@ fy_desc = get_fy_description(selected_month)
 end_month = get_fy_end_month(selected_month)
 
 
-st.sidebar.caption("⚠️ Safeguard tab always uses NGER FY (July—June)")
+st.sidebar.caption("⚠ï¸ Safeguard tab always uses NGER FY (July—June)")
 st.sidebar.markdown("---")
 
 # Baseline Emission Intensity (Dual FSEI)
@@ -102,6 +103,17 @@ fsei_elec = st.sidebar.number_input(
 st.sidebar.caption(f"Baseline = (ROM × {fsei_rom:.4f}) + (Site MWh × {fsei_elec:.4f})")
 st.sidebar.caption(f"Declining at {DECLINE_RATE * 100:.1f}% p.a. from FY{DECLINE_FROM}—FY{DECLINE_TO}")
 
+
+credit_start_fy = st.sidebar.number_input(
+    "Credit Start FY",
+    value=CREDIT_START_FY,
+    min_value=2020,
+    max_value=2030,
+    step=1,
+    help="First FY when Safeguard Mechanism Credits can be earned (FY2023-24 = 2024)"
+)
+st.sidebar.caption("⚠️ Credits only accrue from this year onwards")
+st.sidebar.markdown("---")
 # Projection Period
 st.sidebar.subheader("Projection Period")
 start_fy = st.sidebar.number_input(
@@ -298,7 +310,7 @@ def show_log_viewer():
             st.info("Log file is empty. No data has been loaded yet.")
 
     except FileNotFoundError:
-        st.warning("⚠️ Log file not found. It will be created on the next data load.")
+        st.warning("⚠ï¸ Log file not found. It will be created on the next data load.")
     except Exception as e:
         st.error(f"❌ Error reading log: {str(e)}")
 
@@ -321,14 +333,14 @@ with tab2:
     render_safeguard_tab(rom_df_nger, energy_df_nger, nga_factors, fsei_rom, fsei_elec,
                         start_fy, end_fy, grid_connected_fy,
                         end_mining_fy, end_processing_fy, end_rehabilitation_fy,
-                        carbon_credit_price)
+                        carbon_credit_price, credit_start_fy)
 
 with tab3:
     render_carbon_tax_tab(rom_df, energy_df, nga_factors, fsei_rom, fsei_elec,
                          start_fy, end_fy, grid_connected_fy,
                          end_mining_fy, end_processing_fy, end_rehabilitation_fy,
                          carbon_credit_price, credit_escalation,
-                         tax_start_fy, tax_rate, tax_escalation)
+                         tax_start_fy, tax_rate, tax_escalation, credit_start_fy)
 
 with tab4:
     render_nger_tab()
