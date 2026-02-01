@@ -1,286 +1,595 @@
 """
 tab1_ghg.py
-Total GHG Emissions Tab with Plotly charts
-Last updated: 2026-01-23 17:00 AEST
+Total GHG Emissions tab - combined comparison charts
+Last updated: 2026-02-02 09:50 AEST
 """
 
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
 from plotly.subplots import make_subplots
+from projections import build_projection
+from config import CREDIT_START_FY
 
-from emissions_calc import calculate_emissions
-from projections import build_projection_simple
-from config import COLORS, SCOPE_NAMES, DEFAULT_DISPLAY_YEAR
+# Gold color palette
+GOLD_METALLIC = '#DBB12A'      # Primary - Scope 1
+BRIGHT_GOLD = '#E8AC41'         # Secondary - Scope 2
+DARK_GOLDENROD = '#AE8B0F'     # Tertiary - Scope 3
+SEPIA = '#734B1A'              # Accent
+CAFE_NOIR = '#39250B'          # Lines
+GRID_GREEN = '#2A9D8F'         # Grid connection marker
 
 
-def render_ghg_tab(rom_df, energy_df, nga_factors, fsei_rom, fsei_elec,
+def render_ghg_tab(df, selected_source, fsei_rom, fsei_elec,
                    start_fy, end_fy, grid_connected_fy,
                    end_mining_fy, end_processing_fy, end_rehabilitation_fy):
-    """Render the Total GHG Emissions tab"""
+    """Render Total GHG Emissions tab
+
+    Args:
+        df: Unified DataFrame from load_all_data()
+        selected_source: 'Base', 'NPI-NGERS', or 'All'
+        fsei_rom: ROM emission intensity
+        fsei_elec: Electricity generation emission intensity
+        start_fy through end_rehabilitation_fy: Projection parameters
+    """
 
     st.subheader("Total Greenhouse Gas Emissions")
     st.caption(f"Projection Period: FY{start_fy}—FY{end_fy} | Mining ends FY{end_mining_fy} | Processing ends FY{end_processing_fy}")
 
-    # Year Selection
-    with st.expander("Year Selection", expanded=True):
-        col1, col2, col3 = st.columns(3)
+    display_year = st.session_state.get('display_year', 2025)
 
-        years = energy_df['Date'].dt.year.unique()
-        available_fys = sorted([f"FY{y}" for y in years])
+    # Comparison mode
+    if selected_source == 'All':
 
-        with col1:
-            selected_fy = st.selectbox(
-                "Display Year (Actuals)",
-                available_fys,
-                index=available_fys.index(f"FY{DEFAULT_DISPLAY_YEAR}") if f"FY{DEFAULT_DISPLAY_YEAR}" in available_fys else len(available_fys)-1
-            )
+        # Build projections for both sources
+        proj_base = build_projection(
+            df, dataset='Base',
+            end_mining_fy=end_mining_fy,
+            end_processing_fy=end_processing_fy,
+            end_rehabilitation_fy=end_rehabilitation_fy,
+            grid_connected_fy=grid_connected_fy,
+            fsei_rom=fsei_rom,
+            fsei_elec=fsei_elec,
+            credit_start_fy=CREDIT_START_FY,
+            start_fy=start_fy,
+            end_fy=end_fy
+        )
 
-        with col2:
-            # Set comparison year to selected_fy - 1
-            selected_year = int(selected_fy.replace('FY', ''))
-            prior_fy_default = f'FY{selected_year - 1}'
+        proj_npi = build_projection(
+            df, dataset='NPI-NGERS',
+            end_mining_fy=end_mining_fy,
+            end_processing_fy=end_processing_fy,
+            end_rehabilitation_fy=end_rehabilitation_fy,
+            grid_connected_fy=grid_connected_fy,
+            fsei_rom=fsei_rom,
+            fsei_elec=fsei_elec,
+            credit_start_fy=CREDIT_START_FY,
+            start_fy=start_fy,
+            end_fy=end_fy
+        )
 
-            prior_fy = st.selectbox(
-                "Comparison Year",
-                available_fys,
-                index=available_fys.index(prior_fy_default) if prior_fy_default in available_fys else max(0, len(available_fys)-2)
-            )
-
-
-
-    # Calculate emissions for selected years
-    current_year = int(selected_fy.replace('FY', ''))
-    prior_year = int(prior_fy.replace('FY', ''))
-
-    # Get ROM from dataframe
-    current_rom = rom_df[rom_df['Date'].dt.year == current_year]['ROM'].sum()
-    prior_rom = rom_df[rom_df['Date'].dt.year == prior_year]['ROM'].sum()
-
-    current_emissions = calculate_emissions(energy_df, selected_fy, current_rom, nga_factors)
-    prior_emissions = calculate_emissions(energy_df, prior_fy, prior_rom, nga_factors)
-
-    # Check for missing data
-    if current_emissions is None:
-        st.error(f"âš ï¸ No emissions data available for {selected_fy}")
+        display_comparison(proj_base, proj_npi, display_year, grid_connected_fy, df)
         return
 
-    if prior_emissions is None:
-        st.warning(f"âš ï¸ No emissions data available for {prior_fy} (comparison year)")
-        # Create a dummy prior with zeros for display
-        prior_emissions = {
-            'scope1': 0, 'scope2': 0, 'scope3': 0, 'total': 0,
-            'fuel_kl': 0, 'grid_mwh': 0, 'site_mwh': 0
-        }
-
-    # Display metrics
-    display_emissions_metrics(current_emissions, prior_emissions, selected_fy, prior_fy)
-
-    # Notes
-
-    # Build projection
-    projection = build_projection_simple(
-        start_fy, end_fy, rom_df, energy_df, nga_factors,
-        fsei_rom, fsei_elec, grid_connected_fy,
-        end_mining_fy, end_processing_fy, end_rehabilitation_fy
+    # Single source mode
+    projection = build_projection(
+        df, dataset=selected_source,
+        end_mining_fy=end_mining_fy,
+        end_processing_fy=end_processing_fy,
+        end_rehabilitation_fy=end_rehabilitation_fy,
+        grid_connected_fy=grid_connected_fy,
+        fsei_rom=fsei_rom,
+        fsei_elec=fsei_elec,
+        credit_start_fy=CREDIT_START_FY,
+        start_fy=start_fy,
+        end_fy=end_fy
     )
 
+    # Show data info
+    actual_count = len(df[df['DataSet'] == selected_source])
+    source_data = df[df['DataSet'] == selected_source]
+
+    if len(source_data) > 0:
+        date_min = source_data['Date'].min()
+        date_max = source_data['Date'].max()
+        st.caption(f"📊 {actual_count:,} records | Date Range: {date_min.strftime('%Y-%m')} to {date_max.strftime('%Y-%m')}")
+    else:
+        st.caption(f"📊 No records found for {selected_source}")
+
+    display_single_source(projection, display_year, selected_source, grid_connected_fy, df)
+
+
+def display_single_source(projection, display_year, source_name, grid_connected_fy, df, show_summary=True):
+    """Display charts and tables for single data source"""
+
+    # Summary table
+    if show_summary:
+        with st.expander("📊 Emissions Summary", expanded=True):
+            year_data = projection[projection['FY'] == f'FY{display_year}']
+
+            if len(year_data) == 0:
+                st.warning(f"⚠️ No data for FY{display_year}")
+            else:
+                row = year_data.iloc[0]
+
+                summary_data = [{
+                    'Source': source_name,
+                    'ROM (Mt)': f"{row['ROM_Mt']:.2f}",
+                    'Scope 1 (tCO2-e)': f"{row['Scope1']:,.0f}",
+                    'Scope 2 (tCO2-e)': f"{row['Scope2']:,.0f}",
+                    'Scope 3 (tCO2-e)': f"{row['Scope3']:,.0f}",
+                    'Total (tCO2-e)': f"{row['Total']:,.0f}",
+                    'Intensity (tCO2-e/t)': f"{row['Emission_Intensity']:.4f}" if row['ROM_Mt'] > 0 else "N/A"
+                }]
+
+                st.dataframe(pd.DataFrame(summary_data), hide_index=True, width="stretch")
+
     # Charts
-    display_emissions_charts(projection, grid_connected_fy)
+    with st.expander("📈 Emissions Charts", expanded=True):
 
-    # Data table
-    display_emissions_table(projection)
-
-
-def display_emissions_metrics(current, prior, current_fy, prior_fy):
-    """Display emission metrics comparison"""
-
-    st.markdown("### 📊 Current Year Emissions")
-
-    col1, col2, col3, col4 = st.columns(4)
-
-    with col1:
-        delta = current['scope1'] - prior['scope1']
-        st.metric(
-            SCOPE_NAMES['scope1'],
-            f"{current['scope1']:,.0f} tCO₂-e",
-            delta=f"{delta:+,.0f} tCO₂-e"
-        )
-
-    with col2:
-        delta = current['scope2'] - prior['scope2']
-        st.metric(
-            SCOPE_NAMES['scope2'],
-            f"{current['scope2']:,.0f} tCO₂-e",
-            delta=f"{delta:+,.0f} tCO₂-e"
-        )
-
-    with col3:
-        delta = current['scope3'] - prior['scope3']
-        st.metric(
-            SCOPE_NAMES['scope3'],
-            f"{current['scope3']:,.0f} tCO₂-e",
-            delta=f"{delta:+,.0f} tCO₂-e"
-        )
-
-    with col4:
-        current_total = current['scope1'] + current['scope2'] + current['scope3']
-        prior_total = prior['scope1'] + prior['scope2'] + prior['scope3']
-        delta = current_total - prior_total
-        st.metric(
-            "Total",
-            f"{current_total:,.0f} tCO₂-e",
-            delta=f"{delta:+,.0f} tCO₂-e"
-        )
-
-
-def display_emissions_charts(projection, grid_connected_fy):
-    """Display Plotly charts for emissions projection"""
-
-    with st.expander("📈 Emissions Projection", expanded=True):
-
-        # Chart 1: Stacked emissions by scope
-        st.subheader("Total Emissions by Scope")
-
+        # Stacked area chart
         fig = go.Figure()
 
-        fig.add_trace(go.Bar(
+        fig.add_trace(go.Scatter(
             x=projection['FY'],
             y=projection['Scope1'],
-            name=SCOPE_NAMES['scope1'],
-            marker=dict(
-                color=COLORS['scope1'],
-                line=dict(width=0)
-            ),
-            hovertemplate='%{y:,.0f} tCO₂-e<extra></extra>'
+            name='Scope 1',
+            mode='lines',
+            fill='tonexty',
+            line=dict(color=GOLD_METALLIC, width=2),
+            stackgroup='one'
         ))
 
-        fig.add_trace(go.Bar(
+        fig.add_trace(go.Scatter(
             x=projection['FY'],
             y=projection['Scope2'],
-            name=SCOPE_NAMES['scope2'],
-            marker=dict(
-                color=COLORS['scope2'],
-                line=dict(width=0)
-            ),
-            hovertemplate='%{y:,.0f} tCO₂-e<extra></extra>'
+            name='Scope 2',
+            mode='lines',
+            fill='tonexty',
+            line=dict(color=BRIGHT_GOLD, width=2),
+            stackgroup='one'
         ))
 
-        fig.add_trace(go.Bar(
+        fig.add_trace(go.Scatter(
             x=projection['FY'],
             y=projection['Scope3'],
-            name=SCOPE_NAMES['scope3'],
-            marker=dict(
-                color=COLORS['scope3'],
-                line=dict(width=0)
-            ),
-            hovertemplate='%{y:,.0f} tCO₂-e<extra></extra>'
+            name='Scope 3',
+            mode='lines',
+            fill='tonexty',
+            line=dict(color=DARK_GOLDENROD, width=2),
+            stackgroup='one'
         ))
 
         fig.update_layout(
-            barmode='stack',
-            height=400,
-            xaxis_title='Financial Year',
-            yaxis_title='Emissions (tCO₂-e)',
+            title="Total GHG Emissions by Scope",
+            xaxis_title="Financial Year",
+            yaxis_title="Emissions (tCO2-e)",
             hovermode='x unified',
-            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+            height=500
         )
+
+        # Add grid connection marker
+        if grid_connected_fy and f'FY{grid_connected_fy}' in projection['FY'].values:
+            fig.add_shape(
+                type="line",
+                x0=f'FY{grid_connected_fy}',
+                x1=f'FY{grid_connected_fy}',
+                y0=0,
+                y1=1,
+                yref="paper",
+                line=dict(color=GRID_GREEN, width=2, dash="dot")
+            )
+            fig.add_annotation(
+                x=f'FY{grid_connected_fy}',
+                y=1,
+                yref="paper",
+                text="Grid Connection",
+                showarrow=False,
+                yshift=10
+            )
 
         st.plotly_chart(fig, width="stretch")
-        st.caption("Navy: Scope 1 (Direct) | Blue: Scope 2 (Indirect) | Grey: Scope 3 (Value Chain)")
 
-        # Chart 2: Scope 1 breakdown by source
-        st.subheader("Scope 1 Emission Categories")
+    # Emissions breakdown pie charts (Cost Centre and Department)
+    with st.expander("🥧 Emissions Breakdown", expanded=False):
+        st.caption(f"Breakdown for FY{display_year}")
 
-        fig = go.Figure()
+        # Get FY data from df
+        fy_data = df[(df['FY'] == display_year) & (df['DataSet'] == source_name)].copy()
 
-        fig.add_trace(go.Scatter(
-            x=projection['FY'],
-            y=projection['Power'],
-            name='Power Generation',
-            stackgroup='one',
-            fillcolor=COLORS['power'],
-            line=dict(width=0),  # No border lines
-            hovertemplate='%{y:,.0f} tCO₂-e<extra></extra>'
-        ))
+        if len(fy_data) == 0:
+            st.warning(f"No data available for FY{display_year}")
+        else:
+            col1, col2 = st.columns(2)
 
-        fig.add_trace(go.Scatter(
-            x=projection['FY'],
-            y=projection['Mining'],
-            name='Mining',
-            stackgroup='one',
-            fillcolor=COLORS['mining'],
-            line=dict(width=0),  # No border lines
-            hovertemplate='%{y:,.0f} tCO₂-e<extra></extra>'
-        ))
+            # Gold color palette for pies
+            gold_colors = [
+                GOLD_METALLIC,      # #DBB12A
+                BRIGHT_GOLD,        # #E8AC41
+                DARK_GOLDENROD,     # #AE8B0F
+                SEPIA,              # #734B1A
+                CAFE_NOIR,          # #39250B
+                '#D4A017',          # Metallic gold
+                '#C9AE5D',          # Vegas gold
+                '#B8860B',          # Dark goldenrod variant
+                '#9B7653',          # Tan
+                '#8B7355',          # Burlywood
+                '#7D6D47',          # Other brown
+            ]
 
-        fig.add_trace(go.Scatter(
-            x=projection['FY'],
-            y=projection['Processing'],
-            name='Processing',
-            stackgroup='one',
-            fillcolor=COLORS['processing'],
-            line=dict(width=0),  # No border lines
-            hovertemplate='%{y:,.0f} tCO₂-e<extra></extra>'
-        ))
+            with col1:
+                # Cost Centre breakdown
+                cc_emissions = fy_data.groupby('CostCentre').agg({
+                    'Scope1_tCO2e': 'sum',
+                    'Scope2_tCO2e': 'sum',
+                    'Scope3_tCO2e': 'sum'
+                }).reset_index()
 
-        fig.add_trace(go.Scatter(
-            x=projection['FY'],
-            y=projection['Fixed'],
-            name='Fixed/Admin',
-            stackgroup='one',
-            fillcolor=COLORS['fixed'],
-            line=dict(width=0),  # No border lines
-            hovertemplate='%{y:,.0f} tCO₂-e<extra></extra>'
-        ))
+                cc_emissions['Total'] = cc_emissions['Scope1_tCO2e'] + cc_emissions['Scope2_tCO2e'] + cc_emissions['Scope3_tCO2e']
+                cc_emissions = cc_emissions.sort_values('Total', ascending=False)
 
-        # Add grid connection marker using add_shape (more reliable for categorical x-axis)
-        fig.add_shape(
-            type='line',
-            x0=f'FY{grid_connected_fy}',
-            x1=f'FY{grid_connected_fy}',
-            y0=0,
-            y1=1,
-            yref='paper',
-            line=dict(color='blue', width=2, dash='dash')
-        )
+                # Combine small values into "Other" (keep top 10)
+                if len(cc_emissions) > 10:
+                    top10 = cc_emissions.head(10)
+                    other_total = cc_emissions.tail(len(cc_emissions) - 10)['Total'].sum()
+                    if other_total > 0:
+                        other_row = pd.DataFrame([{
+                            'CostCentre': 'Other',
+                            'Total': other_total
+                        }])
+                        cc_emissions = pd.concat([top10, other_row], ignore_index=True)
 
-        # Add annotation separately
-        fig.add_annotation(
-            x=f'FY{grid_connected_fy}',
-            y=1,
-            yref='paper',
-            text='Grid Connected',
-            showarrow=False,
-            yshift=10
-        )
+                fig_cc = go.Figure(data=[go.Pie(
+                    labels=cc_emissions['CostCentre'],
+                    values=cc_emissions['Total'],
+                    hole=0.3,
+                    textposition='auto',
+                    textinfo='label+percent',
+                    marker=dict(colors=gold_colors[:len(cc_emissions)])
+                )])
 
-        fig.update_layout(
-            height=400,
-            xaxis_title='Financial Year',
-            yaxis_title='Scope 1 Emissions (tCO₂-e)',
-            hovermode='x unified',
-            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
-        )
+                fig_cc.update_layout(
+                    title="By Cost Centre",
+                    height=500,
+                    showlegend=True,
+                    margin=dict(t=60, b=100, l=20, r=20)
+                )
 
-        st.plotly_chart(fig, width="stretch")
-        st.caption("Stacked area shows Scope 1 emission sources over time | Blue line indicates grid connection")
+                st.plotly_chart(fig_cc, width="stretch", key=f"pie_cc_{source_name}")
 
+            with col2:
+                # Department breakdown
+                dept_emissions = fy_data.groupby('Department').agg({
+                    'Scope1_tCO2e': 'sum',
+                    'Scope2_tCO2e': 'sum',
+                    'Scope3_tCO2e': 'sum'
+                }).reset_index()
 
-def display_emissions_table(projection):
-    """Display emissions data table"""
+                dept_emissions['Total'] = dept_emissions['Scope1_tCO2e'] + dept_emissions['Scope2_tCO2e'] + dept_emissions['Scope3_tCO2e']
+                dept_emissions = dept_emissions.sort_values('Total', ascending=False)
 
-    with st.expander("📋 Annual Projection Data", expanded=False):
+                # Combine small values into "Other" (keep top 8)
+                if len(dept_emissions) > 8:
+                    top8 = dept_emissions.head(8)
+                    other_total = dept_emissions.tail(len(dept_emissions) - 8)['Total'].sum()
+                    if other_total > 0:
+                        other_row = pd.DataFrame([{
+                            'Department': 'Other',
+                            'Total': other_total
+                        }])
+                        dept_emissions = pd.concat([top8, other_row], ignore_index=True)
+
+                fig_dept = go.Figure(data=[go.Pie(
+                    labels=dept_emissions['Department'],
+                    values=dept_emissions['Total'],
+                    hole=0.3,
+                    textposition='auto',
+                    textinfo='label+percent',
+                    marker=dict(colors=gold_colors[:len(dept_emissions)])
+                )])
+
+                fig_dept.update_layout(
+                    title="By Department",
+                    height=500,
+                    showlegend=True,
+                    margin=dict(t=60, b=100, l=20, r=20)
+                )
+
+                st.plotly_chart(fig_dept, width="stretch", key=f"pie_dept_{source_name}")
+
+    # Data table (moved to bottom)
+    with st.expander("📋 Emissions Data Table", expanded=False):
         display_df = projection[['FY', 'Phase', 'ROM_Mt', 'Scope1', 'Scope2', 'Scope3', 'Total']].copy()
-
-        # Format columns
-        display_df['ROM (Mt)'] = display_df['ROM_Mt'].apply(lambda x: f"{x:.2f}" if x > 0 else "—")
-        display_df['Scope 1'] = display_df['Scope1'].apply(lambda x: f"{x:,.0f}")
-        display_df['Scope 2'] = display_df['Scope2'].apply(lambda x: f"{x:,.0f}")
-        display_df['Scope 3'] = display_df['Scope3'].apply(lambda x: f"{x:,.0f}")
+        display_df['ROM_Mt'] = display_df['ROM_Mt'].apply(lambda x: f"{x:.2f}")
+        display_df['Scope1'] = display_df['Scope1'].apply(lambda x: f"{x:,.0f}")
+        display_df['Scope2'] = display_df['Scope2'].apply(lambda x: f"{x:,.0f}")
+        display_df['Scope3'] = display_df['Scope3'].apply(lambda x: f"{x:,.0f}")
         display_df['Total'] = display_df['Total'].apply(lambda x: f"{x:,.0f}")
 
-        display_df = display_df[['FY', 'Phase', 'ROM (Mt)', 'Scope 1', 'Scope 2', 'Scope 3', 'Total']]
+        st.dataframe(display_df, hide_index=True, width="stretch", height=400)
 
-        st.dataframe(display_df, width="stretch", hide_index=True)
+
+def display_comparison(proj_base, proj_npi, display_year, grid_connected_fy, df):
+    """Display comparison between Base and NPI-NGERS with combined charts"""
+
+    # Combined summary table
+    with st.expander("📊 Summary", expanded=True):
+        year_base = proj_base[proj_base['FY'] == f'FY{display_year}']
+        year_npi = proj_npi[proj_npi['FY'] == f'FY{display_year}']
+
+        if len(year_base) == 0 or len(year_npi) == 0:
+            st.warning(f"⚠️ No data for FY{display_year}")
+        else:
+            row_base = year_base.iloc[0]
+            row_npi = year_npi.iloc[0]
+
+            # Create comparison table
+            comparison_data = [
+                {
+                    'Source': 'Base',
+                    'ROM (Mt)': f"{row_base['ROM_Mt']:.2f}",
+                    'Scope 1 (tCO2-e)': f"{row_base['Scope1']:,.0f}",
+                    'Scope 2 (tCO2-e)': f"{row_base['Scope2']:,.0f}",
+                    'Scope 3 (tCO2-e)': f"{row_base['Scope3']:,.0f}",
+                    'Total (tCO2-e)': f"{row_base['Total']:,.0f}",
+                    'Intensity (tCO2-e/t)': f"{row_base['Emission_Intensity']:.4f}" if row_base['ROM_Mt'] > 0 else "N/A"
+                },
+                {
+                    'Source': 'NPI-NGERS',
+                    'ROM (Mt)': f"{row_npi['ROM_Mt']:.2f}",
+                    'Scope 1 (tCO2-e)': f"{row_npi['Scope1']:,.0f}",
+                    'Scope 2 (tCO2-e)': f"{row_npi['Scope2']:,.0f}",
+                    'Scope 3 (tCO2-e)': f"{row_npi['Scope3']:,.0f}",
+                    'Total (tCO2-e)': f"{row_npi['Total']:,.0f}",
+                    'Intensity (tCO2-e/t)': f"{row_npi['Emission_Intensity']:.4f}" if row_npi['ROM_Mt'] > 0 else "N/A"
+                }
+            ]
+
+            df_comparison = pd.DataFrame(comparison_data)
+            st.dataframe(df_comparison, hide_index=True, width="stretch")
+
+            # Variance summary
+            diff_total = row_npi['Total'] - row_base['Total']
+            pct_diff = ((row_npi['Total'] - row_base['Total']) / row_base['Total'] * 100) if row_base['Total'] > 0 else 0
+            if abs(pct_diff) > 0.1:
+                st.caption(f"Variance: {diff_total:+,.0f} tCO2-e ({pct_diff:+.1f}%)")
+
+    # Combined comparison charts in single frame
+    with st.expander("📈 Emissions Charts", expanded=True):
+
+        # Stacked vertical comparison
+        fig = make_subplots(
+            rows=2, cols=1,
+            subplot_titles=('Base', 'NPI-NGERS'),
+            vertical_spacing=0.12,
+            row_heights=[0.5, 0.5]
+        )
+
+        # Base (top chart)
+        fig.add_trace(go.Scatter(
+            x=proj_base['FY'], y=proj_base['Scope1'],
+            name='Scope 1', line=dict(color=GOLD_METALLIC, width=2),
+            fill='tonexty', stackgroup='base',
+            hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'
+        ), row=1, col=1)
+
+        fig.add_trace(go.Scatter(
+            x=proj_base['FY'], y=proj_base['Scope2'],
+            name='Scope 2', line=dict(color=BRIGHT_GOLD, width=2),
+            fill='tonexty', stackgroup='base',
+            hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'
+        ), row=1, col=1)
+
+        fig.add_trace(go.Scatter(
+            x=proj_base['FY'], y=proj_base['Scope3'],
+            name='Scope 3', line=dict(color=DARK_GOLDENROD, width=2),
+            fill='tonexty', stackgroup='base',
+            hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'
+        ), row=1, col=1)
+
+        # NPI (bottom chart) - use prime notation for proper hover labels
+        fig.add_trace(go.Scatter(
+            x=proj_npi['FY'], y=proj_npi['Scope1'],
+            name="Scope 1'",
+            line=dict(color=GOLD_METALLIC, width=2),
+            fill='tonexty', stackgroup='npi', showlegend=False,
+            hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'
+        ), row=2, col=1)
+
+        fig.add_trace(go.Scatter(
+            x=proj_npi['FY'], y=proj_npi['Scope2'],
+            name="Scope 2'",
+            line=dict(color=BRIGHT_GOLD, width=2),
+            fill='tonexty', stackgroup='npi', showlegend=False,
+            hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'
+        ), row=2, col=1)
+
+        fig.add_trace(go.Scatter(
+            x=proj_npi['FY'], y=proj_npi['Scope3'],
+            name="Scope 3'",
+            line=dict(color=DARK_GOLDENROD, width=2),
+            fill='tonexty', stackgroup='npi', showlegend=False,
+            hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'
+        ), row=2, col=1)
+
+        fig.update_layout(
+            height=700,
+            hovermode='x unified',
+            showlegend=True,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        fig.update_xaxes(title_text="Financial Year", row=2, col=1)
+        fig.update_yaxes(title_text="Emissions (tCO2-e)", row=1, col=1)
+        fig.update_yaxes(title_text="Emissions (tCO2-e)", row=2, col=1)
+
+        # Add grid connection markers to both charts
+        if grid_connected_fy and f'FY{grid_connected_fy}' in proj_base['FY'].values:
+            # Top chart (Base)
+            fig.add_shape(
+                type="line",
+                x0=f'FY{grid_connected_fy}',
+                x1=f'FY{grid_connected_fy}',
+                y0=0,
+                y1=1,
+                yref="y domain",
+                line=dict(color=GRID_GREEN, width=2, dash="dot"),
+                row=1, col=1
+            )
+            fig.add_annotation(
+                x=f'FY{grid_connected_fy}',
+                y=1,
+                yref="y domain",
+                text="Grid",
+                showarrow=False,
+                yshift=10,
+                row=1, col=1
+            )
+            # Bottom chart (NPI-NGERS)
+            fig.add_shape(
+                type="line",
+                x0=f'FY{grid_connected_fy}',
+                x1=f'FY{grid_connected_fy}',
+                y0=0,
+                y1=1,
+                yref="y2 domain",
+                line=dict(color=GRID_GREEN, width=2, dash="dot"),
+                row=2, col=1
+            )
+            fig.add_annotation(
+                x=f'FY{grid_connected_fy}',
+                y=1,
+                yref="y2 domain",
+                text="Grid",
+                showarrow=False,
+                yshift=10,
+                row=2, col=1
+            )
+
+        st.plotly_chart(fig, width="stretch")
+
+    # Emissions breakdown pie charts (Cost Centre and Department)
+    with st.expander("🥧 Emissions Breakdown", expanded=False):
+        st.caption(f"Breakdown for FY{display_year}")
+
+        # Get FY data from df (actuals + budget)
+        fy_data = df[df['FY'] == display_year].copy()
+
+        if len(fy_data) == 0:
+            st.warning(f"No data available for FY{display_year}")
+        else:
+            # Gold color palette for pies
+            gold_colors = [
+                GOLD_METALLIC,      # #DBB12A
+                BRIGHT_GOLD,        # #E8AC41
+                DARK_GOLDENROD,     # #AE8B0F
+                SEPIA,              # #734B1A
+                CAFE_NOIR,          # #39250B
+                '#D4A017',          # Metallic gold
+                '#C9AE5D',          # Vegas gold
+                '#B8860B',          # Dark goldenrod variant
+                '#9B7653',          # Tan
+                '#8B7355',          # Burlywood
+                '#7D6D47',          # Other brown
+            ]
+
+            # Cost Centre breakdown
+            st.markdown("**By Cost Centre**")
+            col1, col2 = st.columns(2)
+
+            for idx, (dataset, col) in enumerate([('Base', col1), ('NPI-NGERS', col2)]):
+                dataset_data = fy_data[fy_data['DataSet'] == dataset]
+
+                if len(dataset_data) == 0:
+                    continue
+
+                # Aggregate emissions by Cost Centre
+                cc_emissions = dataset_data.groupby('CostCentre', observed=False).agg({
+                    'Scope1_tCO2e': 'sum',
+                    'Scope2_tCO2e': 'sum',
+                    'Scope3_tCO2e': 'sum'
+                }).reset_index()
+
+                cc_emissions['Total'] = cc_emissions['Scope1_tCO2e'] + cc_emissions['Scope2_tCO2e'] + cc_emissions['Scope3_tCO2e']
+                cc_emissions = cc_emissions.sort_values('Total', ascending=False)
+
+                # Combine small values into "Other" (keep top 10)
+                if len(cc_emissions) > 10:
+                    top10 = cc_emissions.head(10)
+                    other_total = cc_emissions.tail(len(cc_emissions) - 10)['Total'].sum()
+                    if other_total > 0:
+                        other_row = pd.DataFrame([{
+                            'CostCentre': 'Other',
+                            'Total': other_total
+                        }])
+                        cc_emissions = pd.concat([top10, other_row], ignore_index=True)
+
+                with col:
+                    st.markdown(f"*{dataset}*")
+
+                    fig_pie = go.Figure(data=[go.Pie(
+                        labels=cc_emissions['CostCentre'],
+                        values=cc_emissions['Total'],
+                        hole=0.3,
+                        textposition='auto',
+                        textinfo='label+percent',
+                        marker=dict(colors=gold_colors[:len(cc_emissions)])
+                    )])
+
+                    fig_pie.update_layout(
+                        height=450,
+                        showlegend=False,
+                        margin=dict(t=30, b=100, l=20, r=20)
+                    )
+
+                    st.plotly_chart(fig_pie, width="stretch", key=f"pie_cc_comp_{dataset}")
+
+            # Department breakdown
+            st.markdown("**By Department**")
+            col3, col4 = st.columns(2)
+
+            for idx, (dataset, col) in enumerate([('Base', col3), ('NPI-NGERS', col4)]):
+                dataset_data = fy_data[fy_data['DataSet'] == dataset]
+
+                if len(dataset_data) == 0:
+                    continue
+
+                # Aggregate emissions by Department
+                dept_emissions = dataset_data.groupby('Department', observed=False).agg({
+                    'Scope1_tCO2e': 'sum',
+                    'Scope2_tCO2e': 'sum',
+                    'Scope3_tCO2e': 'sum'
+                }).reset_index()
+
+                dept_emissions['Total'] = dept_emissions['Scope1_tCO2e'] + dept_emissions['Scope2_tCO2e'] + dept_emissions['Scope3_tCO2e']
+                dept_emissions = dept_emissions.sort_values('Total', ascending=False)
+
+                # Combine small values into "Other" (keep top 8)
+                if len(dept_emissions) > 8:
+                    top8 = dept_emissions.head(8)
+                    other_total = dept_emissions.tail(len(dept_emissions) - 8)['Total'].sum()
+                    if other_total > 0:
+                        other_row = pd.DataFrame([{
+                            'Department': 'Other',
+                            'Total': other_total
+                        }])
+                        dept_emissions = pd.concat([top8, other_row], ignore_index=True)
+
+                with col:
+                    st.markdown(f"*{dataset}*")
+
+                    fig_pie = go.Figure(data=[go.Pie(
+                        labels=dept_emissions['Department'],
+                        values=dept_emissions['Total'],
+                        hole=0.3,
+                        textposition='auto',
+                        textinfo='label+percent',
+                        marker=dict(colors=gold_colors[:len(dept_emissions)])
+                    )])
+
+                    fig_pie.update_layout(
+                        height=450,
+                        showlegend=False,
+                        margin=dict(t=30, b=100, l=20, r=20)
+                    )
+
+                    st.plotly_chart(fig_pie, width="stretch", key=f"pie_dept_comp_{dataset}")

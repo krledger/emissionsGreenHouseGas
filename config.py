@@ -1,10 +1,191 @@
 """
 config.py
 Configuration constants and mappings for Ravenswood Gold emissions model
-Last updated: 2026-01-29 14:45 AEST
+Last updated: 2026-02-02 09:00 AEST
+
+AUDIT READY: This file contains all data classification standards and unit
+conversion factors in a single location for easy auditor review.
+All classifications are based on Description field only - no complex logic.
 """
 
 import pandas as pd
+
+
+
+# =============================================================================
+# DATA CLASSIFICATION STANDARDS
+# =============================================================================
+#
+# This section defines the exact Description values expected in the
+# consolidated_emissions_data.csv file and their classification for
+# NGERS compliance reporting.
+#
+# AUDIT NOTE: All fuel and energy classifications are based on the Description
+# column only. No complex logic or fallback rules are used. If a Description
+# value does not match these standards, a data quality error will be flagged.
+#
+
+# -----------------------------------------------------------------------------
+# DIESEL FUEL CLASSIFICATIONS
+# -----------------------------------------------------------------------------
+# Diesel fuel must be classified by end-use purpose for NGERS Method 1 reporting
+# as per NGER (Measurement) Determination 2008 Section 2.23-2.26
+
+DIESEL_CLASSIFICATIONS = {
+    'Diesel oil - Site power generation': {
+        'purpose': 'electricity',
+        'ngers_method': 'Method 1 - Electricity Generation',
+        'scope': 1,
+        'notes': 'Diesel consumed in stationary generators for on-site electricity production'
+    },
+    'Diesel oil - Mobile equipment': {
+        'purpose': 'stationary',
+        'ngers_method': 'Method 1 - Stationary Energy (Off-road)',
+        'scope': 1,
+        'notes': 'Diesel consumed in mining equipment (haul trucks, loaders, drills, etc.)'
+    }
+}
+
+# Expected diesel Description values (for validation)
+VALID_DIESEL_DESCRIPTIONS = list(DIESEL_CLASSIFICATIONS.keys())
+
+# -----------------------------------------------------------------------------
+# ELECTRICITY CLASSIFICATIONS
+# -----------------------------------------------------------------------------
+# Electricity sources for Scope 1 (site generation) and Scope 2 (grid purchase)
+
+ELECTRICITY_CLASSIFICATIONS = {
+    'Grid electricity': {
+        'source': 'grid_purchase',
+        'scope': 2,
+        'notes': 'Electricity purchased from Queensland grid (CS Energy invoices)'
+    },
+    'Site electricity': {
+        'source': 'site_generation',
+        'scope': 1,
+        'notes': 'Electricity generated on-site from diesel fuel (calculated output in kWh)'
+    }
+}
+
+# Expected electricity Description values (for validation)
+VALID_ELECTRICITY_DESCRIPTIONS = list(ELECTRICITY_CLASSIFICATIONS.keys())
+
+# -----------------------------------------------------------------------------
+# OTHER FUEL CLASSIFICATIONS
+# -----------------------------------------------------------------------------
+
+OTHER_FUEL_CLASSIFICATIONS = {
+    'Liquefied petroleum gas (LPG)': {
+        'scope': 1,
+        'ngers_method': 'Method 1 - Stationary Energy',
+        'notes': 'LPG for process heating (boilers, furnaces, kilns)'
+    },
+    'Petroleum based oils': {
+        'scope': 3,
+        'notes': 'Lubricating oils, hydraulic fluids (combustible but not energy use)'
+    },
+    'Petroleum based greases': {
+        'scope': 3,
+        'notes': 'Lubricating greases (combustible but not energy use)'
+    },
+    'Other gaseous fossil fuels': {
+        'scope': 1,
+        'ngers_method': 'Method 1 - Stationary Energy',
+        'notes': 'Acetylene for welding and cutting'
+    },
+    'Not reportable': {
+        'scope': None,
+        'notes': 'Non-combustible materials (oxygen, nitrogen, inert gases, process chemicals)'
+    }
+}
+
+# -----------------------------------------------------------------------------
+# PRODUCTION METRICS
+# -----------------------------------------------------------------------------
+
+PRODUCTION_DESCRIPTIONS = {
+    'Ore Mined t': {
+        'unit': 't',
+        'notes': 'Run of Mine (ROM) ore extracted from pit'
+    },
+    'Milled Tonnes': {
+        'unit': 'units',  # Actually tonnes but labeled as units in source
+        'notes': 'Ore processed through mill'
+    },
+    'Crushed Ore t': {
+        'unit': 't',
+        'notes': 'Ore crushed before milling'
+    },
+    'Gold Produced': {
+        'unit': 'units',  # Ounces as units
+        'notes': 'Gold recovered and produced'
+    },
+    'Gold Recovered oz': {
+        'unit': 'oz',
+        'notes': 'Gold recovered in metallurgical process'
+    },
+    'Gold Sold': {
+        'unit': 'units',  # Ounces as units
+        'notes': 'Gold sold to market'
+    }
+}
+
+# =============================================================================
+# UNIT CONVERSION FACTORS
+# =============================================================================
+#
+# Physical unit conversions (NOT emission factors)
+# These are for converting between different measurement units
+#
+# AUDIT NOTE: These are standard physical conversion factors, not site-specific.
+# Emission factors are maintained separately in NGA files.
+#
+
+# -----------------------------------------------------------------------------
+# MASS CONVERSIONS
+# -----------------------------------------------------------------------------
+
+MASS_CONVERSIONS = {
+    # Base unit: kg (kilogram)
+    'g_to_kg': 0.001,           # 1 gram = 0.001 kg
+    'kg_to_g': 1000,            # 1 kilogram = 1000 g
+    'kg_to_t': 0.001,           # 1 kilogram = 0.001 tonnes
+    't_to_kg': 1000,            # 1 tonne = 1000 kg
+    'lb_to_kg': 0.453592,       # 1 pound = 0.453592 kg
+    'oz_to_kg': 0.0283495,      # 1 ounce = 0.0283495 kg
+}
+
+# -----------------------------------------------------------------------------
+# VOLUME CONVERSIONS
+# -----------------------------------------------------------------------------
+
+VOLUME_CONVERSIONS = {
+    # Base unit: L (litre)
+    'mL_to_L': 0.001,           # 1 millilitre = 0.001 L
+    'L_to_mL': 1000,            # 1 litre = 1000 mL
+    'L_to_kL': 0.001,           # 1 litre = 0.001 kilolitres
+    'kL_to_L': 1000,            # 1 kilolitre = 1000 L
+    'L_to_ML': 0.000001,        # 1 litre = 0.000001 megalitres
+    'ML_to_L': 1000000,         # 1 megalitre = 1,000,000 L
+    'gal_to_L': 3.78541,        # 1 US gallon = 3.78541 L
+    'm3_to_L': 1000,            # 1 cubic metre = 1000 L
+}
+
+# -----------------------------------------------------------------------------
+# ENERGY CONVERSIONS
+# -----------------------------------------------------------------------------
+
+ENERGY_CONVERSIONS = {
+    # Base unit: kWh (kilowatt-hour)
+    'Wh_to_kWh': 0.001,         # 1 watt-hour = 0.001 kWh
+    'kWh_to_Wh': 1000,          # 1 kilowatt-hour = 1000 Wh
+    'kWh_to_MWh': 0.001,        # 1 kilowatt-hour = 0.001 MWh
+    'MWh_to_kWh': 1000,         # 1 megawatt-hour = 1000 kWh
+    'kWh_to_GWh': 0.000001,     # 1 kilowatt-hour = 0.000001 GWh
+    'GWh_to_kWh': 1000000,      # 1 gigawatt-hour = 1,000,000 kWh
+    'GJ_to_kWh': 277.778,       # 1 gigajoule = 277.778 kWh
+    'kWh_to_GJ': 0.0036,        # 1 kilowatt-hour = 0.0036 GJ
+}
 
 # =============================================================================
 # FINANCIAL YEAR DEFINITION
@@ -92,11 +273,11 @@ def get_fy_description(fy_start_month=None):
     end_name = get_fy_month_name(end_month)
 
     if fy_start_month == 1:
-        return f"Calendar Year ({start_name}—{end_name})"
+        return f"Calendar Year ({start_name}ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â{end_name})"
     elif fy_start_month == 7:
-        return f"NGER Financial Year ({start_name}—{end_name})"
+        return f"NGER Financial Year ({start_name}ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â{end_name})"
     else:
-        return f"Custom Fiscal Year ({start_name}—{end_name})"
+        return f"Custom Fiscal Year ({start_name}ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â{end_name})"
 
 # =============================================================================
 # SAFEGUARD MECHANISM PARAMETERS
@@ -118,10 +299,19 @@ CREDIT_START_FY = 2024  # First FY credits can be earned (FY2023-24 = 2024 under
 # PRODUCTION ASSUMPTIONS
 # =============================================================================
 
-BASE_MWH = 108000        # Annual on-site generation (MWh) - pre-grid
-POST_GRID_MWH = 18000    # Residual on-site generation post-grid (MWh)
-GRID_PURCHASE_MWH = 90000  # Grid electricity purchased post-grid (MWh)
-PRE_GRID_SCOPE2_MWH = 3000  # Existing grid purchase
+BASE_MWH = 108000        # Annual on-site generation (MWh) - pre-grid connection
+POST_GRID_MWH = 2160     # Residual on-site generation post-grid (2% of baseline for portable/backup)
+PRE_GRID_PURCHASE_MWH = 120000  # Existing grid purchase pre-connection (based on FY2024-2025 average)
+
+# Post-grid connection: Site generation shifts to grid
+# Total power remains similar, just the source changes
+# POST_GRID_TOTAL = PRE_GRID_PURCHASE + (BASE_MWH * 0.98 shifted from diesel to grid)
+POST_GRID_TOTAL_MWH = 226000  # 120k existing + 106k shifted from site generation
+
+# Phase-specific grid power levels (% of POST_GRID_TOTAL_MWH)
+GRID_MINING_FACTOR = 1.00      # 100% during mining (full operations)
+GRID_PROCESSING_FACTOR = 0.95  # 95% when mining stops (processing continues)
+GRID_REHABILITATION_FACTOR = 0.05  # 5% during rehabilitation (minimal)
 
 # Maturity cutoff
 MATURITY_CUTOFF = pd.Timestamp('2023-08-01')
@@ -133,6 +323,7 @@ MATURITY_CUTOFF = pd.Timestamp('2023-08-01')
 # Display category grouping
 CATEGORY_MAP = {
     'Supplemental Power Supply': 'Power',
+    'Site Power Generation': 'Power',  # Standardized name for power generation
     'Hauling': 'Mining',
     'Loading': 'Mining',
     'Drilling - Production': 'Mining',
@@ -162,11 +353,13 @@ CATEGORY_MAP = {
     'Stores & Supply': 'Fixed',
     'Mobile Equipment Workshop': 'Fixed',
     'Infrastructure': 'Fixed',
+    'NPE Dredge': 'Mining',  # Mining equipment
 }
 
 # NGER purpose classification (determines emission factor table)
 NGER_PURPOSE_MAP = {
     'Supplemental Power Supply': 'electricity',
+    'Site Power Generation': 'electricity',  # Standardized name for power generation
     'Hauling': 'stationary',
     'Loading': 'stationary',
     'Drilling - Production': 'stationary',
@@ -196,6 +389,7 @@ NGER_PURPOSE_MAP = {
     'Stores & Supply': 'stationary',
     'Mobile Equipment Workshop': 'stationary',
     'Infrastructure': 'stationary',
+    'NPE Dredge': 'stationary',  # Mining equipment
 }
 
 # =============================================================================
@@ -211,19 +405,26 @@ DEFAULT_END_REHABILITATION_FY = 2045
 # PROJECTION DEFAULTS
 # =============================================================================
 
-DEFAULT_START_FY = 2021
+DEFAULT_START_FY = 2023
+
+# Baseline year for projections (last stable operational year)
+BASELINE_YEAR = 2024  # FY2024 is the stable baseline (post-expansion, pre-slowdown)
+
+# Projection variability (for realistic year-to-year variation)
+PROJECTION_RANDOMNESS = 0.05  # Ã‚Â±5% random variation in projections
+RANDOM_SEED_BASE = 42  # Base seed for reproducible randomness
 
 # =============================================================================
 # CARBON MARKET DEFAULTS
 # =============================================================================
 
 # Carbon Credit Market
-DEFAULT_CARBON_CREDIT_PRICE = 35.0  # $/tCO₂-e
+DEFAULT_CARBON_CREDIT_PRICE = 35.0  # $/tCOÃƒÂ¢Ã¢â‚¬Å¡Ã¢â‚¬Å¡-e
 DEFAULT_CREDIT_ESCALATION = 0.03    # 3% per annum
 
 # Carbon Tax Scenario
 DEFAULT_TAX_START_FY = 2030
-DEFAULT_TAX_RATE = 15.0             # $/tCO₂-e initial rate
+DEFAULT_TAX_RATE = 15.0             # $/tCOÃƒÂ¢Ã¢â‚¬Å¡Ã¢â‚¬Å¡-e initial rate
 DEFAULT_TAX_ESCALATION = 0.02       # 2% per annum
 
 # =============================================================================
@@ -231,13 +432,14 @@ DEFAULT_TAX_ESCALATION = 0.02       # 2% per annum
 # =============================================================================
 
 DEFAULT_GRID_CONNECTION_FY = 2027   # Year grid electricity becomes available (diesel generation stops)
+GRID_CONNECTION_MONTH = 7  # Month of grid connection (1-12, 7=July = mid-year for NGER FY)
 
 # =============================================================================
 # INDUSTRY BENCHMARKS (from Safeguard Rule)
 # =============================================================================
 
-DEFAULT_INDUSTRY_EI_ROM = 0.00859   # Industry default tCO₂-e/t ROM
-DEFAULT_INDUSTRY_EI_ELEC = 0.539    # Industry default tCO₂-e/MWh
+DEFAULT_INDUSTRY_EI_ROM = 0.00859   # Industry default tCOÃƒÂ¢Ã¢â‚¬Å¡Ã¢â‚¬Å¡-e/t ROM
+DEFAULT_INDUSTRY_EI_ELEC = 0.539    # Industry default tCOÃƒÂ¢Ã¢â‚¬Å¡Ã¢â‚¬Å¡-e/MWh
 
 # Phase 1: Active Mining (up to End of Mining FY)
 # All cost centres operate at 100%
@@ -274,10 +476,46 @@ PHASE_MINING = {
     'Infrastructure': 1.00,
 }
 
+# Phase 1a: Active Mining POST-GRID CONNECTION
+# All operations continue but site power generation drops to 2% (portable/backup only)
+PHASE_MINING_POST_GRID = {
+    'Supplemental Power Supply': 0.02,  # Only 2% - portable generators and backup
+    'Hauling': 1.00,
+    'Loading': 1.00,
+    'Drilling - Production': 1.00,
+    'Blasting': 1.00,
+    'Supplementary Load and Haul': 1.00,
+    'Rehandling': 1.00,
+    'Mobile Equipment': 1.00,
+    'Grade Control': 1.00,
+    'Geotechnical': 1.00,
+    'Crushing - Fixed': 1.00,
+    'Crushing - Supplemental': 1.00,
+    'New Crusher': 1.00,
+    'Nolans South Crusher': 1.00,
+    'Milling': 1.00,
+    'Tailings Disposal': 1.00,
+    'Light Vehicles': 1.00,
+    'Management Services': 1.00,
+    'Operations Administration': 1.00,
+    'Exploration and Development': 1.00,
+    'Environment': 1.00,
+    'Rehabilitation': 1.00,
+    'Gold Room': 1.00,
+    'Village and Housing': 1.00,
+    'Leach & Adsorption': 1.00,
+    'Laboratory': 1.00,
+    'Supp Crushing Mobile Equipment': 1.00,
+    'Stores & Supply': 1.00,
+    'Mobile Equipment Workshop': 1.00,
+    'Infrastructure': 1.00,
+}
+
 # Phase 2: Processing Only (after End of Mining, before End of Processing)
 # Mining operations cease, processing continues with rehabilitation
+# Grid power: 95% of post-grid total (5% reduction from full mining operations)
 PHASE_PROCESSING = {
-    'Supplemental Power Supply': 1.00,  # Continue power generation
+    'Supplemental Power Supply': 0.02,  # Minimal site power (post-grid level maintained)
     'Hauling': 0.00,                    # Mining stopped
     'Loading': 0.00,                    # Mining stopped
     'Drilling - Production': 0.00,      # Mining stopped
@@ -307,6 +545,7 @@ PHASE_PROCESSING = {
     'Stores & Supply': 1.00,            # Ongoing operations
     'Mobile Equipment Workshop': 1.00,  # Ongoing maintenance
     'Infrastructure': 1.00,             # Ongoing operations
+    'Mining': 0.00,                     # ROM production stopped (ore extraction ceased)
 }
 
 # Phase 3: Rehabilitation Only (after End of Processing)
@@ -342,16 +581,18 @@ PHASE_REHABILITATION = {
     'Stores & Supply': 0.10,            # Minimal supplies
     'Mobile Equipment Workshop': 0.10,  # Minimal maintenance
     'Infrastructure': 0.10,             # Minimal upkeep
+    'Mining': 0.00,                     # ROM production stopped (ore extraction ceased)
 }
 
 # Phase profile lookup
 PHASE_PROFILES = {
     'mining': PHASE_MINING,
+    'mining_post_grid': PHASE_MINING_POST_GRID,
     'processing': PHASE_PROCESSING,
     'rehabilitation': PHASE_REHABILITATION,
 }
 
-def get_phase_profile(fy, end_mining_fy, end_processing_fy, end_rehabilitation_fy):
+def get_phase_profile(fy, end_mining_fy, end_processing_fy, end_rehabilitation_fy, grid_connected_fy=None):
     """Determine operational phase and return activity profile
 
     Args:
@@ -359,15 +600,20 @@ def get_phase_profile(fy, end_mining_fy, end_processing_fy, end_rehabilitation_f
         end_mining_fy: Last year of mining operations
         end_processing_fy: Last year of processing operations
         end_rehabilitation_fy: Last year of rehabilitation
+        grid_connected_fy: Year grid connection occurs (optional)
 
     Returns:
         Tuple of (phase_name, profile_dict, is_active)
-        - phase_name: 'mining', 'processing', 'rehabilitation', or 'closed'
+        - phase_name: 'mining', 'mining_post_grid', 'processing', 'rehabilitation', or 'closed'
         - profile_dict: Cost centre activity multipliers
         - is_active: Boolean indicating if facility is operational
     """
     if fy <= end_mining_fy:
-        return ('mining', PHASE_MINING, True)
+        # Check if grid connected during mining phase
+        if grid_connected_fy is not None and fy >= grid_connected_fy:
+            return ('mining_post_grid', PHASE_MINING_POST_GRID, True)
+        else:
+            return ('mining', PHASE_MINING, True)
     elif fy <= end_processing_fy:
         return ('processing', PHASE_PROCESSING, True)
     elif fy <= end_rehabilitation_fy:
@@ -394,23 +640,133 @@ def apply_phase_profile(fuel_data, phase_profile):
     return adjusted
 
 # =============================================================================
-# COLOR PALETTE - Professional Corporate
+# COLOR PALETTE - Gold Mining Theme
+# =============================================================================
+#
+# Professional gold-themed color palette consistent across all tabs.
+# Theme reflects the mining/gold industry with warm metallic tones.
+#
+# Last updated: 2026-02-02 09:00 AEST
+#
+# DESIGN RATIONALE:
+# - Gold tones for production metrics and positive values (ROM, credits, cumulative)
+# - Dark brown for analytical lines and annual values
+# - Green accent for grid connection (clean energy transition)
+# - Black for regulatory baselines (authoritative reference)
+#
 # =============================================================================
 
+# -----------------------------------------------------------------------------
+# PRIMARY PALETTE - Gold Tones
+# -----------------------------------------------------------------------------
+
+GOLD_METALLIC = '#DBB12A'      # Primary gold - main bars, ROM production
+BRIGHT_GOLD = '#E8AC41'        # Secondary gold - site electricity (top of stack)
+DARK_GOLDENROD = '#AE8B0F'    # Tertiary gold - grid electricity (bottom of stack)
+
+# Usage:
+# - GOLD_METALLIC: ROM production bars, Scope 1 bars, SMC credit bars,
+#                  cumulative tax bars, all primary metrics
+# - BRIGHT_GOLD: Site-generated electricity (top of stacked bars)
+# - DARK_GOLDENROD: Grid-purchased electricity (bottom of stacked bars)
+
+# -----------------------------------------------------------------------------
+# ACCENT COLORS
+# -----------------------------------------------------------------------------
+
+SEPIA = '#734B1A'              # Accent brown - rarely used
+CAFE_NOIR = '#39250B'          # Dark brown - lines, text, annual values
+
+# Usage:
+# - CAFE_NOIR: Actual intensity lines, annual tax line, credit value line,
+#              all analytical trend lines
+# - SEPIA: Reserved for special emphasis (currently unused)
+
+# -----------------------------------------------------------------------------
+# FUNCTIONAL COLORS
+# -----------------------------------------------------------------------------
+
+GRID_GREEN = '#2A9D8F'         # Grid connection marker (clean energy)
+BASELINE_BLACK = '#000000'     # Regulatory baseline (dashed lines)
+
+# Usage:
+# - GRID_GREEN: Vertical line marking grid connection year on all charts
+# - BASELINE_BLACK: Safeguard baseline intensity (dashed reference line)
+
+# -----------------------------------------------------------------------------
+# COLOR USAGE BY TAB
+# -----------------------------------------------------------------------------
+#
+# TAB 1 - GHG EMISSIONS:
+#   ROM Production: GOLD_METALLIC bars
+#   Total Emissions: GOLD_METALLIC bars + CAFE_NOIR line (intensity)
+#   Scope Breakdown: Standard scope colors (see legacy palette below)
+#
+# TAB 2 - SAFEGUARD MECHANISM:
+#   ROM Production: GOLD_METALLIC bars
+#   Electricity (stacked): DARK_GOLDENROD (grid bottom) + BRIGHT_GOLD (site top)
+#   Scope 1 Emissions: GOLD_METALLIC bars
+#   Intensity Lines: CAFE_NOIR (actual) + BASELINE_BLACK (baseline dashed)
+#   SMC Credits: GOLD_METALLIC bars + CAFE_NOIR line (credit value)
+#   Grid Marker: GRID_GREEN vertical line on all charts
+#
+# TAB 3 - CARBON TAX:
+#   Tax Liability: GOLD_METALLIC bars (cumulative) + CAFE_NOIR line (annual)
+#
+# TAB 4 - NGER DATA:
+#   All charts: Standard scope colors (see legacy palette below)
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# LEGACY COLOR PALETTE (Pre-Gold Theme)
+# -----------------------------------------------------------------------------
+# Maintained for backward compatibility with Tab 4 (NGER) and any custom charts
+# These colors are from the original corporate blue/gray palette
+
 COLORS = {
+    # Scope colors (for emissions breakdown charts)
     'scope1': '#2C3E50',          # Navy blue - direct emissions
     'scope2': '#3498DB',          # Medium blue - indirect (purchased)
     'scope3': '#95A5A6',          # Light gray - value chain
+
+    # Metrics and references
     'actual_intensity': '#E74C3C', # Red - performance metric
     'baseline': '#34495E',        # Dark gray - reference standard
+
+    # Operational categories (if needed for detailed breakdowns)
     'power': '#F39C12',           # Amber - power generation
     'mining': '#E67E22',          # Orange - mining operations
     'processing': '#16A085',      # Teal - processing
     'fixed': '#7F8C8D',           # Gray - fixed/admin
+
+    # Financial indicators
     'credits': '#27AE60',         # Green - positive credits
     'deficit': '#C0392B',         # Dark red - deficit
+    'tax': '#C0392B',             # Tax liability
+
+    # Production and datasets
     'rom': '#95A5A6',             # Light gray - production
+    'smc': '#27AE60',             # SMC credits
+    'base': '#2C3E50',            # Base dataset
+    'npi': '#3498DB',             # NPI-NGERS dataset
 }
+
+# -----------------------------------------------------------------------------
+# RECOMMENDED COLOR SELECTION
+# -----------------------------------------------------------------------------
+#
+# For NEW charts, use the gold theme colors directly:
+#   - Import: from config import GOLD_METALLIC, CAFE_NOIR, etc.
+#   - Bars: GOLD_METALLIC
+#   - Lines: CAFE_NOIR
+#   - Grid marker: GRID_GREEN
+#
+# For EXISTING charts (Tab 4), continue using COLORS dict:
+#   - Import: from config import COLORS
+#   - Access: COLORS['scope1'], COLORS['scope2'], etc.
+#
+# =============================================================================
 
 # =============================================================================
 # SCOPE NAMING CONVENTIONS
@@ -495,7 +851,6 @@ GASEOUS_FACTORS = {
 # =============================================================================
 
 DEFAULT_PATHS = {
-    'energy': 'Energy.xlsx',
-    'rom': 'PhysicalsActual.xlsx',
+    'consolidated': 'consolidated_emissions_data.csv',
     'nga': 'national-greenhouse-account-factors-2025.xlsx'
 }

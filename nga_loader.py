@@ -95,7 +95,7 @@ class NGAFactorsByYear:
         }
 
         # Detect column structure by checking row 2 (units row)
-        # 2022-2023: [nan, 'kg CO2‑e/kWh', 'kg CO2‑e/GJ', 'kg CO2‑e/kWh', 'kg CO2‑e/GJ']
+        # 2022-2023: [nan, 'kg CO2â€‘e/kWh', 'kg CO2â€‘e/GJ', 'kg CO2â€‘e/kWh', 'kg CO2â€‘e/GJ']
         #            State, Scope2_kWh(1), Scope2_GJ(2), Scope3_kWh(3), Scope3_GJ(4)
         # 2024-2025: [nan, '(kg CO2-e/kWh)', '(kg CO2-e/kWh)']
         #            State, Scope2_kWh(1), Scope3_kWh(2)
@@ -325,14 +325,14 @@ def load_nga_factors(filepath):
     factors = nga.get_factors_for_year(year, 'QLD')
 
     if factors is None:
-        # Return default factors
+        # Return default factors (in tCO2e/MWh - standard units)
         return {
             'electricity': {'QLD': {'scope2': 0.67, 'scope3': 0.09}},
             'diesel': {},
             'diesel_by_purpose': {},
             'diesel_s3_by_purpose': {},
-            'scope2': 0.67,
-            'scope3': 0.09
+            'scope2': 0.67,  # tCO2e/MWh (standard units)
+            'scope3': 0.09   # tCO2e/MWh (standard units)
         }
 
     # Build legacy structure
@@ -355,6 +355,6 @@ def load_nga_factors(filepath):
         'diesel': factors['diesel'],
         'diesel_by_purpose': diesel_s1_by_purpose,
         'diesel_s3_by_purpose': diesel_s3_by_purpose,
-        'scope2': factors['scope2'],
-        'scope3': factors['scope3']
+        'scope2': factors['scope2'],  # tCO2e/MWh (standard units)
+        'scope3': factors['scope3']   # tCO2e/MWh (standard units)
     }
