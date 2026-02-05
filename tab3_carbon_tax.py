@@ -1,7 +1,7 @@
 """
 tab3_carbon_tax.py
-Carbon Tax Analysis tab - redesigned to match tabs 1 and 2
-Last updated: 2026-02-02 09:50 AEST
+Carbon Tax Analysis tab - date-based architecture
+Last updated: 2026-02-05 20:35 AEDT
 """
 
 import streamlit as st
@@ -9,14 +9,66 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from projections import build_projection, carbon_tax_analysis
+from calc_calendar import date_to_fy, aggregate_by_year_type
+
+
+def prepare_annual_for_tax(monthly, year_type='FY'):
+    """Aggregate monthly data to annual and prepare for tax analysis display
+
+    Args:
+        monthly: Monthly DataFrame from build_projection
+        year_type: 'FY' (Financial Year) or 'CY' (Calendar Year)
+
+    Returns:
+        Annual DataFrame with display-ready columns
+    """
+    # Define aggregation for different column types
+    agg_dict = {
+        'Scope1_tCO2e': 'sum',
+        'Scope2_tCO2e': 'sum',
+        'Scope3_tCO2e': 'sum',
+        'ROM_t': 'sum',
+    }
+
+    # Add optional columns if present
+    if 'Phase' in monthly.columns:
+        agg_dict['Phase'] = 'last'  # Take phase from last month of FY
+    if 'Baseline' in monthly.columns:
+        agg_dict['Baseline'] = 'sum'
+    if 'SMC_Monthly' in monthly.columns:
+        agg_dict['SMC_Monthly'] = 'sum'
+    if 'SMC_Cumulative' in monthly.columns:
+        agg_dict['SMC_Cumulative'] = 'last'
+
+    # Aggregate monthly → annual (Tax Year/FY)
+    annual = aggregate_by_year_type(monthly, year_type, agg_dict=agg_dict)
+
+    # Add FY column as string for compatibility
+    annual['FY'] = annual['Year']
+
+    # Add compatibility columns
+    annual['Scope1'] = annual['Scope1_tCO2e']
+    annual['Scope2'] = annual['Scope2_tCO2e']
+    annual['Scope3'] = annual['Scope3_tCO2e']
+    annual['Total'] = annual['Scope1'] + annual['Scope2'] + annual['Scope3']
+
+    # Convert ROM from tonnes to megatonnes
+    annual['ROM_Mt'] = annual['ROM_t'] / 1_000_000
+
+    # If Phase column is missing, add a default
+    if 'Phase' not in annual.columns:
+        annual['Phase'] = 'Unknown'
+
+    return annual
 
 
 def render_carbon_tax_tab(df, selected_source, fsei_rom, fsei_elec,
-                          start_fy, end_fy, grid_connected_fy,
-                          end_mining_fy, end_processing_fy, end_rehabilitation_fy,
+                          start_date, end_date, grid_connected_date,
+                          end_mining_date, end_processing_date, end_rehabilitation_date,
                           carbon_credit_price, credit_escalation,
-                          tax_start_fy, tax_rate, tax_escalation,
-                          credit_start_fy):
+                          tax_start_date, tax_rate, tax_escalation,
+                          credit_start_date,
+                          decline_rate_phase2, year_type='FY'):
     """Render Carbon Tax Analysis tab
 
     Args:
@@ -24,14 +76,20 @@ def render_carbon_tax_tab(df, selected_source, fsei_rom, fsei_elec,
         selected_source: 'Base', 'NPI-NGERS', or 'All'
         fsei_rom: ROM emission intensity
         fsei_elec: Electricity generation emission intensity
-        Phase parameters
+        Phase parameters (dates)
         carbon_credit_price: SMC market price
         credit_escalation: Annual price increase
-        tax_start_fy: Year tax starts
+        tax_start_date: Date tax starts
         tax_rate: Initial tax rate ($/tCO2-e)
-        tax_escalation: Annual tax rate increase (not compound, just rate change)
-        credit_start_fy: First year credits can be earned
+        tax_escalation: Annual tax rate increase
+        credit_start_date: First date credits can be earned
+        decline_rate_phase2: Phase 2 decline rate
+        year_type: 'FY' (Financial Year, July-June) or 'CY' (Calendar Year, Jan-Dec)
     """
+
+    # Convert dates to FY for display
+    tax_start_fy = date_to_fy(tax_start_date)
+    credit_start_fy = date_to_fy(credit_start_date)
 
     st.subheader("💵 Carbon Tax Scenario Analysis")
     st.caption(f"Tax starts FY{tax_start_fy} at ${tax_rate:.2f}/tCO2-e, escalating {tax_escalation*100:.1f}% p.a. Based on Scope 1 emissions only.")
@@ -41,59 +99,69 @@ def render_carbon_tax_tab(df, selected_source, fsei_rom, fsei_elec,
     # Multiple datasets selected - show combined comparison charts
     if selected_source == 'All':
 
-        proj_base = build_projection(
+        monthly_base = build_projection(
             df, dataset='Base',
-            end_mining_fy=end_mining_fy,
-            end_processing_fy=end_processing_fy,
-            end_rehabilitation_fy=end_rehabilitation_fy,
-            grid_connected_fy=grid_connected_fy,
+            end_mining_date=end_mining_date,
+            end_processing_date=end_processing_date,
+            end_rehabilitation_date=end_rehabilitation_date,
+            grid_connected_date=grid_connected_date,
             fsei_rom=fsei_rom,
             fsei_elec=fsei_elec,
-            credit_start_fy=credit_start_fy,
-            start_fy=start_fy,
-            end_fy=end_fy
+            credit_start_date=credit_start_date,
+            start_date=start_date,
+            end_date=end_date,
+            decline_rate_phase2=decline_rate_phase2
         )
 
-        proj_npi = build_projection(
+        monthly_npi = build_projection(
             df, dataset='NPI-NGERS',
-            end_mining_fy=end_mining_fy,
-            end_processing_fy=end_processing_fy,
-            end_rehabilitation_fy=end_rehabilitation_fy,
-            grid_connected_fy=grid_connected_fy,
+            end_mining_date=end_mining_date,
+            end_processing_date=end_processing_date,
+            end_rehabilitation_date=end_rehabilitation_date,
+            grid_connected_date=grid_connected_date,
             fsei_rom=fsei_rom,
             fsei_elec=fsei_elec,
-            credit_start_fy=credit_start_fy,
-            start_fy=start_fy,
-            end_fy=end_fy
+            credit_start_date=credit_start_date,
+            start_date=start_date,
+            end_date=end_date,
+            decline_rate_phase2=decline_rate_phase2
         )
+
+        # Aggregate monthly → annual
+        proj_base = prepare_annual_for_tax(monthly_base, year_type)
+        proj_npi = prepare_annual_for_tax(monthly_npi, year_type)
 
         # Apply carbon tax analysis
         tax_base = carbon_tax_analysis(proj_base, tax_start_fy, tax_rate, tax_escalation)
         tax_npi = carbon_tax_analysis(proj_npi, tax_start_fy, tax_rate, tax_escalation)
 
-        display_tax_comparison(tax_base, tax_npi, display_year, tax_start_fy)
+        display_tax_comparison(tax_base, tax_npi, display_year, tax_start_fy, year_type)
 
         # Prepare tax data list for combined data table
         tax_data_list = [('Base', tax_base), ('NPI-NGERS', tax_npi)]
 
     # Single source mode
     else:
-        projection = build_projection(
+        monthly = build_projection(
             df, dataset=selected_source,
-            end_mining_fy=end_mining_fy,
-            end_processing_fy=end_processing_fy,
-            end_rehabilitation_fy=end_rehabilitation_fy,
-            grid_connected_fy=grid_connected_fy,
+            end_mining_date=end_mining_date,
+            end_processing_date=end_processing_date,
+            end_rehabilitation_date=end_rehabilitation_date,
+            grid_connected_date=grid_connected_date,
             fsei_rom=fsei_rom,
             fsei_elec=fsei_elec,
-            credit_start_fy=credit_start_fy,
-            start_fy=start_fy,
-            end_fy=end_fy
+            credit_start_date=credit_start_date,
+            start_date=start_date,
+            end_date=end_date,
+            decline_rate_phase2=decline_rate_phase2
         )
+
+        # Aggregate monthly → annual
+        projection = prepare_annual_for_tax(monthly, year_type)
 
         carbon_tax = carbon_tax_analysis(projection, tax_start_fy, tax_rate, tax_escalation)
 
-        display_tax_single(carbon_tax, selected_source, tax_start_fy)
+        display_tax_single(carbon_tax, selected_source, tax_start_fy, year_type=year_type)
 
         # Prepare tax data list for combined data table
         tax_data_list = [(selected_source, carbon_tax)]
@@ -127,15 +195,13 @@ def render_carbon_tax_tab(df, selected_source, fsei_rom, fsei_elec,
             st.info(f"Tax period starts FY{tax_start_fy}")
 
 
-def display_tax_single(carbon_tax, source_name, tax_start_fy, show_summary=True):
-    """Display carbon tax analysis for single source
+def display_tax_single(carbon_tax, source_name, tax_start_fy, show_summary=True, year_type='FY'):
+    """Display tax analysis for single data source"""
 
-    Args:
-        carbon_tax: Tax analysis DataFrame
-        source_name: Dataset name
-        tax_start_fy: First year of tax
-        show_summary: If False, skip summary table (used in comparison mode)
-    """
+    # Construct year label based on year_type
+    year_prefix = 'CY' if year_type == 'CY' else 'FY'
+    display_year = st.session_state.get('display_year', 2025)
+    year_label = f'{year_prefix}{display_year}'
 
     # Gold color palette
     GOLD_METALLIC = '#DBB12A'      # Bars - cumulative
@@ -147,11 +213,10 @@ def display_tax_single(carbon_tax, source_name, tax_start_fy, show_summary=True)
     # Summary table - single row with all data
     if show_summary:
         with st.expander("📊 Summary", expanded=True):
-            display_year = st.session_state.get('display_year', 2025)
-            year_data = tax_data[tax_data['FY'] == f'FY{display_year}']
+            year_data = tax_data[tax_data['FY'] == year_label]
 
             if len(year_data) == 0:
-                st.warning(f"⚠️ No tax data for FY{display_year} (tax starts FY{tax_start_fy})")
+                st.warning(f"⚠️ No tax data for {year_label} (tax starts FY{tax_start_fy})")
             else:
                 row = year_data.iloc[0]
 
@@ -172,12 +237,16 @@ def display_tax_single(carbon_tax, source_name, tax_start_fy, show_summary=True)
         if len(tax_data) == 0:
             st.info(f"Tax period starts FY{tax_start_fy}")
         else:
+            # Prepare display years
+            tax_data = tax_data.copy()
+            tax_data['Year'] = tax_data['FY'].str.replace('FY', '')
+
             fig = make_subplots(specs=[[{"secondary_y": True}]])
 
             # Cumulative tax (bars)
             fig.add_trace(
                 go.Bar(
-                    x=tax_data['FY'],
+                    x=tax_data['Year'],
                     y=tax_data['Tax_Cumulative'],
                     name='Cumulative Tax',
                     marker_color=GOLD_METALLIC,
@@ -199,7 +268,7 @@ def display_tax_single(carbon_tax, source_name, tax_start_fy, show_summary=True)
 
             fig.add_trace(
                 go.Scatter(
-                    x=tax_data['FY'],
+                    x=tax_data['Year'],
                     y=tax_data['Tax_Annual'],
                     name='Annual Tax',
                     mode='lines+markers+text',
@@ -212,7 +281,7 @@ def display_tax_single(carbon_tax, source_name, tax_start_fy, show_summary=True)
                 secondary_y=True
             )
 
-            fig.update_xaxes(title_text="Financial Year")
+            fig.update_xaxes(title_text="Calendar Year" if year_type == "CY" else "Financial Year")
             fig.update_yaxes(title_text="Cumulative Tax ($AUD)", secondary_y=False)
             fig.update_yaxes(title_text="Annual Tax ($AUD)", secondary_y=True)
             fig.update_layout(
@@ -232,8 +301,12 @@ def display_tax_single(carbon_tax, source_name, tax_start_fy, show_summary=True)
                 st.caption(f"💵 {final_year} Cumulative Tax: ${final_cumulative:,.0f} AUD at ${final_rate:.2f}/tCO2-e")
 
 
-def display_tax_comparison(tax_base, tax_npi, display_year, tax_start_fy):
+def display_tax_comparison(tax_base, tax_npi, display_year, tax_start_fy, year_type='FY'):
     """Display tax comparison between Base and NPI-NGERS with combined charts"""
+
+    # Construct year label based on year_type
+    year_prefix = 'CY' if year_type == 'CY' else 'FY'
+    year_label = f'{year_prefix}{display_year}'
 
     # Gold color palette
     GOLD_METALLIC = '#DBB12A'
@@ -245,8 +318,8 @@ def display_tax_comparison(tax_base, tax_npi, display_year, tax_start_fy):
 
     # Combined summary table
     with st.expander("📊 Summary", expanded=True):
-        year_base = tax_base[tax_base['FY'] == f'FY{display_year}']
-        year_npi = tax_npi[tax_npi['FY'] == f'FY{display_year}']
+        year_base = tax_base[tax_base['FY'] == year_label]
+        year_npi = tax_npi[tax_npi['FY'] == year_label]
 
         summary_rows = []
 
@@ -380,7 +453,7 @@ def display_tax_comparison(tax_base, tax_npi, display_year, tax_start_fy):
             )
 
             # Update axes
-            fig.update_xaxes(title_text="Financial Year", row=2, col=1)
+            fig.update_xaxes(title_text="Calendar Year" if year_type == "CY" else "Financial Year", row=2, col=1)
             fig.update_yaxes(title_text="Cumulative Tax ($AUD)", secondary_y=False, row=1, col=1)
             fig.update_yaxes(title_text="Annual Tax ($AUD)", secondary_y=True, row=1, col=1)
             fig.update_yaxes(title_text="Cumulative Tax ($AUD)", secondary_y=False, row=2, col=1)

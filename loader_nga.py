@@ -1,5 +1,5 @@
 """
-nga_loader.py
+loader_nga.py
 Load National Greenhouse Accounts emission factors from Excel by year
 Last updated: 2026-01-07 12:30 AEST
 """
@@ -95,7 +95,7 @@ class NGAFactorsByYear:
         }
 
         # Detect column structure by checking row 2 (units row)
-        # 2022-2023: [nan, 'kg CO2â€‘e/kWh', 'kg CO2â€‘e/GJ', 'kg CO2â€‘e/kWh', 'kg CO2â€‘e/GJ']
+        # 2022-2023: [nan, 'kg CO2Ã¢â‚¬â€˜e/kWh', 'kg CO2Ã¢â‚¬â€˜e/GJ', 'kg CO2Ã¢â‚¬â€˜e/kWh', 'kg CO2Ã¢â‚¬â€˜e/GJ']
         #            State, Scope2_kWh(1), Scope2_GJ(2), Scope3_kWh(3), Scope3_GJ(4)
         # 2024-2025: [nan, '(kg CO2-e/kWh)', '(kg CO2-e/kWh)']
         #            State, Scope2_kWh(1), Scope3_kWh(2)

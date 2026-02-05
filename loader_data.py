@@ -1,5 +1,5 @@
 """
-data_loader.py
+loader_data.py
 Simplified unified data loader - ONE DataFrame output
 Last updated: 2026-02-01 23:55 AEST
 
@@ -17,9 +17,10 @@ Output columns:
 
 import pandas as pd
 from pathlib import Path
-from config import calculate_fy, NGER_FY_START_MONTH
-from nga_loader import NGAFactorsByYear
-from emissions_calc import (
+from calc_calendar import date_to_fy
+from config import NGER_FY_START_MONTH
+from loader_nga import NGAFactorsByYear
+from calc_emissions import (
     convert_litres_to_kilolitres,
     convert_kwh_to_mwh,
     calculate_scope1_diesel,
@@ -54,27 +55,34 @@ def load_all_data(filepath='consolidated_emissions_data.csv',
     # 1. LOAD CSV
     try:
         df = pd.read_csv(filepath)
-        print(f"✅ Loaded CSV: {len(df):,} records")
+        print(f"âœ… Loaded CSV: {len(df):,} records")
     except FileNotFoundError:
-        print(f"❌ File not found: {filepath}")
+        print(f"âŒ File not found: {filepath}")
         raise
 
     # 2. PARSE DATES AND ADD TIME COLUMNS
-    # Handle mixed date formats (some with time, some without)
-    df['Date'] = pd.to_datetime(df['Date'], format='mixed')
+    # Handle DD/MM/YY format with dayfirst=True
+    df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
+
+    # Check for failed parsing
+    failed_dates = df['Date'].isna().sum()
+    if failed_dates > 0:
+        print(f"⚠️  Warning: {failed_dates} dates failed to parse")
+
     df['Year'] = df['Date'].dt.year
     df['Month'] = df['Date'].dt.month
-    df['FY'] = df.apply(lambda r: calculate_fy(r['Year'], r['Month'], fy_start_month), axis=1)
+    # Calculate FY from Date (July start = FY, not CY)
+    df['FY'] = df['Date'].apply(date_to_fy)
 
     print(f"✅ Date range: {df['Date'].min():%Y-%m} to {df['Date'].max():%Y-%m}")
 
     # 3. DISCOVER DATASETS (dynamic - don't hardcode)
     datasets = sorted(df['DataSet'].unique())
-    print(f"✅ Datasets found: {datasets}")
+    print(f"âœ… Datasets found: {datasets}")
 
     # 4. AGGREGATE TO MONTHLY LEVEL
     # Group by: Year, Month, FY, DataSet, Description, Department, CostCentre, UOM
-    print(f"\n📊 Aggregating to monthly level...")
+    print(f"\nðŸ“Š Aggregating to monthly level...")
 
     agg_df = df.groupby([
         'Year', 'Month', 'FY', 'DataSet',
@@ -84,7 +92,7 @@ def load_all_data(filepath='consolidated_emissions_data.csv',
         'Source': 'first'  # Keep first source as metadata
     }).reset_index()
 
-    print(f"✅ Aggregated: {len(df):,} → {len(agg_df):,} records")
+    print(f"âœ… Aggregated: {len(df):,} â†’ {len(agg_df):,} records")
 
     # 5. LOAD NGA FACTORS
     if nga_folder is None:
@@ -94,9 +102,9 @@ def load_all_data(filepath='consolidated_emissions_data.csv',
     try:
         nga_by_year = NGAFactorsByYear(str(nga_folder))
         years_loaded = sorted(nga_by_year.factors_by_year.keys())
-        print(f"✅ NGA factors loaded: {years_loaded}")
+        print(f"âœ… NGA factors loaded: {years_loaded}")
     except Exception as e:
-        print(f"❌ Error loading NGA factors: {e}")
+        print(f"âŒ Error loading NGA factors: {e}")
         raise
 
     # 6. CALCULATE EMISSIONS
@@ -204,13 +212,13 @@ def load_all_data(filepath='consolidated_emissions_data.csv',
     factor_cols = [col for col in agg_df.columns if col.startswith('factor_')]
     agg_df = agg_df.drop(columns=factor_cols)
 
-    print(f"✅ Emissions calculated")
-    print(f"   Total Scope 1: {agg_df['Scope1_tCO2e'].sum():,.0f} tCO₂-e")
-    print(f"   Total Scope 2: {agg_df['Scope2_tCO2e'].sum():,.0f} tCO₂-e")
-    print(f"   Total Scope 3: {agg_df['Scope3_tCO2e'].sum():,.0f} tCO₂-e")
+    print(f"âœ… Emissions calculated")
+    print(f"   Total Scope 1: {agg_df['Scope1_tCO2e'].sum():,.0f} tCOâ‚‚-e")
+    print(f"   Total Scope 2: {agg_df['Scope2_tCO2e'].sum():,.0f} tCOâ‚‚-e")
+    print(f"   Total Scope 3: {agg_df['Scope3_tCO2e'].sum():,.0f} tCOâ‚‚-e")
 
     # 7. OPTIMIZE MEMORY (categorical dtypes)
-    print(f"\n💾 Optimizing memory...")
+    print(f"\nðŸ’¾ Optimizing memory...")
 
     agg_df['DataSet'] = agg_df['DataSet'].astype('category')
     agg_df['Description'] = agg_df['Description'].astype('category')
@@ -226,7 +234,7 @@ def load_all_data(filepath='consolidated_emissions_data.csv',
     agg_df['Scope3_tCO2e'] = agg_df['Scope3_tCO2e'].astype('float32')
 
     memory_mb = agg_df.memory_usage(deep=True).sum() / 1024**2
-    print(f"✅ Memory optimized: {memory_mb:.2f} MB")
+    print(f"âœ… Memory optimized: {memory_mb:.2f} MB")
 
     # 8. RECREATE DATE COLUMN (for convenience, set to 1st of each month)
     agg_df['Date'] = pd.to_datetime(
@@ -237,7 +245,7 @@ def load_all_data(filepath='consolidated_emissions_data.csv',
     agg_df = agg_df.sort_values(['DataSet', 'Year', 'Month', 'Description']).reset_index(drop=True)
 
     print(f"\n" + "="*80)
-    print(f"✅ DATA LOADING COMPLETE")
+    print(f"âœ… DATA LOADING COMPLETE")
     print(f"   Records: {len(agg_df):,}")
     print(f"   Datasets: {list(agg_df['DataSet'].cat.categories)}")
     print(f"   Date range: FY{agg_df['FY'].min()}-{agg_df['FY'].max()}")

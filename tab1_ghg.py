@@ -1,7 +1,7 @@
 """
 tab1_ghg.py
 Total GHG Emissions tab - combined comparison charts
-Last updated: 2026-02-02 09:50 AEST
+Last updated: 2026-02-05 20:32 AEDT
 """
 
 import streamlit as st
@@ -9,7 +9,8 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from projections import build_projection
-from config import CREDIT_START_FY
+from calc_calendar import date_to_fy, aggregate_by_year_type
+from config import CREDIT_START_DATE
 
 # Gold color palette
 GOLD_METALLIC = '#DBB12A'      # Primary - Scope 1
@@ -20,9 +21,84 @@ CAFE_NOIR = '#39250B'          # Lines
 GRID_GREEN = '#2A9D8F'         # Grid connection marker
 
 
+def prepare_annual_for_display(monthly, year_type='FY'):
+    """Aggregate monthly data to annual and prepare for display
+
+    Aggregates monthly emissions data to annual, converts units
+    and adds compatibility columns for existing display code.
+
+    Args:
+        monthly: Monthly DataFrame from build_projection
+        year_type: 'FY' (Financial Year) or 'CY' (Calendar Year)
+
+    Returns:
+        Annual DataFrame with display-ready columns
+    """
+    # Define aggregation for different column types
+    agg_dict = {
+        'Scope1_tCO2e': 'sum',
+        'Scope2_tCO2e': 'sum',
+        'Scope3_tCO2e': 'sum',
+        'ROM_t': 'sum',
+    }
+
+    # Add optional columns if present
+    if 'Site_Electricity_kWh' in monthly.columns:
+        agg_dict['Site_Electricity_kWh'] = 'sum'
+    if 'Grid_Electricity_kWh' in monthly.columns:
+        agg_dict['Grid_Electricity_kWh'] = 'sum'
+    if 'Baseline' in monthly.columns:
+        agg_dict['Baseline'] = 'sum'
+    if 'Baseline_Intensity' in monthly.columns:
+        agg_dict['Baseline_Intensity'] = 'mean'  # Average intensity over year
+    if 'Emission_Intensity' in monthly.columns:
+        agg_dict['Emission_Intensity'] = 'mean'  # Average intensity over year
+    if 'Phase' in monthly.columns:
+        agg_dict['Phase'] = 'last'  # Take phase from last month of FY
+    if 'SMC_Monthly' in monthly.columns:
+        agg_dict['SMC_Monthly'] = 'sum'  # Sum monthly credits to annual
+    if 'SMC_Cumulative' in monthly.columns:
+        agg_dict['SMC_Cumulative'] = 'last'  # Take end-of-year cumulative
+    if 'In_Safeguard' in monthly.columns:
+        agg_dict['In_Safeguard'] = 'last'  # Take end-of-year status
+
+    # Aggregate monthly → annual (Tax Year/FY)
+    annual = aggregate_by_year_type(monthly, year_type, agg_dict=agg_dict)
+
+    # Add FY column as string for compatibility
+    annual['FY'] = annual['Year']
+
+    # Add compatibility columns (display code expects these names)
+    annual['Scope1'] = annual['Scope1_tCO2e']
+    annual['Scope2'] = annual['Scope2_tCO2e']
+    annual['Scope3'] = annual['Scope3_tCO2e']
+    annual['Total'] = annual['Scope1'] + annual['Scope2'] + annual['Scope3']
+
+    # Convert ROM from tonnes to megatonnes
+    annual['ROM_Mt'] = annual['ROM_t'] / 1_000_000
+
+    # Recalculate emission intensity from annual totals (more accurate than averaging monthly)
+    annual['Emission_Intensity'] = 0.0
+    mask = annual['ROM_Mt'] > 0
+    annual.loc[mask, 'Emission_Intensity'] = annual.loc[mask, 'Scope1'] / (annual.loc[mask, 'ROM_Mt'] * 1_000_000)
+
+    # If Phase column is missing, add a default
+    if 'Phase' not in annual.columns:
+        annual['Phase'] = 'Unknown'
+
+    # Ensure electricity columns exist (with 0 if missing)
+    if 'Site_Electricity_kWh' not in annual.columns:
+        annual['Site_Electricity_kWh'] = 0
+    if 'Grid_Electricity_kWh' not in annual.columns:
+        annual['Grid_Electricity_kWh'] = 0
+
+    return annual
+
+
 def render_ghg_tab(df, selected_source, fsei_rom, fsei_elec,
-                   start_fy, end_fy, grid_connected_fy,
-                   end_mining_fy, end_processing_fy, end_rehabilitation_fy):
+                   start_date, end_date, grid_connected_date,
+                   end_mining_date, end_processing_date, end_rehabilitation_date,
+                   decline_rate_phase2, year_type='FY'):
     """Render Total GHG Emissions tab
 
     Args:
@@ -30,8 +106,17 @@ def render_ghg_tab(df, selected_source, fsei_rom, fsei_elec,
         selected_source: 'Base', 'NPI-NGERS', or 'All'
         fsei_rom: ROM emission intensity
         fsei_elec: Electricity generation emission intensity
-        start_fy through end_rehabilitation_fy: Projection parameters
+        start_date through end_rehabilitation_date: Projection dates
+        decline_rate_phase2: Phase 2 decline rate
+        year_type: 'FY' (Financial Year, July-June) or 'CY' (Calendar Year, Jan-Dec)
     """
+
+    # Convert dates to FY for display
+    start_fy = date_to_fy(start_date)
+    end_fy = date_to_fy(end_date)
+    grid_connected_fy = date_to_fy(grid_connected_date)
+    end_mining_fy = date_to_fy(end_mining_date)
+    end_processing_fy = date_to_fy(end_processing_date)
 
     st.subheader("Total Greenhouse Gas Emissions")
     st.caption(f"Projection Period: FY{start_fy}—FY{end_fy} | Mining ends FY{end_mining_fy} | Processing ends FY{end_processing_fy}")
@@ -41,49 +126,59 @@ def render_ghg_tab(df, selected_source, fsei_rom, fsei_elec,
     # Comparison mode
     if selected_source == 'All':
 
-        # Build projections for both sources
-        proj_base = build_projection(
+        # Build monthly projections for both sources
+        monthly_base = build_projection(
             df, dataset='Base',
-            end_mining_fy=end_mining_fy,
-            end_processing_fy=end_processing_fy,
-            end_rehabilitation_fy=end_rehabilitation_fy,
-            grid_connected_fy=grid_connected_fy,
+            end_mining_date=end_mining_date,
+            end_processing_date=end_processing_date,
+            end_rehabilitation_date=end_rehabilitation_date,
+            grid_connected_date=grid_connected_date,
             fsei_rom=fsei_rom,
             fsei_elec=fsei_elec,
-            credit_start_fy=CREDIT_START_FY,
-            start_fy=start_fy,
-            end_fy=end_fy
+            credit_start_date=CREDIT_START_DATE,
+            start_date=start_date,
+            end_date=end_date,
+            decline_rate_phase2=decline_rate_phase2
         )
 
-        proj_npi = build_projection(
+        monthly_npi = build_projection(
             df, dataset='NPI-NGERS',
-            end_mining_fy=end_mining_fy,
-            end_processing_fy=end_processing_fy,
-            end_rehabilitation_fy=end_rehabilitation_fy,
-            grid_connected_fy=grid_connected_fy,
+            end_mining_date=end_mining_date,
+            end_processing_date=end_processing_date,
+            end_rehabilitation_date=end_rehabilitation_date,
+            grid_connected_date=grid_connected_date,
             fsei_rom=fsei_rom,
             fsei_elec=fsei_elec,
-            credit_start_fy=CREDIT_START_FY,
-            start_fy=start_fy,
-            end_fy=end_fy
+            credit_start_date=CREDIT_START_DATE,
+            start_date=start_date,
+            end_date=end_date,
+            decline_rate_phase2=decline_rate_phase2
         )
 
-        display_comparison(proj_base, proj_npi, display_year, grid_connected_fy, df)
+        # Aggregate monthly → annual and prepare for display
+        proj_base = prepare_annual_for_display(monthly_base, year_type)
+        proj_npi = prepare_annual_for_display(monthly_npi, year_type)
+
+        display_comparison(proj_base, proj_npi, display_year, grid_connected_fy, df, year_type)
         return
 
     # Single source mode
-    projection = build_projection(
+    monthly = build_projection(
         df, dataset=selected_source,
-        end_mining_fy=end_mining_fy,
-        end_processing_fy=end_processing_fy,
-        end_rehabilitation_fy=end_rehabilitation_fy,
-        grid_connected_fy=grid_connected_fy,
+        end_mining_date=end_mining_date,
+        end_processing_date=end_processing_date,
+        end_rehabilitation_date=end_rehabilitation_date,
+        grid_connected_date=grid_connected_date,
         fsei_rom=fsei_rom,
         fsei_elec=fsei_elec,
-        credit_start_fy=CREDIT_START_FY,
-        start_fy=start_fy,
-        end_fy=end_fy
+        credit_start_date=CREDIT_START_DATE,
+        start_date=start_date,
+        end_date=end_date,
+        decline_rate_phase2=decline_rate_phase2
     )
+
+    # Aggregate monthly → annual and prepare for display
+    projection = prepare_annual_for_display(monthly, year_type)
 
     # Show data info
     actual_count = len(df[df['DataSet'] == selected_source])
@@ -96,19 +191,23 @@ def render_ghg_tab(df, selected_source, fsei_rom, fsei_elec,
     else:
         st.caption(f"📊 No records found for {selected_source}")
 
-    display_single_source(projection, display_year, selected_source, grid_connected_fy, df)
+    display_single_source(projection, display_year, selected_source, grid_connected_fy, df, year_type=year_type)
 
 
-def display_single_source(projection, display_year, source_name, grid_connected_fy, df, show_summary=True):
+def display_single_source(projection, display_year, source_name, grid_connected_fy, df, show_summary=True, year_type='FY'):
     """Display charts and tables for single data source"""
+
+    # Construct year label based on year_type
+    year_prefix = 'CY' if year_type == 'CY' else 'FY'
+    year_label = f'{year_prefix}{display_year}'
 
     # Summary table
     if show_summary:
         with st.expander("📊 Emissions Summary", expanded=True):
-            year_data = projection[projection['FY'] == f'FY{display_year}']
+            year_data = projection[projection['FY'] == year_label]
 
             if len(year_data) == 0:
-                st.warning(f"⚠️ No data for FY{display_year}")
+                st.warning(f"⚠️ No data for {year_label}")
             else:
                 row = year_data.iloc[0]
 
@@ -125,14 +224,18 @@ def display_single_source(projection, display_year, source_name, grid_connected_
                 st.dataframe(pd.DataFrame(summary_data), hide_index=True, width="stretch")
 
     # Charts
-    with st.expander("📈 Emissions Charts", expanded=True):
+    with st.expander("📊 Emissions Charts", expanded=True):
+
+        # Prepare display years without FY
+        projection_display = projection.copy()
+        projection_display['Year'] = projection_display['FY'].str.replace('FY', '')
 
         # Stacked area chart
         fig = go.Figure()
 
         fig.add_trace(go.Scatter(
-            x=projection['FY'],
-            y=projection['Scope1'],
+            x=projection_display['Year'],
+            y=projection_display['Scope1'],
             name='Scope 1',
             mode='lines',
             fill='tonexty',
@@ -141,8 +244,8 @@ def display_single_source(projection, display_year, source_name, grid_connected_
         ))
 
         fig.add_trace(go.Scatter(
-            x=projection['FY'],
-            y=projection['Scope2'],
+            x=projection_display['Year'],
+            y=projection_display['Scope2'],
             name='Scope 2',
             mode='lines',
             fill='tonexty',
@@ -151,8 +254,8 @@ def display_single_source(projection, display_year, source_name, grid_connected_
         ))
 
         fig.add_trace(go.Scatter(
-            x=projection['FY'],
-            y=projection['Scope3'],
+            x=projection_display['Year'],
+            y=projection_display['Scope3'],
             name='Scope 3',
             mode='lines',
             fill='tonexty',
@@ -162,37 +265,39 @@ def display_single_source(projection, display_year, source_name, grid_connected_
 
         fig.update_layout(
             title="Total GHG Emissions by Scope",
-            xaxis_title="Financial Year",
+            xaxis_title="Calendar Year" if year_type == "CY" else "Financial Year",
             yaxis_title="Emissions (tCO2-e)",
             hovermode='x unified',
             height=500
         )
 
         # Add grid connection marker
-        if grid_connected_fy and f'FY{grid_connected_fy}' in projection['FY'].values:
-            fig.add_shape(
-                type="line",
-                x0=f'FY{grid_connected_fy}',
-                x1=f'FY{grid_connected_fy}',
-                y0=0,
-                y1=1,
-                yref="paper",
-                line=dict(color=GRID_GREEN, width=2, dash="dot")
-            )
-            fig.add_annotation(
-                x=f'FY{grid_connected_fy}',
-                y=1,
-                yref="paper",
-                text="Grid Connection",
-                showarrow=False,
-                yshift=10
-            )
+        if grid_connected_fy:
+            grid_year = str(grid_connected_fy)
+            if grid_year in projection_display['Year'].values:
+                fig.add_shape(
+                    type="line",
+                    x0=grid_year,
+                    x1=grid_year,
+                    y0=0,
+                    y1=1,
+                    yref="paper",
+                    line=dict(color=GRID_GREEN, width=2, dash="dot")
+                )
+                fig.add_annotation(
+                    x=grid_year,
+                    y=1,
+                    yref="paper",
+                    text="Grid Connection",
+                    showarrow=False,
+                    yshift=10
+                )
 
         st.plotly_chart(fig, width="stretch")
 
     # Emissions breakdown pie charts (Cost Centre and Department)
     with st.expander("🥧 Emissions Breakdown", expanded=False):
-        st.caption(f"Breakdown for FY{display_year}")
+        st.caption(f"Breakdown for {year_label}")
 
         # Get FY data from df
         fy_data = df[(df['FY'] == display_year) & (df['DataSet'] == source_name)].copy()
@@ -219,7 +324,7 @@ def display_single_source(projection, display_year, source_name, grid_connected_
 
             with col1:
                 # Cost Centre breakdown
-                cc_emissions = fy_data.groupby('CostCentre').agg({
+                cc_emissions = fy_data.groupby('CostCentre', observed=False).agg({
                     'Scope1_tCO2e': 'sum',
                     'Scope2_tCO2e': 'sum',
                     'Scope3_tCO2e': 'sum'
@@ -259,7 +364,7 @@ def display_single_source(projection, display_year, source_name, grid_connected_
 
             with col2:
                 # Department breakdown
-                dept_emissions = fy_data.groupby('Department').agg({
+                dept_emissions = fy_data.groupby('Department', observed=False).agg({
                     'Scope1_tCO2e': 'sum',
                     'Scope2_tCO2e': 'sum',
                     'Scope3_tCO2e': 'sum'
@@ -309,16 +414,20 @@ def display_single_source(projection, display_year, source_name, grid_connected_
         st.dataframe(display_df, hide_index=True, width="stretch", height=400)
 
 
-def display_comparison(proj_base, proj_npi, display_year, grid_connected_fy, df):
+def display_comparison(proj_base, proj_npi, display_year, grid_connected_fy, df, year_type='FY'):
     """Display comparison between Base and NPI-NGERS with combined charts"""
+
+    # Construct year label based on year_type
+    year_prefix = 'CY' if year_type == 'CY' else 'FY'
+    year_label = f'{year_prefix}{display_year}'
 
     # Combined summary table
     with st.expander("📊 Summary", expanded=True):
-        year_base = proj_base[proj_base['FY'] == f'FY{display_year}']
-        year_npi = proj_npi[proj_npi['FY'] == f'FY{display_year}']
+        year_base = proj_base[proj_base['FY'] == year_label]
+        year_npi = proj_npi[proj_npi['FY'] == year_label]
 
         if len(year_base) == 0 or len(year_npi) == 0:
-            st.warning(f"⚠️ No data for FY{display_year}")
+            st.warning(f"⚠️ No data for {year_label}")
         else:
             row_base = year_base.iloc[0]
             row_npi = year_npi.iloc[0]
@@ -355,7 +464,7 @@ def display_comparison(proj_base, proj_npi, display_year, grid_connected_fy, df)
                 st.caption(f"Variance: {diff_total:+,.0f} tCO2-e ({pct_diff:+.1f}%)")
 
     # Combined comparison charts in single frame
-    with st.expander("📈 Emissions Charts", expanded=True):
+    with st.expander("📊 Emissions Charts", expanded=True):
 
         # Stacked vertical comparison
         fig = make_subplots(
@@ -418,17 +527,17 @@ def display_comparison(proj_base, proj_npi, display_year, grid_connected_fy, df)
             showlegend=True,
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
-        fig.update_xaxes(title_text="Financial Year", row=2, col=1)
+        fig.update_xaxes(title_text="Calendar Year" if year_type == "CY" else "Financial Year", row=2, col=1)
         fig.update_yaxes(title_text="Emissions (tCO2-e)", row=1, col=1)
         fig.update_yaxes(title_text="Emissions (tCO2-e)", row=2, col=1)
 
         # Add grid connection markers to both charts
-        if grid_connected_fy and f'FY{grid_connected_fy}' in proj_base['FY'].values:
+        if grid_connected_fy and f'{year_prefix}{grid_connected_fy}' in proj_base['FY'].values:
             # Top chart (Base)
             fig.add_shape(
                 type="line",
-                x0=f'FY{grid_connected_fy}',
-                x1=f'FY{grid_connected_fy}',
+                x0=f'{year_prefix}{grid_connected_fy}',
+                x1=f'{year_prefix}{grid_connected_fy}',
                 y0=0,
                 y1=1,
                 yref="y domain",
@@ -436,7 +545,7 @@ def display_comparison(proj_base, proj_npi, display_year, grid_connected_fy, df)
                 row=1, col=1
             )
             fig.add_annotation(
-                x=f'FY{grid_connected_fy}',
+                x=f'{year_prefix}{grid_connected_fy}',
                 y=1,
                 yref="y domain",
                 text="Grid",
@@ -447,8 +556,8 @@ def display_comparison(proj_base, proj_npi, display_year, grid_connected_fy, df)
             # Bottom chart (NPI-NGERS)
             fig.add_shape(
                 type="line",
-                x0=f'FY{grid_connected_fy}',
-                x1=f'FY{grid_connected_fy}',
+                x0=f'{year_prefix}{grid_connected_fy}',
+                x1=f'{year_prefix}{grid_connected_fy}',
                 y0=0,
                 y1=1,
                 yref="y2 domain",
@@ -456,7 +565,7 @@ def display_comparison(proj_base, proj_npi, display_year, grid_connected_fy, df)
                 row=2, col=1
             )
             fig.add_annotation(
-                x=f'FY{grid_connected_fy}',
+                x=f'{year_prefix}{grid_connected_fy}',
                 y=1,
                 yref="y2 domain",
                 text="Grid",
@@ -469,7 +578,7 @@ def display_comparison(proj_base, proj_npi, display_year, grid_connected_fy, df)
 
     # Emissions breakdown pie charts (Cost Centre and Department)
     with st.expander("🥧 Emissions Breakdown", expanded=False):
-        st.caption(f"Breakdown for FY{display_year}")
+        st.caption(f"Breakdown for {year_label}")
 
         # Get FY data from df (actuals + budget)
         fy_data = df[df['FY'] == display_year].copy()

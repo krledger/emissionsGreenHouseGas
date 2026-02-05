@@ -1,15 +1,107 @@
 """
 config.py
 Configuration constants and mappings for Ravenswood Gold emissions model
-Last updated: 2026-02-02 09:00 AEST
+Last updated: 2026-02-05 20:53 AEDT
 
-AUDIT READY: This file contains all data classification standards and unit
-conversion factors in a single location for easy auditor review.
-All classifications are based on Description field only - no complex logic.
+================================================================================
+AUDIT DOCUMENTATION
+================================================================================
+
+PURPOSE:
+This configuration file serves as the single source of truth for all data
+classification standards, unit conversion factors and regulatory constants
+used in the Ravenswood Gold Safeguard Mechanism Model.
+
+DESIGN PRINCIPLE:
+All classifications are based on the "Description" field only. No complex logic,
+fallback rules or inference is used. This ensures:
+1. Complete auditability and traceability
+2. Clear data quality requirements
+3. No "magic" classification decisions
+4. Easy verification against source documents
+
+If a Description value does not match the standards defined here, a data quality
+error will be flagged rather than attempting to guess the correct classification.
+
+FILE STRUCTURE:
+1. Data Classification Standards
+   - Diesel fuel classifications (by end-use purpose)
+   - Electricity classifications (site vs grid)
+   - Other fuel types (LPG, oils, gases)
+
+2. Emission Scope Mappings
+   - Scope 1 (Direct): Fuel combustion
+   - Scope 2 (Indirect): Purchased electricity
+   - Scope 3 (Other): Transmission losses, non-energy fuels
+
+3. Regulatory Constants
+   - Safeguard baseline parameters
+   - Decline rates and thresholds
+   - Reporting period definitions
+
+4. Unit Conversion Factors
+   - Volume conversions (ML, L, kL)
+   - Mass conversions (t, Mt, kg)
+   - Energy conversions (kWh, MWh, GJ)
+
+5. Department Mappings
+   - Pronto ERP department codes to operational categories
+   - Alignment with organizational structure
+
+6. Visualization Palette
+   - Chart colors for consistent dashboard appearance
+   - Gold-themed palette for mining industry context
+
+DATA QUALITY REQUIREMENTS:
+All input data must use exact Description values as defined in this file:
+- Diesel oil - Site power generation (for generators)
+- Diesel oil - Mobile equipment (for mining equipment)
+- Grid electricity (purchased from network)
+- Site electricity (generated on-site)
+- Liquefied petroleum gas (LPG)
+- Petroleum based oils
+- Petroleum based greases
+- Other gaseous fossil fuels
+- Not reportable (non-energy materials)
+
+Any variation in spelling, capitalization or wording will trigger a validation error.
+
+REGULATORY REFERENCES:
+- NGER (Measurement) Determination 2008: Method 1 calculations
+- Safeguard Mechanism Rule 2015 (amended 2023): Baseline requirements
+- National Greenhouse Account Factors: Annual emission factors by fuel type
+- Clean Energy Regulator Guidance: Facility categorization and reporting
+
+CRITICAL CONSTANTS:
+- FSEI ROM Component: 0.0177 tCO₂-e/t (mining intensity baseline)
+- FSEI Electricity Component: 0.9081 tCO₂-e/MWh (power intensity baseline)
+- Site Generation Ratio: 0.008735 MWh/t (8.735 kWh per tonne ROM)
+- Decline Rate: 4.9% per annum (FY2024 to FY2030)
+- Grid Connection: FY2027 (transition from 100% diesel to 2% diesel + 98% grid)
+- 10-Year Exit Rule: Facility exits Safeguard when Scope 1 < 100,000 tCO₂-e
+  for 10 consecutive years (grace period FY2027-2036, exit FY2037)
+
+FILE DEPENDENCIES:
+Used by all calculation modules:
+- emissions_calc.py: Emission calculations
+- loader_data.py: Data classification
+- nga_loader.py: NGA factor lookup
+- projections.py: Baseline and SMC calculations
+- All tab modules: Visualization and reporting
+
+CHANGE LOG:
+- 2026-02-02: Added comprehensive audit documentation and color palette
+- 2026-01-28: Added grid connection scenario parameters
+- 2026-01-20: Simplified to Description-only classification
+- 2025-12-15: Initial configuration for Budget Prime architecture
+
+================================================================================
 """
 
 import pandas as pd
-
+from datetime import datetime
+# Date/calendar functions moved to calc_calendar.py
+from calc_calendar import date_to_fy, date_to_cy
 
 
 # =============================================================================
@@ -24,50 +116,125 @@ import pandas as pd
 # column only. No complex logic or fallback rules are used. If a Description
 # value does not match these standards, a data quality error will be flagged.
 #
+# REGULATORY BASIS:
+# Classifications follow NGER (Measurement) Determination 2008 requirements
+# for Method 1 emission calculations. Fuel type and end-use purpose determine
+# the applicable emission factors from NGA Factors tables.
+#
 
 # -----------------------------------------------------------------------------
 # DIESEL FUEL CLASSIFICATIONS
 # -----------------------------------------------------------------------------
 # Diesel fuel must be classified by end-use purpose for NGERS Method 1 reporting
 # as per NGER (Measurement) Determination 2008 Section 2.23-2.26
+#
+# TWO DIESEL CATEGORIES ONLY:
+# 1. Site power generation: Diesel consumed in stationary generators for electricity
+# 2. Mobile equipment: Diesel consumed in mining equipment (haul trucks, loaders, etc.)
+#
+# REGULATORY SIGNIFICANCE:
+# - Power generation diesel feeds into electricity intensity calculation
+# - Mobile equipment diesel feeds into mining (ROM) intensity calculation
+# - Both use the same emission factor (~2.68 kg CO₂-e/L) from NGA Factors Table 1
+# - Classification determines which baseline component the emissions affect
+#
+# EMISSION FACTOR SOURCE:
+# NGA Factors Table 1: Diesel Oil (Distillate Fuel Oil)
+# - Full combustion factors include CO₂, CH₄, N₂O
+# - Global Warming Potentials: 100-year GWP from IPCC AR4/AR5
+# - Factor varies slightly by year (2.673-2.694 kg CO₂-e/L range 2021-2025)
+#
+# DATA SOURCE:
+# Pronto ERP inventory transactions with Description field indicating purpose.
+# Historical transactions use these exact strings consistently from FY2009 onwards.
+#
 
 DIESEL_CLASSIFICATIONS = {
     'Diesel oil - Site power generation': {
-        'purpose': 'electricity',
+        'purpose': 'electricity',           # Used for power intensity calculation
         'ngers_method': 'Method 1 - Electricity Generation',
-        'scope': 1,
-        'notes': 'Diesel consumed in stationary generators for on-site electricity production'
+        'scope': 1,                         # Direct emissions (Scope 1)
+        'notes': 'Diesel consumed in stationary generators for on-site electricity production. '
+                 'Emissions calculated as ML × 1,000,000 L/ML × EF kg CO₂-e/L ÷ 1,000 kg/t. '
+                 'This diesel consumption ceases almost entirely after grid connection (FY2027), '
+                 'remaining at only 2% for backup generation.'
     },
     'Diesel oil - Mobile equipment': {
-        'purpose': 'stationary',
+        'purpose': 'stationary',            # NGER classification (off-road mobile = stationary)
         'ngers_method': 'Method 1 - Stationary Energy (Off-road)',
-        'scope': 1,
-        'notes': 'Diesel consumed in mining equipment (haul trucks, loaders, drills, etc.)'
+        'scope': 1,                         # Direct emissions (Scope 1)
+        'notes': 'Diesel consumed in mining equipment: haul trucks, front-end loaders, '
+                 'excavators, dozers, graders, water trucks and drill rigs. '
+                 'Emissions calculated as ML × 1,000,000 L/ML × EF kg CO₂-e/L ÷ 1,000 kg/t. '
+                 'This is the primary source of Scope 1 emissions and drives the ROM intensity metric.'
     }
 }
 
-# Expected diesel Description values (for validation)
+# Expected diesel Description values for data validation
+# Any deviation triggers data quality error
 VALID_DIESEL_DESCRIPTIONS = list(DIESEL_CLASSIFICATIONS.keys())
 
 # -----------------------------------------------------------------------------
 # ELECTRICITY CLASSIFICATIONS
 # -----------------------------------------------------------------------------
 # Electricity sources for Scope 1 (site generation) and Scope 2 (grid purchase)
+#
+# TWO ELECTRICITY CATEGORIES:
+# 1. Grid electricity: Purchased from network (Scope 2 indirect emissions)
+# 2. Site electricity: Generated on-site from diesel (Scope 1 direct emissions)
+#
+# REGULATORY SIGNIFICANCE:
+# - Grid electricity uses NGA Factors state-specific emission factors (Queensland)
+# - Site electricity is calculated output, not input (kWh generated, not diesel consumed)
+# - Site generation has already been accounted in Scope 1 via power generation diesel
+# - Grid connection (FY2027) shifts most electricity from Scope 1 to Scope 2
+#
+# GRID CONNECTION IMPACT:
+# Current state (FY2024-2026):
+#   - 100% site generation (diesel-powered)
+#   - 0% grid purchase
+#   - High Scope 1, zero Scope 2 electricity
+#
+# Post-connection (FY2027+):
+#   - 2% site generation (backup only)
+#   - 98% grid purchase
+#   - Low Scope 1, high Scope 2 electricity
+#
+# EMISSION FACTOR SOURCES:
+# Grid: NGA Factors Table 4 - Queensland (QLD) emission factor
+#       ~0.79 kg CO₂-e/kWh (varies by year as grid decarbonizes)
+# Site: Already captured in power generation diesel Scope 1 emissions
+#       Do not double-count by applying emission factor to site kWh
+#
+# SCOPE 3 CONSIDERATION:
+# Grid electricity also generates Scope 3 emissions from transmission and
+# distribution (T&D) losses. These use NGA Factors Table 6.
+#
 
 ELECTRICITY_CLASSIFICATIONS = {
     'Grid electricity': {
-        'source': 'grid_purchase',
-        'scope': 2,
-        'notes': 'Electricity purchased from Queensland grid (CS Energy invoices)'
+        'source': 'grid_purchase',          # Purchased from Queensland grid
+        'scope': 2,                         # Indirect emissions (Scope 2)
+        'notes': 'Electricity purchased from Queensland grid (CS Energy invoices). '
+                 'Emission factor from NGA Factors Table 4 (QLD). '
+                 'Currently zero (pre-FY2027), becomes 98% of total electricity post-connection. '
+                 'Also generates Scope 3 T&D losses (NGA Factors Table 6). '
+                 'Grid is progressively decarbonizing (emission factor declining over time).'
     },
     'Site electricity': {
-        'source': 'site_generation',
-        'scope': 1,
-        'notes': 'Electricity generated on-site from diesel fuel (calculated output in kWh)'
+        'source': 'site_generation',        # Generated on-site from diesel
+        'scope': 1,                         # Direct emissions (already counted in diesel)
+        'notes': 'Electricity generated on-site from diesel fuel (calculated output in kWh). '
+                 'This is NOT an additional emission source - the emissions are already captured '
+                 'in "Diesel oil - Site power generation" Scope 1 calculations. '
+                 'Site generation is used only for: (1) intensity calculations, (2) baseline '
+                 'determination, and (3) operational tracking. '
+                 'Currently 100% of electricity (pre-FY2027), reduces to 2% backup post-connection.'
     }
 }
 
-# Expected electricity Description values (for validation)
+# Expected electricity Description values for data validation
+# Any deviation triggers data quality error
 VALID_ELECTRICITY_DESCRIPTIONS = list(ELECTRICITY_CLASSIFICATIONS.keys())
 
 # -----------------------------------------------------------------------------
@@ -191,16 +358,18 @@ ENERGY_CONVERSIONS = {
 # FINANCIAL YEAR DEFINITION
 # =============================================================================
 
-# Default fiscal year start month (can be overridden in app)
-DEFAULT_FY_START_MONTH = 1   # January = 1, July = 7
-NGER_FY_START_MONTH = 7      # NGER/Safeguard always uses July-June FY
+# =============================================================================
+# FISCAL YEAR CONFIGURATION
+# =============================================================================
+
+# Note: NGER_FY_START_MONTH defined in calc_calendar.py (always 7 for NGERS/Safeguard)
+# Fiscal year start month for NGER reporting
+NGER_FY_START_MONTH = 7  # July - required for backward compatibility with loader_data
+
 # Default year for display in GHG tab
 DEFAULT_DISPLAY_YEAR = 2025  # Year to show by default in year selectors
-
-
-# Common configurations:
-# Calendar year (internal reporting): start_month = 1 (January)
-# NGER financial year (regulatory):   start_month = 7 (July)
+DEFAULT_YEAR_TYPE = 'CY'     # Default year type: 'CY' (Calendar Year) or 'FY' (Financial Year)
+DEFAULT_DATA_SOURCE = 'Base'  # Default data source: 'Base', 'NPI-NGERS', or 'All'
 # US fiscal year (Oct-Sep):           start_month = 10 (October)
 
 
@@ -273,27 +442,138 @@ def get_fy_description(fy_start_month=None):
     end_name = get_fy_month_name(end_month)
 
     if fy_start_month == 1:
-        return f"Calendar Year ({start_name}ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â{end_name})"
+        return f"Calendar Year ({start_name}–{end_name})"
     elif fy_start_month == 7:
-        return f"NGER Financial Year ({start_name}ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â{end_name})"
+        return f"NGER Financial Year ({start_name}–{end_name})"
     else:
-        return f"Custom Fiscal Year ({start_name}ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â{end_name})"
+        return f"Custom Fiscal Year ({start_name}–{end_name})"
 
+# =============================================================================
 # =============================================================================
 # SAFEGUARD MECHANISM PARAMETERS
 # =============================================================================
+#
+# REGULATORY CONTEXT:
+# The Safeguard Mechanism (SMM) was established under the NGER Act 2007 and
+# commenced 1 July 2016. Reformed in July 2023 to include declining baselines
+# and credit generation for over-performance.
+#
+# FACILITY DETAILS:
+# - Facility: Ravenswood Gold Mine
+# - Facility ID: Not disclosed in model (commercial confidentiality)
+# - Responsible Entity: Ravenswood Gold Group Pty Ltd
+# - Baseline Type: Production-adjusted (intensity-based)
+# - Baseline Method: Facility-Specific Emission Intensity (FSEI)
+#
+# EMISSION INTENSITY DETERMINATION (EID):
+# Approved by Clean Energy Regulator October 2024 following independent
+# assurance engagement. Based on FY2024 operational data as the most
+# representative baseline year (post-expansion, stable operations).
+#
+# BASELINE FORMULA:
+# Annual Baseline (tCO₂-e) = ROM Production (t) × Baseline Intensity (tCO₂-e/t)
+#
+# where:
+# Baseline Intensity = ROM Component + (Site Gen Ratio × Elec Component) × (1 - decline_rate)^years
+#                    = 0.0177 + (0.008735 × 0.9081) × (1 - 0.049)^(year - 2024)
+#                    = 0.02563 tCO₂-e/t (FY2024)
+#                    = declining 4.9% p.a. to FY2030, then flat
+#
+# SAFEGUARD MECHANISM CREDITS (SMCs):
+# Generated when: Actual Scope 1 Emissions < Annual Baseline
+# SMC Amount (tCO₂-e) = Baseline - Actual (when positive)
+# Credit Value ($) = SMC Amount × Carbon Credit Price × (1 + escalation)^years
+#
+# 10-YEAR EXIT RULE:
+# Facility exits Safeguard Mechanism when Scope 1 emissions < 100,000 tCO₂-e
+# for 10 consecutive financial years. Once exited, no further SMCs generated.
+# Grace period: FY2027-2036 (grid connection in FY2027 drops Scope 1 below threshold)
+# Exit year: FY2037 (after 10-year grace period expires)
+#
+# GRID CONNECTION IMPACT:
+# FY2027 grid connection fundamentally changes emissions profile:
+# - Scope 1 drops from ~195,000 to ~99,000 tCO₂-e (50% reduction)
+# - Scope 2 increases from ~95,000 to ~180,000 tCO₂-e (grid electricity)
+# - Total emissions remain similar (~290,000 tCO₂-e) but shift from Scope 1 to 2
+# - Baseline continues declining 4.9% p.a. through FY2030
+# - SMC generation accelerates dramatically (larger gap: Actual < Baseline)
+# - Cumulative credits FY2024-2036: ~440,000 tCO₂-e (~$16M @ escalating prices)
+#
 
-# FSEI Factors (CER Approved October 2024)
-FSEI_ELEC = 0.9081  # tCO2-e per MWh on-site generation
-FSEI_ROM = 0.0177   # tCO2-e per tonne ROM ore
+# -----------------------------------------------------------------------------
+# APPROVED FACILITY-SPECIFIC EMISSION INTENSITY (FSEI) FACTORS
+# -----------------------------------------------------------------------------
+# Source: Clean Energy Regulator Emission Intensity Determination
+# Approval Date: October 2024
+# Baseline Year: FY2024 (July 2023 - June 2024)
+# Assurance: Independent limited assurance engagement completed April 2024
+#
 
-# Baseline decline
-DECLINE_RATE = 0.049    # 4.9% p.a.
-DECLINE_FROM = 2024     # FY baseline decline starts
-DECLINE_TO = 2030       # FY baseline decline ends
+FSEI_ELEC = 0.9081  # tCO₂-e per MWh of on-site electricity generation
+                     # Derived from: Power diesel consumption ÷ electricity output
+                     # FY2024 data: ~1,080 ML diesel Â¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ~108,000 MWh generation
+                     # Calculation: (1,080 ML × 1,000,000 L/ML × 2.68 kg/L ÷ 1,000) ÷ 108,000 MWh
+                     #            = 2,894,400 kg CO₂-e ÷ 108,000 MWh = 0.9081 tCO₂-e/MWh
 
-# Safeguard Mechanism Credit generation
-CREDIT_START_FY = 2024  # First FY credits can be earned (FY2023-24 = 2024 under NGER July-June)
+FSEI_ROM = 0.0177   # tCO₂-e per tonne of Run of Mine (ROM) ore extracted
+                     # Derived from: Mobile diesel consumption ÷ ROM production
+                     # FY2024 data: ~5,300 ML diesel Â¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ~4,280,000 t ROM
+                     # Calculation: (5,300 ML × 1,000,000 L/ML × 2.68 kg/L ÷ 1,000) ÷ 4,280,000 t
+                     #            = 14,204,000 kg CO₂-e ÷ 4,280,000 t = 0.0177 tCO₂-e/t
+
+# Site Generation Ratio (calculated from FY2024 operations)
+SITE_GENERATION_RATIO = 0.008735  # MWh per tonne ROM (8.735 kWh/t)
+                                  # Derived from: Electricity output ÷ ROM production
+                                  # Calculation: 108,000 MWh ÷ 4,280,000 t = 0.008735 MWh/t
+                                  # Used in baseline calculation to scale electricity component
+
+# Combined Baseline Intensity (FY2024)
+# = FSEI_ROM + (SITE_GENERATION_RATIO × FSEI_ELEC)
+# = 0.0177 + (0.008735 × 0.9081)
+# = 0.0177 + 0.007931
+# = 0.02563 tCO₂-e/t ROM
+
+# -----------------------------------------------------------------------------
+# BASELINE DECLINE TRAJECTORY
+# -----------------------------------------------------------------------------
+# Safeguard Mechanism (Reformed 2023) requires declining baselines to drive
+# emissions reduction. Decline rate is facility-specific based on sector.
+#
+
+# Two-stage decline per Safeguard Mechanism legislation
+DECLINE_RATE_PHASE1 = 0.049     # 4.9% per annum (FY2024-FY2030)
+DECLINE_RATE_PHASE2 = 0.03285   # 3.285% per annum (FY2031-FY2050, indicative)
+
+DECLINE_PHASE1_START = 2024     # FY2024: Phase 1 decline starts
+DECLINE_PHASE1_END = 2030       # FY2030: Phase 1 ends
+DECLINE_PHASE2_START = 2031     # FY2031: Phase 2 decline starts
+DECLINE_PHASE2_END = 2050       # FY2050: Phase 2 ends, flat thereafter
+
+# Legacy constants (for backward compatibility)
+DECLINE_RATE = DECLINE_RATE_PHASE1   # Default to Phase 1 rate
+DECLINE_FROM = DECLINE_PHASE1_START
+DECLINE_TO = DECLINE_PHASE2_END
+# -----------------------------------------------------------------------------
+# SAFEGUARD MECHANISM CREDIT (SMC) GENERATION
+# -----------------------------------------------------------------------------
+# Credits can be generated when actual emissions are below baseline.
+# Credits are Australian Carbon Credit Units (ACCUs) that can be traded or
+# held to offset future above-baseline emissions.
+#
+
+SAFEGUARD_THRESHOLD = 100000  # tCOšâ€š-e - Facilities above this threshold are
+                              # subject to Safeguard Mechanism requirements
+
+# Reformed Safeguard Mechanism start date (legislation effective date)
+SAFEGUARD_START_DATE = datetime(2023, 7, 1)  # July 1, 2023
+CREDIT_START_DATE = datetime(2023, 7, 1)     # July 1, 2023 (first date credits can be earned)
+SAFEGUARD_DATE = datetime(2023, 7, 1)         # July 1, 2023 (reformed Safeguard Mechanism start)
+
+# Prior to July 1, 2023, the reformed mechanism did not exist
+# Exit year calculations only consider dates >= SAFEGUARD_START_DATE
+
+SMC_EXIT_PERIOD_YEARS = 10  # Years SMC credits remain valid after dropping below 100,000 tCO2-e threshold
+                             # Per Safeguard Mechanism Rule 2015
 
 # =============================================================================
 # PRODUCTION ASSUMPTIONS
@@ -396,50 +676,46 @@ NGER_PURPOSE_MAP = {
 # OPERATIONAL PHASE PROFILES
 # =============================================================================
 
-# Default phase timing
-DEFAULT_END_MINING_FY = 2035
-DEFAULT_END_PROCESSING_FY = 2038
-DEFAULT_END_REHABILITATION_FY = 2045
+# Phase transition dates (actual dates - first day of fiscal year)
+# Dates are the source of truth for all phase logic and comparisons.
+DEFAULT_START_DATE = datetime(2023, 7, 1)               # July 1, 2023 (FY2024)
+DEFAULT_END_MINING_DATE = datetime(2034, 7, 1)          # July 1, 2034
+DEFAULT_END_PROCESSING_DATE = datetime(2037, 7, 1)      # July 1, 2037
+DEFAULT_END_REHABILITATION_DATE = datetime(2044, 7, 1)  # July 1, 2044
+
+# Grid connection date (calendar date when grid becomes available)
+DEFAULT_GRID_CONNECTION_DATE = datetime(2026, 7, 1)     # July 1, 2026 (FY2027)
 
 # =============================================================================
 # PROJECTION DEFAULTS
 # =============================================================================
 
-DEFAULT_START_FY = 2023
 
 # Baseline year for projections (last stable operational year)
-BASELINE_YEAR = 2024  # FY2024 is the stable baseline (post-expansion, pre-slowdown)
 
 # Projection variability (for realistic year-to-year variation)
-PROJECTION_RANDOMNESS = 0.05  # Ã‚Â±5% random variation in projections
-RANDOM_SEED_BASE = 42  # Base seed for reproducible randomness
 
 # =============================================================================
 # CARBON MARKET DEFAULTS
 # =============================================================================
 
 # Carbon Credit Market
-DEFAULT_CARBON_CREDIT_PRICE = 35.0  # $/tCOÃƒÂ¢Ã¢â‚¬Å¡Ã¢â‚¬Å¡-e
+DEFAULT_CARBON_CREDIT_PRICE = 35.0  # $/tCO–Æ’Ã†â€™â€šÃ‚Â¢Æ’Ã‚Â¢Â¢šÂ¬Ã…Â¡â€šÃ‚Â¬Æ’Ã¢â‚¬Â¦â€šÃ‚Â¡Æ’Ã†â€™â€šÃ‚Â¢Æ’Ã‚Â¢Â¢šÂ¬Ã…Â¡â€šÃ‚Â¬Æ’Ã¢â‚¬Â¦â€šÃ‚Â¡-e
 DEFAULT_CREDIT_ESCALATION = 0.03    # 3% per annum
 
 # Carbon Tax Scenario
-DEFAULT_TAX_START_FY = 2030
-DEFAULT_TAX_RATE = 15.0             # $/tCOÃƒÂ¢Ã¢â‚¬Å¡Ã¢â‚¬Å¡-e initial rate
+DEFAULT_TAX_START_DATE = datetime(2029, 7, 1)  # July 1, 2029 (FY2030)
+DEFAULT_TAX_RATE = 15.0             # $/tCO–Æ’Ã†â€™â€šÃ‚Â¢Æ’Ã‚Â¢Â¢šÂ¬Ã…Â¡â€šÃ‚Â¬Æ’Ã¢â‚¬Â¦â€šÃ‚Â¡Æ’Ã†â€™â€šÃ‚Â¢Æ’Ã‚Â¢Â¢šÂ¬Ã…Â¡â€šÃ‚Â¬Æ’Ã¢â‚¬Â¦â€šÃ‚Â¡-e initial rate
 DEFAULT_TAX_ESCALATION = 0.02       # 2% per annum
 
 # =============================================================================
-# GRID CONNECTION DEFAULTS
-# =============================================================================
-
-DEFAULT_GRID_CONNECTION_FY = 2027   # Year grid electricity becomes available (diesel generation stops)
-GRID_CONNECTION_MONTH = 7  # Month of grid connection (1-12, 7=July = mid-year for NGER FY)
 
 # =============================================================================
 # INDUSTRY BENCHMARKS (from Safeguard Rule)
 # =============================================================================
 
-DEFAULT_INDUSTRY_EI_ROM = 0.00859   # Industry default tCOÃƒÂ¢Ã¢â‚¬Å¡Ã¢â‚¬Å¡-e/t ROM
-DEFAULT_INDUSTRY_EI_ELEC = 0.539    # Industry default tCOÃƒÂ¢Ã¢â‚¬Å¡Ã¢â‚¬Å¡-e/MWh
+DEFAULT_INDUSTRY_EI_ROM = 0.00859   # Industry default tCO–Æ’Ã†â€™â€šÃ‚Â¢Æ’Ã‚Â¢Â¢šÂ¬Ã…Â¡â€šÃ‚Â¬Æ’Ã¢â‚¬Â¦â€šÃ‚Â¡Æ’Ã†â€™â€šÃ‚Â¢Æ’Ã‚Â¢Â¢šÂ¬Ã…Â¡â€šÃ‚Â¬Æ’Ã¢â‚¬Â¦â€šÃ‚Â¡-e/t ROM
+DEFAULT_INDUSTRY_EI_ELEC = 0.539    # Industry default tCO–Æ’Ã†â€™â€šÃ‚Â¢Æ’Ã‚Â¢Â¢šÂ¬Ã…Â¡â€šÃ‚Â¬Æ’Ã¢â‚¬Â¦â€šÃ‚Â¡Æ’Ã†â€™â€šÃ‚Â¢Æ’Ã‚Â¢Â¢šÂ¬Ã…Â¡â€šÃ‚Â¬Æ’Ã¢â‚¬Â¦â€šÃ‚Â¡-e/MWh
 
 # Phase 1: Active Mining (up to End of Mining FY)
 # All cost centres operate at 100%

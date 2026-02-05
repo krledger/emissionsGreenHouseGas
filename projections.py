@@ -1,23 +1,36 @@
 """
 projections.py
-Build annual projections with Budget Prime (phase-adjusted budget)
-Last updated: 2026-02-02 01:15 AEST
+Build monthly projections with Budget Prime (phase-adjusted budget)
+Last updated: 2026-02-05 17:30 AEST
 
-Takes unified data from data_loader.py
+ARCHITECTURE: Date-based processing
+- Keeps monthly granularity with dates throughout
+- No FY aggregation (happens at display time in tabs)
+- Calculates Safeguard metrics on monthly data
+- Returns monthly DataFrame with dates
+
+Takes unified data from loader_data.py
 Creates Budget Prime by applying phase adjustments to raw budget
 Combines actuals + Budget Prime
-Aggregates to annual and calculates safeguard metrics
+Calculates safeguard metrics on monthly data
 """
 
 import pandas as pd
 import numpy as np
+from datetime import datetime
 from config import (
-    calculate_fy, NGER_FY_START_MONTH, CREDIT_START_FY, FSEI_ROM, FSEI_ELEC,
+    NGER_FY_START_MONTH,
+    CREDIT_START_DATE, SAFEGUARD_START_DATE, SMC_EXIT_PERIOD_YEARS,
+    FSEI_ROM, FSEI_ELEC,
     PHASE_MINING, PHASE_MINING_POST_GRID, PHASE_PROCESSING, PHASE_REHABILITATION,
-    get_phase_profile, DECLINE_RATE, DECLINE_FROM, DECLINE_TO
+    get_phase_profile, DECLINE_RATE_PHASE1, DECLINE_RATE_PHASE2,
+    DECLINE_PHASE1_START, DECLINE_PHASE1_END, DECLINE_PHASE2_START, DECLINE_PHASE2_END,
+    DEFAULT_GRID_CONNECTION_DATE, DEFAULT_START_DATE,
+    DEFAULT_END_MINING_DATE, DEFAULT_END_PROCESSING_DATE, DEFAULT_END_REHABILITATION_DATE
 )
-from nga_loader import NGAFactorsByYear
-from emissions_calc import (
+from calc_calendar import date_to_fy, add_years
+from loader_nga import NGAFactorsByYear
+from calc_emissions import (
     calculate_scope1_diesel,
     calculate_scope1_lpg,
     calculate_scope1_oils,
@@ -32,46 +45,56 @@ import os
 
 
 def build_projection(df, dataset='Base',
-                     end_mining_fy=2035,
-                     end_processing_fy=2038,
-                     end_rehabilitation_fy=2045,
-                     grid_connected_fy=2030,
+                     end_mining_date=DEFAULT_END_MINING_DATE,
+                     end_processing_date=DEFAULT_END_PROCESSING_DATE,
+                     end_rehabilitation_date=DEFAULT_END_REHABILITATION_DATE,
+                     grid_connected_date=DEFAULT_GRID_CONNECTION_DATE,
                      fsei_rom=FSEI_ROM,
                      fsei_elec=FSEI_ELEC,
-                     credit_start_fy=CREDIT_START_FY,
-                     start_fy=2023,
-                     end_fy=2045):
-    """Build annual projection with Budget Prime
+                     credit_start_date=CREDIT_START_DATE,
+                     start_date=DEFAULT_START_DATE,
+                     end_date=DEFAULT_END_REHABILITATION_DATE,
+                     decline_rate_phase2=None):
+    """Build monthly projection with Budget Prime (date-based)
 
     Args:
         df: Unified DataFrame from load_all_data()
         dataset: 'Base' or 'NPI-NGERS'
-        end_mining_fy: Last year of mining operations
-        end_processing_fy: Last year of processing operations
-        end_rehabilitation_fy: Last year of rehabilitation
-        grid_connected_fy: Year grid connection occurs
+        end_mining_date: Date mining operations end
+        end_processing_date: Date processing operations end
+        end_rehabilitation_date: Date rehabilitation ends
+        grid_connected_date: Date grid connection occurs
         fsei_rom: Facility specific emission intensity for ROM (tCO2-e/t)
         fsei_elec: Facility specific emission intensity for electricity (tCO2-e/MWh)
-        credit_start_fy: First year credits can be earned
-        start_fy: First projection year
-        end_fy: Last projection year
+        credit_start_date: First date credits can be earned
+        start_date: First projection date
+        end_date: Last projection date
+        decline_rate_phase2: Optional override for Phase 2 decline rate
 
     Returns:
-        Annual projection DataFrame with columns:
-        FY, Phase, ROM_Mt, Scope1, Scope2, Scope3, Total,
-        Emission_Intensity, Baseline_Intensity, SMC_Annual, SMC_Cumulative, etc.
+        Monthly projection DataFrame with columns:
+        Date, Scope1, Scope2, Scope3, Total, ROM_t, etc.
+        (Display layer aggregates to FY/CY as needed)
     """
 
     print(f"\n{'='*80}")
     print(f"BUILDING PROJECTION: {dataset}")
     print(f"{'='*80}")
 
+    # Convert dates to FY for display (not for logic)
+    start_fy = date_to_fy(start_date)
+    end_fy = date_to_fy(end_date)
+    grid_connected_fy = date_to_fy(grid_connected_date)
+    end_mining_fy = date_to_fy(end_mining_date)
+    end_processing_fy = date_to_fy(end_processing_date)
+    end_rehabilitation_fy = date_to_fy(end_rehabilitation_date)
+
     # 1. Separate actuals and budget
     actuals = df[df['DataSet'] == dataset].copy()
     budget = df[df['DataSet'] == 'Budget'].copy()
 
     if len(actuals) == 0:
-        print(f"❌ No actuals found for dataset: {dataset}")
+        print(f"Ã¢ÂÅ’ No actuals found for dataset: {dataset}")
         return pd.DataFrame()
 
     if len(budget) == 0:
@@ -95,26 +118,26 @@ def build_projection(df, dataset='Base',
     else:
         print(f"Budget future: 0 records")
 
-    # 4. Apply phase adjustments to budget → Budget Prime
+    # 4. Apply phase adjustments to budget â†’ Budget Prime
     print(f"\nApplying phase adjustments to budget...")
-    print(f"  End Mining FY:        {end_mining_fy}")
-    print(f"  End Processing FY:    {end_processing_fy}")
-    print(f"  End Rehabilitation FY: {end_rehabilitation_fy}")
-    print(f"  Grid Connected FY:    {grid_connected_fy}")
+    print(f"  End Mining FY:        {end_mining_fy} ({end_mining_date.strftime('%Y-%m-%d')})")
+    print(f"  End Processing FY:    {end_processing_fy} ({end_processing_date.strftime('%Y-%m-%d')})")
+    print(f"  End Rehabilitation FY: {end_rehabilitation_fy} ({end_rehabilitation_date.strftime('%Y-%m-%d')})")
+    print(f"  Grid Connected FY:    {grid_connected_fy} ({grid_connected_date.strftime('%Y-%m-%d')})")
 
     # STEP 1: Handle grid connection transfer (before phase adjustments)
-    budget_prime = apply_grid_connection_transfer(budget_future.copy(), grid_connected_fy)
+    budget_prime = apply_grid_connection_transfer(budget_future.copy(), grid_connected_date)
 
     # STEP 2: Apply phase adjustments
     budget_prime = apply_phase_multipliers(
         budget_prime,
-        end_mining_fy,
-        end_processing_fy,
-        end_rehabilitation_fy,
-        grid_connected_fy
+        end_mining_date,
+        end_processing_date,
+        end_rehabilitation_date,
+        grid_connected_date
     )
 
-    print(f"✅ Budget Prime created: {len(budget_prime)} records")
+    print(f"�… Budget Prime created: {len(budget_prime)} records")
 
     # 5. Recalculate emissions for Budget Prime
     print(f"\nRecalculating emissions for Budget Prime...")
@@ -126,193 +149,190 @@ def build_projection(df, dataset='Base',
     nga_by_year = NGAFactorsByYear(nga_folder)
 
     budget_prime = recalculate_emissions(budget_prime, nga_by_year)
-    print(f"✅ Emissions recalculated")
+    print(f"�… Emissions recalculated")
 
-    # 6. Combine actuals + Budget Prime
-    combined = pd.concat([actuals, budget_prime], ignore_index=True)
-    print(f"\n✅ Combined: {len(actuals)} actuals + {len(budget_prime)} budget prime = {len(combined)} total")
+    # 6. Combine actuals + Budget Prime â†’ Monthly data
+    monthly = pd.concat([actuals, budget_prime], ignore_index=True)
+    print(f"\n�… Combined: {len(actuals)} actuals + {len(budget_prime)} budget prime = {len(monthly)} total monthly records")
 
-    # 7. Aggregate to annual
-    print(f"\nAggregating to annual...")
-    annual = aggregate_to_annual(combined, start_fy, end_fy)
-    print(f"✅ Annual projection: {len(annual)} years (FY{start_fy}-FY{end_fy})")
+    # 6a. Aggregate to monthly summary (one row per month)
+    print(f"\nAggregating to monthly summary (one row per month)...")
 
-    # 8. Calculate safeguard metrics
-    print(f"\nCalculating safeguard metrics...")
-    annual = calculate_safeguard_metrics(
-        annual,
+    # Extract ROM quantities (Ore Mined)
+    rom_data = monthly[monthly['Description'] == 'Ore Mined t'].groupby('Date')['Quantity'].sum().reset_index()
+    rom_data.columns = ['Date', 'ROM_t']
+
+    # Extract Site Electricity (kWh)
+    site_elec_data = monthly[monthly['Description'] == 'Site electricity'].groupby('Date')['Quantity'].sum().reset_index()
+    site_elec_data.columns = ['Date', 'Site_Electricity_kWh']
+
+    # Extract Grid Electricity (kWh)
+    grid_elec_data = monthly[monthly['Description'] == 'Grid electricity'].groupby('Date')['Quantity'].sum().reset_index()
+    grid_elec_data.columns = ['Date', 'Grid_Electricity_kWh']
+
+    # Aggregate emissions by Date
+    emissions_agg = monthly.groupby('Date').agg({
+        'Scope1_tCO2e': 'sum',
+        'Scope2_tCO2e': 'sum',
+        'Scope3_tCO2e': 'sum'
+    }).reset_index()
+
+    # Merge all components
+    monthly_summary = emissions_agg.merge(rom_data, on='Date', how='left')
+    monthly_summary = monthly_summary.merge(site_elec_data, on='Date', how='left')
+    monthly_summary = monthly_summary.merge(grid_elec_data, on='Date', how='left')
+
+    # Fill NaN values with 0
+    monthly_summary['ROM_t'] = monthly_summary['ROM_t'].fillna(0)
+    monthly_summary['Site_Electricity_kWh'] = monthly_summary['Site_Electricity_kWh'].fillna(0)
+    monthly_summary['Grid_Electricity_kWh'] = monthly_summary['Grid_Electricity_kWh'].fillna(0)
+
+    print(f"�… Aggregated to {len(monthly_summary)} monthly records")
+    print(f"   ROM range: {monthly_summary['ROM_t'].min():.0f} to {monthly_summary['ROM_t'].max():.0f} tonnes/month")
+    print(f"   Site Electricity range: {monthly_summary['Site_Electricity_kWh'].min():.0f} to {monthly_summary['Site_Electricity_kWh'].max():.0f} kWh/month")
+
+    # 7. Calculate safeguard metrics on monthly data
+    print(f"\nCalculating safeguard metrics on monthly data...")
+    monthly_summary = calculate_safeguard_metrics_monthly(
+        monthly_summary,
         fsei_rom,
         fsei_elec,
-        credit_start_fy,
-        end_mining_fy,
-        end_processing_fy,
-        end_rehabilitation_fy,
-        grid_connected_fy
+        credit_start_date,
+        end_mining_date,
+        end_processing_date,
+        end_rehabilitation_date,
+        grid_connected_date,
+        decline_rate_phase2
     )
-    print(f"✅ Safeguard metrics calculated")
+    print(f"�… Safeguard metrics calculated")
 
     print(f"\n{'='*80}")
     print(f"PROJECTION COMPLETE")
+    print(f"  Monthly records: {len(monthly_summary)}")
+    print(f"  Date range: {monthly_summary['Date'].min().strftime('%Y-%m-%d')} to {monthly_summary['Date'].max().strftime('%Y-%m-%d')}")
+    print(f"  Aggregate to FY/CY at display time")
     print(f"{'='*80}\n")
 
-    return annual
+    return monthly_summary
 
 
-def apply_phase_multipliers(data, end_mining_fy, end_processing_fy,
-                           end_rehabilitation_fy, grid_connected_fy):
-    """Apply Cost Centre-based phase multipliers to quantities
+def apply_phase_multipliers(data, end_mining_date, end_processing_date,
+                           end_rehabilitation_date, grid_connected_date):
+    """Apply Cost Centre-based phase multipliers based on dates
 
-    Creates Budget Prime by adjusting raw budget quantities based on phase.
+    Adjusts raw budget quantities based on operational phase at each date.
     Does NOT handle grid connection transfer - that's done separately first.
 
-    IMPORTANT: Only items with explicit multipliers in PHASE_ dicts get adjusted.
-    Items without multipliers continue at 100% (no default adjustments).
-    This makes missing config entries obvious and prevents hidden errors.
+    Args:
+        data: DataFrame with monthly budget data
+        end_mining_date: Date when mining ends
+        end_processing_date: Date when processing ends
+        end_rehabilitation_date: Date when rehabilitation ends
+        grid_connected_date: Date when grid connection occurs
+
+    Returns:
+        DataFrame with phase multipliers applied
     """
     result = data.copy()
 
-    # Process each FY
-    for fy in result['FY'].unique():
-
-        # Get phase profile for this FY
+    # Process each unique date
+    for date in result['Date'].unique():
+        # Get phase profile for this date
         phase_name, phase_profile, is_active = get_phase_profile(
-            fy, end_mining_fy, end_processing_fy, end_rehabilitation_fy, grid_connected_fy
+            date, end_mining_date, end_processing_date, end_rehabilitation_date, grid_connected_date
         )
 
-        fy_mask = result['FY'] == fy
+        date_mask = result['Date'] == date
 
         if not is_active:
             # Facility closed - zero everything
-            result.loc[fy_mask, 'Quantity'] = 0
+            result.loc[date_mask, 'Quantity'] = 0
             continue
 
-        # Apply Cost Centre multipliers ONLY to items in phase_profile
-        # Items not in phase_profile continue at 100% (no default adjustment)
+        # Apply Cost Centre multipliers only to items in phase_profile
         for cost_centre, multiplier in phase_profile.items():
-            mask = fy_mask & (result['CostCentre'] == cost_centre)
+            mask = date_mask & (result['CostCentre'] == cost_centre)
             if mask.any():
                 result.loc[mask, 'Quantity'] *= multiplier
-
-        # NO FALLBACK LOGIC
-        # If a Cost Centre is not in the phase profile dictionary,
-        # it continues at its budget value (100%).
-        # This makes missing entries visible rather than hiding them with defaults.
 
     return result
 
 
-def apply_grid_connection_transfer(data, grid_connected_fy):
-    """Handle grid connection electricity transfer
+def apply_grid_connection_transfer(data, grid_connected_date):
+    """Apply grid connection transfer based on date (not FY)
 
-    Grid connection occurs July 1st (Month 7) of grid_connected_fy.
-    Runs BEFORE phase adjustments, so quantities are clean baselines.
-
-    Changes:
-    - Before grid: 100% diesel → site electricity (Scope 1)
-    - Grid year Jul-Dec: 2% diesel → 2% site electricity + 98% grid (Scope 2)
-    - After grid: 2% diesel → 2% site electricity + 98% grid (Scope 2)
-
-    Adjustments made:
-    1. Site electricity (kWh) → 2% of original
-    2. Grid electricity (kWh) → +98% of site electricity
-    3. Diesel oil - Site power generation (L) → 2% of original
+    Diesel generation and site electricity reduce to 2% after grid connection.
+    The 98% reduction in site electricity transfers to grid electricity.
 
     Args:
-        data: DataFrame with monthly data (Budget, BEFORE phase adjustments)
-        grid_connected_fy: Year grid connection occurs
+        data: DataFrame with monthly budget data
+        grid_connected_date: datetime when grid connection occurs
 
     Returns:
         DataFrame with grid connection transfers applied
     """
     result = data.copy()
 
-    # Track changes for logging
-    diesel_before = 0
-    diesel_after = 0
-    site_elec_before = 0
-    site_elec_after = 0
-    grid_elec_before = 0
-    grid_elec_after = 0
+    # Filter to records on or after grid connection date
+    post_grid = result['Date'] >= grid_connected_date
 
-    # Process each month
-    for fy in sorted(result['FY'].unique()):
-        if fy < grid_connected_fy:
-            continue  # Pre-grid: no changes needed
+    if not post_grid.any():
+        return result  # No records after grid connection
 
-        for month in range(1, 13):
-            # Determine if grid is active this month
-            if fy > grid_connected_fy:
-                grid_active = True  # Always on grid after connection year
-            elif fy == grid_connected_fy and month >= 7:
-                grid_active = True  # July onwards in connection year
+    # Track totals for logging
+    diesel_reduced = 0
+    site_reduced = 0
+    grid_increased = 0
+
+    # === 1. REDUCE DIESEL FUEL (Site power generation) ===
+    diesel_mask = post_grid & (result['Description'] == 'Diesel oil - Site power generation')
+
+    if diesel_mask.any():
+        original_diesel = result.loc[diesel_mask, 'Quantity'].sum()
+        result.loc[diesel_mask, 'Quantity'] *= 0.02
+        new_diesel = result.loc[diesel_mask, 'Quantity'].sum()
+        diesel_reduced = original_diesel - new_diesel
+
+    # === 2. REDUCE SITE ELECTRICITY and TRANSFER TO GRID ===
+    site_mask = post_grid & (result['Description'] == 'Site electricity')
+
+    if site_mask.any():
+        # Process each site electricity record
+        for idx in result[site_mask].index:
+            original_qty = result.loc[idx, 'Quantity']
+            date = result.loc[idx, 'Date']
+            cost_centre = result.loc[idx, 'CostCentre']
+            department = result.loc[idx, 'Department']
+
+            site_reduced += original_qty * 0.98
+
+            # Reduce site to 2%
+            result.loc[idx, 'Quantity'] = original_qty * 0.02
+
+            # Transfer 98% to grid
+            transfer_qty = original_qty * 0.98
+            grid_increased += transfer_qty
+
+            # Find existing grid electricity for same cost centre and date
+            grid_mask = (result['Date'] == date) & \
+                       (result['Description'] == 'Grid electricity') & \
+                       (result['CostCentre'] == cost_centre)
+
+            if grid_mask.any():
+                # Add to existing grid record
+                result.loc[grid_mask, 'Quantity'] += transfer_qty
             else:
-                grid_active = False  # Pre-grid
+                # Create new grid electricity record
+                new_row = result.loc[idx].copy()
+                new_row['Description'] = 'Grid electricity'
+                new_row['Quantity'] = transfer_qty
+                result = pd.concat([result, pd.DataFrame([new_row])], ignore_index=True)
 
-            if not grid_active:
-                continue  # No transfer needed
-
-            # === 1. REDUCE DIESEL FUEL (Site power generation) ===
-            diesel_mask = (result['FY'] == fy) & \
-                         (result['Month'] == month) & \
-                         (result['Description'] == 'Diesel oil - Site power generation')
-
-            for idx in result[diesel_mask].index:
-                original_qty = result.loc[idx, 'Quantity']
-                diesel_before += original_qty
-
-                # Reduce diesel to 2% (98% no longer needed)
-                result.loc[idx, 'Quantity'] = original_qty * 0.02
-                diesel_after += original_qty * 0.02
-
-            # === 2. TRANSFER SITE ELECTRICITY TO GRID ===
-            site_mask = (result['FY'] == fy) & \
-                       (result['Month'] == month) & \
-                       (result['Description'] == 'Site electricity')
-
-            if not site_mask.any():
-                continue  # No site electricity this month
-
-            # Process each site electricity entry (by Cost Centre)
-            for idx in result[site_mask].index:
-                original_qty = result.loc[idx, 'Quantity']
-                cost_centre = result.loc[idx, 'CostCentre']
-                department = result.loc[idx, 'Department']
-
-                site_elec_before += original_qty
-
-                # Reduce site to 2%
-                result.loc[idx, 'Quantity'] = original_qty * 0.02
-                site_elec_after += original_qty * 0.02
-
-                # Transfer 98% to grid
-                transfer_qty = original_qty * 0.98
-
-                # Find existing grid electricity for same cost centre/month
-                grid_mask = (result['FY'] == fy) & \
-                           (result['Month'] == month) & \
-                           (result['Description'] == 'Grid electricity') & \
-                           (result['CostCentre'] == cost_centre)
-
-                if grid_mask.any():
-                    # Add to existing grid entry
-                    grid_idx = grid_mask.idxmax()
-                    grid_elec_before += result.loc[grid_idx, 'Quantity']
-                    result.loc[grid_idx, 'Quantity'] += transfer_qty
-                    grid_elec_after += result.loc[grid_idx, 'Quantity']
-                else:
-                    # Create new grid electricity entry
-                    new_row = result.loc[idx].copy()
-                    new_row['Description'] = 'Grid electricity'
-                    new_row['Quantity'] = transfer_qty
-                    new_row['Source'] = 'Grid connection (from site)'
-                    result = pd.concat([result, pd.DataFrame([new_row])], ignore_index=True)
-                    grid_elec_after += transfer_qty
-
-    # Summary logging
-    print(f"✅ Grid connection transfer (active from FY{grid_connected_fy} July onwards):")
-    print(f"   Diesel fuel:      {diesel_before:,.0f} → {diesel_after:,.0f} L ({diesel_before-diesel_after:,.0f} L reduced)")
-    print(f"   Site electricity: {site_elec_before:,.0f} → {site_elec_after:,.0f} kWh ({site_elec_before-site_elec_after:,.0f} kWh reduced)")
-    print(f"   Grid electricity: {grid_elec_before:,.0f} → {grid_elec_after:,.0f} kWh (+{grid_elec_after-grid_elec_before:,.0f} kWh added)")
+    # Log the transfer
+    print(f"�… Grid connection transfer (active from {grid_connected_date.strftime('%Y-%m-%d')} onwards):")
+    print(f"   Diesel fuel:      {diesel_reduced:,.0f} L reduced")
+    print(f"   Site electricity: {site_reduced:,.0f} kWh reduced")
+    print(f"   Grid electricity: {grid_increased:,.0f} kWh added")
 
     return result
 
@@ -321,7 +341,7 @@ def apply_grid_connection_transfer(data, grid_connected_fy):
 def recalculate_emissions(data, nga_by_year):
     """Recalculate emissions from adjusted quantities
 
-    Uses same logic as data_loader.py but on Budget Prime quantities
+    Uses same logic as loader_data.py but on Budget Prime quantities
     """
     result = data.copy()
 
@@ -330,8 +350,9 @@ def recalculate_emissions(data, nga_by_year):
     result['Scope2_tCO2e'] = 0.0
     result['Scope3_tCO2e'] = 0.0
 
-    # Get NGA factors for each FY
-    unique_years = result['FY'].unique()
+    # Get NGA factors for each year (using FY from dates)
+    result['FY_temp'] = result['Date'].apply(date_to_fy)
+    unique_years = result['FY_temp'].unique()
     year_factor_map = {}
 
     for year in unique_years:
@@ -370,50 +391,50 @@ def recalculate_emissions(data, nga_by_year):
     # Diesel - Site power
     mask = result['Description'] == 'Diesel oil - Site power generation'
     if mask.any():
-        result.loc[mask, 'factor_s1'] = result.loc[mask, 'FY'].map(lambda y: year_factor_map[y]['diesel_elec_s1'])
-        result.loc[mask, 'factor_s3'] = result.loc[mask, 'FY'].map(lambda y: year_factor_map[y]['diesel_s3'])
+        result.loc[mask, 'factor_s1'] = result.loc[mask, 'FY_temp'].map(lambda y: year_factor_map[y]['diesel_elec_s1'])
+        result.loc[mask, 'factor_s3'] = result.loc[mask, 'FY_temp'].map(lambda y: year_factor_map[y]['diesel_s3'])
         result.loc[mask, 'Scope1_tCO2e'] = calculate_scope1_diesel(result.loc[mask, 'Quantity'], result.loc[mask, 'factor_s1'])
         result.loc[mask, 'Scope3_tCO2e'] = calculate_scope3_diesel(result.loc[mask, 'Quantity'], result.loc[mask, 'factor_s3'])
 
     # Diesel - Mobile equipment
     mask = result['Description'] == 'Diesel oil - Mobile equipment'
     if mask.any():
-        result.loc[mask, 'factor_s1'] = result.loc[mask, 'FY'].map(lambda y: year_factor_map[y]['diesel_stat_s1'])
-        result.loc[mask, 'factor_s3'] = result.loc[mask, 'FY'].map(lambda y: year_factor_map[y]['diesel_s3'])
+        result.loc[mask, 'factor_s1'] = result.loc[mask, 'FY_temp'].map(lambda y: year_factor_map[y]['diesel_stat_s1'])
+        result.loc[mask, 'factor_s3'] = result.loc[mask, 'FY_temp'].map(lambda y: year_factor_map[y]['diesel_s3'])
         result.loc[mask, 'Scope1_tCO2e'] = calculate_scope1_diesel(result.loc[mask, 'Quantity'], result.loc[mask, 'factor_s1'])
         result.loc[mask, 'Scope3_tCO2e'] = calculate_scope3_diesel(result.loc[mask, 'Quantity'], result.loc[mask, 'factor_s3'])
 
     # LPG
     mask = result['Description'].str.contains('Liquefied petroleum gas', case=False, na=False)
     if mask.any():
-        result.loc[mask, 'factor_s1'] = result.loc[mask, 'FY'].map(lambda y: year_factor_map[y]['lpg_s1'])
-        result.loc[mask, 'factor_s3'] = result.loc[mask, 'FY'].map(lambda y: year_factor_map[y]['lpg_s3'])
+        result.loc[mask, 'factor_s1'] = result.loc[mask, 'FY_temp'].map(lambda y: year_factor_map[y]['lpg_s1'])
+        result.loc[mask, 'factor_s3'] = result.loc[mask, 'FY_temp'].map(lambda y: year_factor_map[y]['lpg_s3'])
         result.loc[mask, 'Scope1_tCO2e'] = calculate_scope1_lpg(result.loc[mask, 'Quantity'], result.loc[mask, 'factor_s1'])
         result.loc[mask, 'Scope3_tCO2e'] = calculate_scope1_lpg(result.loc[mask, 'Quantity'], result.loc[mask, 'factor_s3'])
 
     # Petroleum oils (Scope 3 only)
     mask = result['Description'].str.contains('Petroleum based oils', case=False, na=False)
     if mask.any():
-        result.loc[mask, 'factor_s3'] = result.loc[mask, 'FY'].map(lambda y: year_factor_map[y]['oil_s3'])
+        result.loc[mask, 'factor_s3'] = result.loc[mask, 'FY_temp'].map(lambda y: year_factor_map[y]['oil_s3'])
         result.loc[mask, 'Scope3_tCO2e'] = calculate_scope1_oils(result.loc[mask, 'Quantity'], result.loc[mask, 'factor_s3'])
 
     # Petroleum greases (Scope 3 only)
     mask = result['Description'].str.contains('Petroleum based greases', case=False, na=False)
     if mask.any():
-        result.loc[mask, 'factor_s3'] = result.loc[mask, 'FY'].map(lambda y: year_factor_map[y]['grease_s3'])
+        result.loc[mask, 'factor_s3'] = result.loc[mask, 'FY_temp'].map(lambda y: year_factor_map[y]['grease_s3'])
         result.loc[mask, 'Scope3_tCO2e'] = calculate_scope1_greases(result.loc[mask, 'Quantity'], result.loc[mask, 'factor_s3'])
 
     # Acetylene
     mask = result['Description'].str.contains('gaseous fossil fuels', case=False, na=False)
     if mask.any():
-        result.loc[mask, 'factor_s1'] = result.loc[mask, 'FY'].map(lambda y: year_factor_map[y]['acetylene_s1'])
+        result.loc[mask, 'factor_s1'] = result.loc[mask, 'FY_temp'].map(lambda y: year_factor_map[y]['acetylene_s1'])
         result.loc[mask, 'Scope1_tCO2e'] = calculate_scope1_acetylene(result.loc[mask, 'Quantity'], result.loc[mask, 'factor_s1'])
 
     # Grid electricity
     mask = result['Description'] == 'Grid electricity'
     if mask.any():
-        result.loc[mask, 'factor_s2'] = result.loc[mask, 'FY'].map(lambda y: year_factor_map[y]['grid_s2'])
-        result.loc[mask, 'factor_s3'] = result.loc[mask, 'FY'].map(lambda y: year_factor_map[y]['grid_s3'])
+        result.loc[mask, 'factor_s2'] = result.loc[mask, 'FY_temp'].map(lambda y: year_factor_map[y]['grid_s2'])
+        result.loc[mask, 'factor_s3'] = result.loc[mask, 'FY_temp'].map(lambda y: year_factor_map[y]['grid_s3'])
         # Convert kWh to MWh
         mwh = convert_kwh_to_mwh(result.loc[mask, 'Quantity'])
         result.loc[mask, 'Scope2_tCO2e'] = calculate_scope2_grid_electricity(mwh, result.loc[mask, 'factor_s2'])
@@ -426,145 +447,227 @@ def recalculate_emissions(data, nga_by_year):
     return result
 
 
-def aggregate_to_annual(data, start_fy, end_fy):
-    """Aggregate monthly data to annual"""
-
-    # Aggregate emissions
-    emissions_annual = data.groupby('FY').agg({
-        'Scope1_tCO2e': 'sum',
-        'Scope2_tCO2e': 'sum',
-        'Scope3_tCO2e': 'sum'
-    }).reset_index()
-
-    # Aggregate ROM (use "Ore Mined t" only - Safeguard production variable)
-    rom_data = data[data['Description'] == 'Ore Mined t']
-    rom_annual = rom_data.groupby('FY')['Quantity'].sum().reset_index()
-    rom_annual['ROM_Mt'] = rom_annual['Quantity'] / 1_000_000
-    rom_annual = rom_annual[['FY', 'ROM_Mt']]
-
-    # Aggregate electricity consumption
-    site_elec_data = data[data['Description'] == 'Site electricity']
-    site_elec_annual = site_elec_data.groupby('FY')['Quantity'].sum().reset_index()
-    site_elec_annual.columns = ['FY', 'Site_Electricity_kWh']
-
-    grid_elec_data = data[data['Description'] == 'Grid electricity']
-    grid_elec_annual = grid_elec_data.groupby('FY')['Quantity'].sum().reset_index()
-    grid_elec_annual.columns = ['FY', 'Grid_Electricity_kWh']
-
-    # Merge
-    annual = emissions_annual.merge(rom_annual, on='FY', how='left')
-    annual = annual.merge(site_elec_annual, on='FY', how='left')
-    annual = annual.merge(grid_elec_annual, on='FY', how='left')
-    annual['ROM_Mt'] = annual['ROM_Mt'].fillna(0)
-    annual['Site_Electricity_kWh'] = annual['Site_Electricity_kWh'].fillna(0)
-    annual['Grid_Electricity_kWh'] = annual['Grid_Electricity_kWh'].fillna(0)
-
-    # Ensure all years present
-    all_fys = pd.DataFrame({'FY': range(start_fy, end_fy + 1)})
-    annual = all_fys.merge(annual, on='FY', how='left')
-    annual = annual.fillna(0)
-
-    # Add total emissions
-    annual['Total'] = annual['Scope1_tCO2e'] + annual['Scope2_tCO2e'] + annual['Scope3_tCO2e']
-
-    # Add aliases for backward compatibility
-    annual['Scope1'] = annual['Scope1_tCO2e']
-    annual['Scope2'] = annual['Scope2_tCO2e']
-    annual['Scope3'] = annual['Scope3_tCO2e']
-
-    return annual
 
 
-def calculate_safeguard_metrics(annual, fsei_rom, fsei_elec, credit_start_fy,
-                                end_mining_fy, end_processing_fy,
-                                end_rehabilitation_fy, grid_connected_fy):
-    """Calculate safeguard mechanism metrics with dual FSEI components"""
+def calculate_safeguard_metrics_monthly(monthly, fsei_rom, fsei_elec, credit_start_date,
+                                        end_mining_date, end_processing_date,
+                                        end_rehabilitation_date, grid_connected_date,
+                                        decline_rate_phase2=None):
+    """Calculate safeguard mechanism metrics on monthly data (date-based)
+
+    Calculates baseline intensity, SMC credits and applies 10-year exit rule.
+    Works on monthly data with dates (not annual FY data).
+
+    Args:
+        monthly: Monthly DataFrame with Date, Scope1, ROM_t columns
+        fsei_rom: Facility specific emission intensity for ROM (tCO2-e/t)
+        fsei_elec: Facility specific emission intensity for electricity (tCO2-e/MWh)
+        credit_start_date: First date credits can be earned
+        end_mining_date: Date when mining ends
+        end_processing_date: Date when processing ends
+        end_rehabilitation_date: Date when rehabilitation ends
+        grid_connected_date: Date when grid connection occurs
+        decline_rate_phase2: Optional override for Phase 2 decline rate
+
+    Returns:
+        Monthly DataFrame with added metrics columns
+    """
+    result = monthly.copy()
+
+    # Filter to only include dates from Safeguard Mechanism start onwards
+    result = result[result['Date'] >= SAFEGUARD_START_DATE].copy()
+
+    if len(result) == 0:
+        # Return empty DataFrame with expected columns if all data filtered out
+        result['Phase'] = []
+        result['Emission_Intensity'] = []
+        result['Baseline_Intensity'] = []
+        result['Baseline'] = []
+        result['Intensity_Excess'] = []
+        result['SMC_Monthly'] = []
+        result['SMC_Cumulative'] = []
+        result['In_Safeguard'] = []
+        return result
 
     # Add phase column
-    annual['Phase'] = annual['FY'].apply(lambda fy: get_phase_name(
-        fy, end_mining_fy, end_processing_fy, end_rehabilitation_fy, grid_connected_fy
+    result['Phase'] = result['Date'].apply(lambda d: get_phase_name_by_date(
+        d, end_mining_date, end_processing_date, end_rehabilitation_date, grid_connected_date
     ))
 
-    # Emission intensity (actual Scope 1 / ROM)
-    annual['Emission_Intensity'] = 0.0
-    mask = annual['ROM_Mt'] > 0
-    annual.loc[mask, 'Emission_Intensity'] = annual.loc[mask, 'Scope1'] / (annual.loc[mask, 'ROM_Mt'] * 1_000_000)
+    # Emission intensity (actual Scope 1 / ROM tonnes)
+    result['Emission_Intensity'] = 0.0
+    mask = result['ROM_t'] > 0
+    result.loc[mask, 'Emission_Intensity'] = result.loc[mask, 'Scope1_tCO2e'] / result.loc[mask, 'ROM_t']
 
-    # Baseline intensity with BOTH ROM and electricity components
-    # Based on FY2023-24 operational data: 11.624 Mt ROM, 101,540 MWh site generation
-    # Site generation ratio: 101,540 / 11,624,000 = 0.008735 MWh/t ROM
+    # Calculate baseline intensity for each month's date
     SITE_GENERATION_RATIO = 0.008735  # MWh per tonne ROM
-
-    # Baseline Intensity = FSEI_ROM + (Site_MWh / ROM) × FSEI_ELEC
-    #                    = 0.0177 + (0.008735 × 0.9081)
-    #                    = 0.0177 + 0.00793
-    #                    = 0.02563 tCO2-e/t
     baseline_intensity_base = fsei_rom + (SITE_GENERATION_RATIO * fsei_elec)
 
-    annual['Baseline_Intensity'] = baseline_intensity_base
-    for idx, row in annual.iterrows():
-        fy = row['FY']
-        if DECLINE_FROM <= fy <= DECLINE_TO:
-            years_declining = fy - DECLINE_FROM
-            decline_factor = (1 - DECLINE_RATE) ** years_declining
-            annual.at[idx, 'Baseline_Intensity'] = baseline_intensity_base * decline_factor
-        elif fy > DECLINE_TO:
-            years_declining = DECLINE_TO - DECLINE_FROM
-            decline_factor = (1 - DECLINE_RATE) ** years_declining
-            annual.at[idx, 'Baseline_Intensity'] = baseline_intensity_base * decline_factor
+    result['Baseline_Intensity'] = result['Date'].apply(
+        lambda d: calculate_baseline_intensity_for_date(
+            d, baseline_intensity_base, decline_rate_phase2
+        )
+    )
 
-    # Baseline emissions
-    annual['Baseline'] = annual['Baseline_Intensity'] * annual['ROM_Mt'] * 1_000_000
+    # Baseline emissions - separate ROM and electricity components with decline
+    # Both components decline at the same rate as baseline_intensity
+
+    # Calculate declining FSEI factors for this date
+    result['FSEI_ROM_Declining'] = result['Date'].apply(
+        lambda d: fsei_rom * (calculate_baseline_intensity_for_date(d, 1.0, decline_rate_phase2))
+    )
+    result['FSEI_ELEC_Declining'] = result['Date'].apply(
+        lambda d: fsei_elec * (calculate_baseline_intensity_for_date(d, 1.0, decline_rate_phase2))
+    )
+
+    # Calculate each baseline component
+    result['Baseline_ROM'] = result['FSEI_ROM_Declining'] * result['ROM_t']
+    result['Baseline_Electricity'] = 0.0
+    if 'Site_Electricity_kWh' in result.columns:
+        result['Baseline_Electricity'] = result['FSEI_ELEC_Declining'] * (result['Site_Electricity_kWh'] / 1000)
+
+    # Total baseline
+    result['Baseline'] = result['Baseline_ROM'] + result['Baseline_Electricity']
 
     # Intensity excess (for reporting - positive means above baseline)
-    annual['Intensity_Excess'] = annual['Emission_Intensity'] - annual['Baseline_Intensity']
+    result['Intensity_Excess'] = result['Emission_Intensity'] - result['Baseline_Intensity']
 
-    # SMC Annual = Baseline - Actual Scope 1
-    # Positive = Credits earned (actual below baseline - good performance)
-    # Negative = Liability (actual above baseline - need to buy credits or pay tax)
-    annual['SMC_Annual'] = 0.0
-    mask = (annual['FY'] >= credit_start_fy) & (annual['ROM_Mt'] > 0)
-    annual.loc[mask, 'SMC_Annual'] = annual.loc[mask, 'Baseline'] - annual.loc[mask, 'Scope1']
+    # SMC Monthly = Baseline - Actual Scope 1
+    result['SMC_Monthly'] = 0.0
+    mask = (result['Date'] >= credit_start_date)
+    result.loc[mask, 'SMC_Monthly'] = result.loc[mask, 'Baseline'] - result.loc[mask, 'Scope1_tCO2e']
+    # Only allow positive credits (below baseline)
+    result.loc[result['SMC_Monthly'] < 0, 'SMC_Monthly'] = 0.0
 
-    # Apply 10-year exit rule: Credits stop 10 years after dropping below 100,000 tCO2-e
-    # Per Safeguard Mechanism regulations
-    exit_year = None
-    for idx, row in annual.iterrows():
-        fy_num = row['FY']
-        scope1 = row['Scope1']
+    # Apply 10-year exit rule: Find first date emissions drop below 100,000 tCO2-e
+    exit_date = find_exit_date(result, SAFEGUARD_START_DATE)
 
-        # Find first year below 100,000 tCO2-e threshold
-        if exit_year is None and scope1 < 100_000:
-            exit_year = fy_num
-
-        # Zero credits after 10 years past exit year
-        if exit_year is not None and (fy_num - exit_year) >= 10:
-            annual.at[idx, 'SMC_Annual'] = 0.0
+    # Add Exit_FY column for visualization
+    if exit_date:
+        from calc_calendar import date_to_fy
+        result['Exit_FY'] = date_to_fy(exit_date)
+        # Zero credits after 10 years from exit date
+        stop_date = add_years(exit_date, SMC_EXIT_PERIOD_YEARS)  # Stop after 10 years
+        result.loc[result['Date'] >= stop_date, 'SMC_Monthly'] = 0.0
+    else:
+        result['Exit_FY'] = None
 
     # SMC Cumulative
-    annual['SMC_Cumulative'] = 0.0
-    cumulative = 0.0
-    for idx, row in annual.iterrows():
-        if row['FY'] >= credit_start_fy:
-            cumulative += row['SMC_Annual']
-        annual.at[idx, 'SMC_Cumulative'] = cumulative
+    result['SMC_Cumulative'] = result['SMC_Monthly'].cumsum()
 
-    # In Safeguard threshold (100,000 tCO2-e)
-    annual['In_Safeguard'] = annual['Scope1'] >= 100_000
+    # In Safeguard threshold (100,000 tCO2-e annually)
+    # Mark if month is in a year that exceeds threshold
+    result['In_Safeguard'] = result.groupby(result['Date'].dt.year)['Scope1_tCO2e'].transform('sum') >= 100_000
 
-    # Store exit year for reference
-    annual['Exit_Year'] = exit_year if exit_year is not None else None
-
-    # Format FY column
-    annual['FY'] = 'FY' + annual['FY'].astype(int).astype(str)
-
-    return annual
+    return result
 
 
-def get_phase_name(fy, end_mining_fy, end_processing_fy, end_rehabilitation_fy, grid_connected_fy):
-    """Get phase name for display"""
+def calculate_baseline_intensity_for_date(date, baseline_intensity_base, decline_rate_phase2=None):
+    """Calculate declining baseline intensity for a specific date
+
+    Two-phase decline per Safeguard Mechanism legislation:
+    - Phase 1: 4.9% per year (FY2024-FY2030)
+    - Phase 2: 3.285% per year (FY2031-FY2050)
+    - Flat after FY2050
+
+    Args:
+        date: Date to calculate baseline for
+        baseline_intensity_base: Base baseline intensity (tCO2-e/t)
+        decline_rate_phase2: Optional override for Phase 2 decline rate
+
+    Returns:
+        float: Baseline intensity for the given date
+    """
+    from calc_calendar import date_to_fy
+
+    fy = date_to_fy(date)
+
+    # Phase 1: FY2024-FY2030 (4.9% decline)
+    if DECLINE_PHASE1_START <= fy <= DECLINE_PHASE1_END:
+        years_declining = fy - DECLINE_PHASE1_START
+        decline_factor = (1 - DECLINE_RATE_PHASE1) ** years_declining
+        return baseline_intensity_base * decline_factor
+
+    # Phase 2: FY2031-FY2050 (3.285% decline)
+    elif DECLINE_PHASE2_START <= fy <= DECLINE_PHASE2_END:
+        # First apply Phase 1 decline (6 years from FY2025-FY2030)
+        phase1_years = DECLINE_PHASE1_END - DECLINE_PHASE1_START
+        phase1_factor = (1 - DECLINE_RATE_PHASE1) ** phase1_years
+        baseline_after_phase1 = baseline_intensity_base * phase1_factor
+
+        # Then apply Phase 2 decline
+        rate_phase2 = decline_rate_phase2 if decline_rate_phase2 is not None else DECLINE_RATE_PHASE2
+        phase2_years = fy - DECLINE_PHASE1_END
+        phase2_factor = (1 - rate_phase2) ** phase2_years
+        return baseline_after_phase1 * phase2_factor
+
+    # After FY2050: Flat baseline
+    elif fy > DECLINE_PHASE2_END:
+        # Apply both phases
+        phase1_years = DECLINE_PHASE1_END - DECLINE_PHASE1_START
+        phase1_factor = (1 - DECLINE_RATE_PHASE1) ** phase1_years
+        baseline_after_phase1 = baseline_intensity_base * phase1_factor
+
+        rate_phase2 = decline_rate_phase2 if decline_rate_phase2 is not None else DECLINE_RATE_PHASE2
+        phase2_years = DECLINE_PHASE2_END - DECLINE_PHASE1_END
+        phase2_factor = (1 - rate_phase2) ** phase2_years
+        return baseline_after_phase1 * phase2_factor
+
+    # Before FY2024: No decline
+    else:
+        return baseline_intensity_base
+
+
+def find_exit_date(monthly, safeguard_start_date):
+    """Find first date when emissions drop below 100,000 tCO2-e threshold
+
+    Only considers dates after Safeguard Mechanism started.
+    Handles re-entry: If emissions go back above 100k, exit date resets.
+
+    Args:
+        monthly: Monthly DataFrame with Date and Scope1_tCO2e columns
+        safeguard_start_date: Date when Safeguard Mechanism started
+
+    Returns:
+        datetime or None: First date emissions drop below 100k (after considering re-entry)
+    """
+    from calc_calendar import date_to_fy
+
+    # Group by FY and sum emissions
+    monthly['FY_temp'] = monthly['Date'].apply(date_to_fy)
+    annual_scope1 = monthly.groupby('FY_temp')['Scope1_tCO2e'].sum()
+
+    exit_fy = None
+    for fy in sorted(annual_scope1.index):
+        # Only consider years after Safeguard started
+        if fy < date_to_fy(safeguard_start_date):
+            continue
+
+        scope1 = annual_scope1[fy]
+
+        # Find first year below threshold
+        if scope1 < 100_000:
+            if exit_fy is None:
+                exit_fy = fy
+        else:
+            # Re-entry: emissions back above threshold
+            if exit_fy is not None:
+                exit_fy = None
+
+    # Convert exit FY to first date of that FY
+    if exit_fy:
+        from calc_calendar import fy_to_date_range
+        exit_date, _ = fy_to_date_range(exit_fy)
+        return exit_date
+
+    return None
+
+
+def get_phase_name_by_date(date, end_mining_date, end_processing_date,
+                           end_rehabilitation_date, grid_connected_date):
+    """Get phase name for display based on date"""
     phase_name, _, is_active = get_phase_profile(
-        fy, end_mining_fy, end_processing_fy, end_rehabilitation_fy, grid_connected_fy
+        date, end_mining_date, end_processing_date, end_rehabilitation_date, grid_connected_date
     )
 
     if not is_active:
@@ -597,8 +700,8 @@ def carbon_tax_analysis(projection, tax_start_fy, tax_rate_initial, tax_escalati
     """
     result = projection.copy()
 
-    # Extract FY number
-    result['FY_num'] = result['FY'].str.replace('FY', '').astype(int)
+    # Extract year number (works for both FY2023 and CY2023 formats)
+    result['FY_num'] = result['Year'].str.extract(r'(\d+)')[0].astype(int)
 
     # Calculate tax rate for each year (escalates annually)
     result['Tax_Rate'] = 0.0
@@ -641,9 +744,9 @@ def smc_credit_value_analysis(projection, credit_start_fy, credit_price_initial,
     years_since_start = result.loc[mask, 'FY_num'] - credit_start_fy
     result.loc[mask, 'Credit_Price'] = credit_price_initial * ((1 + credit_escalation_rate) ** years_since_start)
 
-    # Credit value (SMC credits × escalated price)
+    # Credit value (SMC credits Ãƒ– escalated price)
     result['Credit_Value_Annual'] = result['SMC_Annual'] * result['Credit_Price']
-    result['Credit_Value_Cumulative'] = result['Credit_Value_Annual'].cumsum()
+    result['Credit_Value_Cumulative'] = result['SMC_Cumulative'] * result['Credit_Price']
 
     return result
 
