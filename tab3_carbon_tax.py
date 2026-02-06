@@ -196,7 +196,14 @@ def render_carbon_tax_tab(df, selected_source, fsei_rom, fsei_elec,
 
 
 def display_tax_single(carbon_tax, source_name, tax_start_fy, show_summary=True, year_type='FY'):
-    """Display tax analysis for single data source"""
+    """Display tax analysis for single data source
+
+    Waterfall chart style matching SMC Credits & Value chart:
+    - Floating bars show annual tax (green = tax owed, red = refund/credit)
+    - Gold line shows cumulative tax liability on secondary axis
+    - Connector lines link bar tops between years
+    - Labels at 5-year intervals on cumulative line
+    """
 
     # Construct year label based on year_type
     year_prefix = 'CY' if year_type == 'CY' else 'FY'
@@ -204,13 +211,13 @@ def display_tax_single(carbon_tax, source_name, tax_start_fy, show_summary=True,
     year_label = f'{year_prefix}{display_year}'
 
     # Gold color palette
-    GOLD_METALLIC = '#DBB12A'      # Bars - cumulative
-    CAFE_NOIR = '#39250B'          # Line - annual
+    GOLD_METALLIC = '#DBB12A'
+    CAFE_NOIR = '#39250B'
 
     # Filter to tax period
     tax_data = carbon_tax[carbon_tax['FY_num'] >= tax_start_fy]
 
-    # Summary table - single row with all data
+    # Summary table
     if show_summary:
         with st.expander("📊 Summary", expanded=True):
             year_data = tax_data[tax_data['FY'] == year_label]
@@ -231,7 +238,7 @@ def display_tax_single(carbon_tax, source_name, tax_start_fy, show_summary=True,
                 df_summary = pd.DataFrame(summary_data)
                 st.dataframe(df_summary, hide_index=True, width="stretch")
 
-    # Tax Liability chart - cumulative bars + annual line
+    # Tax Liability chart - waterfall style (matching SMC Credits & Value)
     with st.expander("💰 Tax Liability", expanded=True):
 
         if len(tax_data) == 0:
@@ -239,56 +246,121 @@ def display_tax_single(carbon_tax, source_name, tax_start_fy, show_summary=True,
         else:
             # Prepare display years
             tax_data = tax_data.copy()
-            tax_data['Year'] = tax_data['FY'].str.replace('FY', '')
+            tax_data['Year'] = tax_data['FY'].str.replace(r'^[A-Z]{2}', '', regex=True)
 
             fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-            # Cumulative tax (bars)
+            # --- Waterfall bars: annual tax floating at cumulative position ---
+            annual_vals = tax_data['Tax_Annual'].values
+            cum_vals = tax_data['Tax_Cumulative'].values
+
+            # Calculate base (bottom) of each waterfall bar
+            bases = []
+            for i, (ann, cum) in enumerate(zip(annual_vals, cum_vals)):
+                if ann >= 0:
+                    bases.append(cum - ann)  # Tax: base at previous cumulative
+                else:
+                    bases.append(cum)  # Refund: base at new (lower) cumulative
+
+            # Green = tax owed, Red = refund/credit offset
+            bar_colors = ['#CA564B' if v >= 0 else '#2A9D8F' for v in annual_vals]
+            bar_heights = [abs(v) for v in annual_vals]
+
+            # Bar labels
+            bar_labels = []
+            for v in annual_vals:
+                if abs(v) >= 1_000_000:
+                    bar_labels.append(f"${abs(v)/1_000_000:.1f}M")
+                elif abs(v) >= 1_000:
+                    bar_labels.append(f"${abs(v)/1_000:.0f}K")
+                elif v != 0:
+                    bar_labels.append(f"${abs(v):,.0f}")
+                else:
+                    bar_labels.append("")
+
             fig.add_trace(
                 go.Bar(
                     x=tax_data['Year'],
-                    y=tax_data['Tax_Cumulative'],
-                    name='Cumulative Tax',
-                    marker_color=GOLD_METALLIC,
-                    opacity=0.8
+                    y=bar_heights,
+                    base=bases,
+                    name='Annual Tax',
+                    marker_color=bar_colors,
+                    marker_cornerradius=4,
+                    opacity=0.9,
+                    text=bar_labels,
+                    textposition='outside',
+                    textfont=dict(size=11, color='rgba(57, 37, 11, 0.8)'),
+                    constraintext='none',
+                    hovertext=[f"${v:,.0f} ({'tax' if v >= 0 else 'refund'})" for v in annual_vals],
+                    hovertemplate='%{hovertext}<extra></extra>'
                 ),
                 secondary_y=False
             )
 
-            # Annual tax (line with dollar labels)
-            # Format labels for display
-            labels = []
-            for val in tax_data['Tax_Annual']:
-                if val >= 1_000_000:
-                    labels.append(f"${val/1_000_000:.1f}M")
-                elif val >= 1_000:
-                    labels.append(f"${val/1_000:.0f}K")
-                else:
-                    labels.append(f"${val:.0f}")
+            # Connector lines between bars
+            for i in range(1, len(tax_data)):
+                prev_cum = cum_vals[i - 1]
+                fig.add_shape(
+                    type="line",
+                    x0=tax_data['Year'].iloc[i - 1],
+                    x1=tax_data['Year'].iloc[i],
+                    y0=prev_cum,
+                    y1=prev_cum,
+                    line=dict(color='rgba(138, 126, 107, 0.4)', width=1, dash='dot'),
+                )
 
+            # Cumulative value line on secondary axis
             fig.add_trace(
                 go.Scatter(
                     x=tax_data['Year'],
-                    y=tax_data['Tax_Annual'],
-                    name='Annual Tax',
-                    mode='lines+markers+text',
-                    line=dict(color=CAFE_NOIR, width=3),
-                    marker=dict(size=6),
-                    text=labels,
-                    textposition='top center',
-                    textfont=dict(size=10, color=CAFE_NOIR)
+                    y=cum_vals,
+                    name='Cumulative Tax ($)',
+                    mode='lines+markers',
+                    line=dict(color=GOLD_METALLIC, width=3),
+                    marker=dict(size=6, color=GOLD_METALLIC),
+                    hovertemplate='$%{y:,.0f}<extra></extra>'
                 ),
                 secondary_y=True
             )
 
+            # Labels at 5-year intervals on cumulative line
+            years_list = tax_data['Year'].tolist()
+            key_indices = set()
+            for idx, yr in enumerate(years_list):
+                if int(yr) % 5 == 0:
+                    key_indices.add(idx)
+            key_indices.add(len(years_list) - 1)  # Always include last year
+
+            for idx in key_indices:
+                if idx < len(years_list) and cum_vals[idx] > 0:
+                    val_m = cum_vals[idx] / 1e6
+                    fig.add_annotation(
+                        x=years_list[idx],
+                        y=cum_vals[idx],
+                        yref='y2',
+                        text=f"<b>${val_m:.1f}M</b>",
+                        showarrow=False,
+                        yshift=-16,
+                        font=dict(size=11, color=GOLD_METALLIC),
+                    )
+
+            # Zero line
+            fig.add_hline(y=0, line_dash="solid", line_color="grey", line_width=0.5, secondary_y=False)
+
+            # Axis scaling: bars in upper portion, cumulative line below
+            max_cum = max(tax_data['Tax_Cumulative'].max(), 1)
             fig.update_xaxes(title_text="Calendar Year" if year_type == "CY" else "Financial Year")
-            fig.update_yaxes(title_text="Cumulative Tax ($AUD)", secondary_y=False)
-            fig.update_yaxes(title_text="Annual Tax ($AUD)", secondary_y=True)
+            fig.update_yaxes(title_text="Tax Liability (AUD)", secondary_y=False,
+                           range=[0, max_cum * 1.55])
+            fig.update_yaxes(title_text="Cumulative Tax ($AUD)", secondary_y=True,
+                           range=[0, max_cum * 1.25])
+
             fig.update_layout(
-                title="Carbon Tax Liability",
                 hovermode='x unified',
-                height=400,
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                height=500,
+                showlegend=True,
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=0.95),
+                bargap=0.15,
             )
 
             st.plotly_chart(fig, width="stretch", key=f"tax_liability_{source_name}")
@@ -298,11 +370,16 @@ def display_tax_single(carbon_tax, source_name, tax_start_fy, show_summary=True,
                 final_year = tax_data['FY'].iloc[-1]
                 final_cumulative = tax_data['Tax_Cumulative'].iloc[-1]
                 final_rate = tax_data['Tax_Rate'].iloc[-1]
-                st.caption(f"💵 {final_year} Cumulative Tax: ${final_cumulative:,.0f} AUD at ${final_rate:.2f}/tCO2-e")
+                st.caption(f"{final_year} Cumulative Tax: ${final_cumulative:,.0f} AUD at ${final_rate:.2f}/tCO2-e")
 
 
 def display_tax_comparison(tax_base, tax_npi, display_year, tax_start_fy, year_type='FY'):
-    """Display tax comparison between Base and NPI-NGERS with combined charts"""
+    """Display tax comparison between Base and NPI-NGERS
+
+    Waterfall chart style matching SMC Credits & Value comparison:
+    - Two stacked subplots (Base top, NPI-NGERS bottom)
+    - Floating bars show annual tax, gold line shows cumulative
+    """
 
     # Construct year label based on year_type
     year_prefix = 'CY' if year_type == 'CY' else 'FY'
@@ -355,7 +432,7 @@ def display_tax_comparison(tax_base, tax_npi, display_year, tax_start_fy, year_t
         else:
             st.info(f"Tax period starts FY{tax_start_fy}")
 
-    # Combined tax liability chart in single frame
+    # Combined tax liability chart - waterfall style
     if len(tax_base_period) > 0 and len(tax_npi_period) > 0:
         with st.expander("💰 Tax Liability", expanded=True):
 
@@ -367,103 +444,103 @@ def display_tax_comparison(tax_base, tax_npi, display_year, tax_start_fy, year_t
                 row_heights=[0.5, 0.5]
             )
 
+            # Helper to add waterfall tax traces for a dataset
+            def add_tax_traces(tax_period, row, show_legend=True, name_suffix=''):
+                annual_vals = tax_period['Tax_Annual'].values
+                cum_vals = tax_period['Tax_Cumulative'].values
+                fy_vals = tax_period['FY'].tolist()
+
+                # Calculate waterfall bases
+                bases = []
+                for i, (ann, cum) in enumerate(zip(annual_vals, cum_vals)):
+                    if ann >= 0:
+                        bases.append(cum - ann)
+                    else:
+                        bases.append(cum)
+
+                # Red = tax owed (cost), Green = refund
+                bar_colors = ['#CA564B' if v >= 0 else '#2A9D8F' for v in annual_vals]
+                bar_heights = [abs(v) for v in annual_vals]
+
+                # Bar labels
+                bar_labels = []
+                for v in annual_vals:
+                    if abs(v) >= 1_000_000:
+                        bar_labels.append(f"${abs(v)/1_000_000:.1f}M")
+                    elif abs(v) >= 1_000:
+                        bar_labels.append(f"${abs(v)/1_000:.0f}K")
+                    elif v != 0:
+                        bar_labels.append(f"${abs(v):,.0f}")
+                    else:
+                        bar_labels.append("")
+
+                fig.add_trace(
+                    go.Bar(
+                        x=fy_vals,
+                        y=bar_heights,
+                        base=bases,
+                        name=f'Annual Tax{name_suffix}',
+                        marker_color=bar_colors,
+                        marker_cornerradius=4,
+                        opacity=0.9,
+                        text=bar_labels,
+                        textposition='outside',
+                        textfont=dict(size=10, color='rgba(57, 37, 11, 0.8)'),
+                        constraintext='none',
+                        showlegend=show_legend,
+                        hovertext=[f"${v:,.0f}" for v in annual_vals],
+                        hovertemplate='%{hovertext}<extra></extra>'
+                    ),
+                    secondary_y=False, row=row, col=1
+                )
+
+                # Connector lines
+                for i in range(1, len(fy_vals)):
+                    prev_cum = cum_vals[i - 1]
+                    fig.add_shape(
+                        type="line",
+                        x0=fy_vals[i - 1], x1=fy_vals[i],
+                        y0=prev_cum, y1=prev_cum,
+                        line=dict(color='rgba(138, 126, 107, 0.4)', width=1, dash='dot'),
+                        row=row, col=1
+                    )
+
+                # Cumulative value line
+                fig.add_trace(
+                    go.Scatter(
+                        x=fy_vals,
+                        y=cum_vals,
+                        name=f'Cumulative Tax{name_suffix}',
+                        mode='lines+markers',
+                        line=dict(color=GOLD_METALLIC, width=3),
+                        marker=dict(size=4, color=GOLD_METALLIC),
+                        showlegend=show_legend,
+                        hovertemplate='$%{y:,.0f}<extra></extra>'
+                    ),
+                    secondary_y=True, row=row, col=1
+                )
+
+                # Zero line
+                fig.add_hline(y=0, line_dash="solid", line_color="grey", line_width=0.5,
+                              secondary_y=False, row=row, col=1)
+
             # Base (top chart)
-            fig.add_trace(
-                go.Bar(
-                    x=tax_base_period['FY'],
-                    y=tax_base_period['Tax_Cumulative'],
-                    name='Cumulative Tax',
-                    marker_color=GOLD_METALLIC,
-                    opacity=0.8,
-                    hovertemplate='$%{y:,.0f}<extra></extra>'
-                ),
-                secondary_y=False,
-                row=1, col=1
-            )
-
-            # Format labels for Base annual line
-            labels_base = []
-            for val in tax_base_period['Tax_Annual']:
-                if val >= 1_000_000:
-                    labels_base.append(f"${val/1_000_000:.1f}M")
-                elif val >= 1_000:
-                    labels_base.append(f"${val/1_000:.0f}K")
-                else:
-                    labels_base.append(f"${val:.0f}")
-
-            fig.add_trace(
-                go.Scatter(
-                    x=tax_base_period['FY'],
-                    y=tax_base_period['Tax_Annual'],
-                    name='Annual Tax',
-                    mode='lines+markers+text',
-                    line=dict(color=CAFE_NOIR, width=3),
-                    marker=dict(size=6),
-                    text=labels_base,
-                    textposition='top center',
-                    textfont=dict(size=9, color=CAFE_NOIR),
-                    showlegend=False,
-                    hovertemplate='$%{y:,.0f}<extra></extra>'
-                ),
-                secondary_y=True,
-                row=1, col=1
-            )
-
-            # NPI-NGERS (bottom chart) - use prime notation for proper hover labels
-            fig.add_trace(
-                go.Bar(
-                    x=tax_npi_period['FY'],
-                    y=tax_npi_period['Tax_Cumulative'],
-                    name="Cumulative Tax'",
-                    marker_color=GOLD_METALLIC,
-                    opacity=0.8,
-                    showlegend=False,
-                    hovertemplate='$%{y:,.0f}<extra></extra>'
-                ),
-                secondary_y=False,
-                row=2, col=1
-            )
-
-            # Format labels for NPI annual line
-            labels_npi = []
-            for val in tax_npi_period['Tax_Annual']:
-                if val >= 1_000_000:
-                    labels_npi.append(f"${val/1_000_000:.1f}M")
-                elif val >= 1_000:
-                    labels_npi.append(f"${val/1_000:.0f}K")
-                else:
-                    labels_npi.append(f"${val:.0f}")
-
-            fig.add_trace(
-                go.Scatter(
-                    x=tax_npi_period['FY'],
-                    y=tax_npi_period['Tax_Annual'],
-                    name="Annual Tax'",
-                    mode='lines+markers+text',
-                    line=dict(color=CAFE_NOIR, width=3),
-                    marker=dict(size=6),
-                    text=labels_npi,
-                    textposition='top center',
-                    textfont=dict(size=9, color=CAFE_NOIR),
-                    showlegend=False,
-                    hovertemplate='$%{y:,.0f}<extra></extra>'
-                ),
-                secondary_y=True,
-                row=2, col=1
-            )
+            add_tax_traces(tax_base_period, row=1, show_legend=True)
+            # NPI-NGERS (bottom chart)
+            add_tax_traces(tax_npi_period, row=2, show_legend=False, name_suffix="'")
 
             # Update axes
             fig.update_xaxes(title_text="Calendar Year" if year_type == "CY" else "Financial Year", row=2, col=1)
-            fig.update_yaxes(title_text="Cumulative Tax ($AUD)", secondary_y=False, row=1, col=1)
-            fig.update_yaxes(title_text="Annual Tax ($AUD)", secondary_y=True, row=1, col=1)
-            fig.update_yaxes(title_text="Cumulative Tax ($AUD)", secondary_y=False, row=2, col=1)
-            fig.update_yaxes(title_text="Annual Tax ($AUD)", secondary_y=True, row=2, col=1)
+            fig.update_yaxes(title_text="Tax Liability (AUD)", secondary_y=False, row=1, col=1)
+            fig.update_yaxes(title_text="Cumulative Tax ($AUD)", secondary_y=True, row=1, col=1)
+            fig.update_yaxes(title_text="Tax Liability (AUD)", secondary_y=False, row=2, col=1)
+            fig.update_yaxes(title_text="Cumulative Tax ($AUD)", secondary_y=True, row=2, col=1)
 
             fig.update_layout(
                 height=700,
                 hovermode='x unified',
                 showlegend=True,
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=0.95)
             )
 
             st.plotly_chart(fig, width="stretch")
@@ -474,4 +551,4 @@ def display_tax_comparison(tax_base, tax_npi, display_year, tax_start_fy, year_t
                 final_cumulative_base = tax_base_period['Tax_Cumulative'].iloc[-1]
                 final_year_npi = tax_npi_period['FY'].iloc[-1]
                 final_cumulative_npi = tax_npi_period['Tax_Cumulative'].iloc[-1]
-                st.caption(f"💵 {final_year_base}: Base ${final_cumulative_base:,.0f} | NPI-NGERS ${final_cumulative_npi:,.0f}")
+                st.caption(f"{final_year_base}: Base ${final_cumulative_base:,.0f} | NPI-NGERS ${final_cumulative_npi:,.0f}")

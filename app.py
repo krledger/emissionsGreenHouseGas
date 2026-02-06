@@ -615,4 +615,4 @@ with tab4:
 
 # FOOTER
 st.markdown("---")
-st.caption("Â© 2024-2026 Decision Chaos | Safeguard Mechanism Compliance Model for Ravenswood Gold Mine")
+st.caption("Safeguard Mechanism Compliance Model for Ravenswood Gold Mine")

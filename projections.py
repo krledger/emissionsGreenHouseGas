@@ -94,7 +94,7 @@ def build_projection(df, dataset='Base',
     budget = df[df['DataSet'] == 'Budget'].copy()
 
     if len(actuals) == 0:
-        print(f"Ã¢ÂÅ’ No actuals found for dataset: {dataset}")
+        print(f"❌ No actuals found for dataset: {dataset}")
         return pd.DataFrame()
 
     if len(budget) == 0:
@@ -118,7 +118,7 @@ def build_projection(df, dataset='Base',
     else:
         print(f"Budget future: 0 records")
 
-    # 4. Apply phase adjustments to budget â†’ Budget Prime
+    # 4. Apply phase adjustments to budget Ã¢â€ â€™ Budget Prime
     print(f"\nApplying phase adjustments to budget...")
     print(f"  End Mining FY:        {end_mining_fy} ({end_mining_date.strftime('%Y-%m-%d')})")
     print(f"  End Processing FY:    {end_processing_fy} ({end_processing_date.strftime('%Y-%m-%d')})")
@@ -137,7 +137,7 @@ def build_projection(df, dataset='Base',
         grid_connected_date
     )
 
-    print(f"�… Budget Prime created: {len(budget_prime)} records")
+    print(f"ï¿½â€¦ Budget Prime created: {len(budget_prime)} records")
 
     # 5. Recalculate emissions for Budget Prime
     print(f"\nRecalculating emissions for Budget Prime...")
@@ -149,11 +149,11 @@ def build_projection(df, dataset='Base',
     nga_by_year = NGAFactorsByYear(nga_folder)
 
     budget_prime = recalculate_emissions(budget_prime, nga_by_year)
-    print(f"�… Emissions recalculated")
+    print(f"ï¿½â€¦ Emissions recalculated")
 
-    # 6. Combine actuals + Budget Prime â†’ Monthly data
+    # 6. Combine actuals + Budget Prime Ã¢â€ â€™ Monthly data
     monthly = pd.concat([actuals, budget_prime], ignore_index=True)
-    print(f"\n�… Combined: {len(actuals)} actuals + {len(budget_prime)} budget prime = {len(monthly)} total monthly records")
+    print(f"\nï¿½â€¦ Combined: {len(actuals)} actuals + {len(budget_prime)} budget prime = {len(monthly)} total monthly records")
 
     # 6a. Aggregate to monthly summary (one row per month)
     print(f"\nAggregating to monthly summary (one row per month)...")
@@ -187,7 +187,7 @@ def build_projection(df, dataset='Base',
     monthly_summary['Site_Electricity_kWh'] = monthly_summary['Site_Electricity_kWh'].fillna(0)
     monthly_summary['Grid_Electricity_kWh'] = monthly_summary['Grid_Electricity_kWh'].fillna(0)
 
-    print(f"�… Aggregated to {len(monthly_summary)} monthly records")
+    print(f"ï¿½â€¦ Aggregated to {len(monthly_summary)} monthly records")
     print(f"   ROM range: {monthly_summary['ROM_t'].min():.0f} to {monthly_summary['ROM_t'].max():.0f} tonnes/month")
     print(f"   Site Electricity range: {monthly_summary['Site_Electricity_kWh'].min():.0f} to {monthly_summary['Site_Electricity_kWh'].max():.0f} kWh/month")
 
@@ -204,7 +204,7 @@ def build_projection(df, dataset='Base',
         grid_connected_date,
         decline_rate_phase2
     )
-    print(f"�… Safeguard metrics calculated")
+    print(f"ï¿½â€¦ Safeguard metrics calculated")
 
     print(f"\n{'='*80}")
     print(f"PROJECTION COMPLETE")
@@ -329,7 +329,7 @@ def apply_grid_connection_transfer(data, grid_connected_date):
                 result = pd.concat([result, pd.DataFrame([new_row])], ignore_index=True)
 
     # Log the transfer
-    print(f"�… Grid connection transfer (active from {grid_connected_date.strftime('%Y-%m-%d')} onwards):")
+    print(f"ï¿½â€¦ Grid connection transfer (active from {grid_connected_date.strftime('%Y-%m-%d')} onwards):")
     print(f"   Diesel fuel:      {diesel_reduced:,.0f} L reduced")
     print(f"   Site electricity: {site_reduced:,.0f} kWh reduced")
     print(f"   Grid electricity: {grid_increased:,.0f} kWh added")
@@ -503,7 +503,10 @@ def calculate_safeguard_metrics_monthly(monthly, fsei_rom, fsei_elec, credit_sta
     SITE_GENERATION_RATIO = 0.008735  # MWh per tonne ROM
     baseline_intensity_base = fsei_rom + (SITE_GENERATION_RATIO * fsei_elec)
 
-    result['Baseline_Intensity'] = result['Date'].apply(
+    # NOTE: Baseline_Intensity is calculated AFTER the baseline (derived from
+    # actual baseline / ROM_t).  The fixed-ratio version below is kept as
+    # 'Baseline_Intensity_Fixed' for reference only (valid pre-grid, misleading post-grid).
+    result['Baseline_Intensity_Fixed'] = result['Date'].apply(
         lambda d: calculate_baseline_intensity_for_date(
             d, baseline_intensity_base, decline_rate_phase2
         )
@@ -520,44 +523,87 @@ def calculate_safeguard_metrics_monthly(monthly, fsei_rom, fsei_elec, credit_sta
         lambda d: fsei_elec * (calculate_baseline_intensity_for_date(d, 1.0, decline_rate_phase2))
     )
 
-    # Calculate each baseline component
+    # Baseline per Safeguard Mechanism Rule 2015, Section 19:
+    #   Baseline = Σ (Production_qty × FSEI × decline_factor)
+    # Two production variables per approved EID (CER October 2024):
+    #   1. ROM metal ore:          ROM_t × FSEI_ROM × decline
+    #   2. Electricity generation: Site_MWh × FSEI_ELEC × decline
+    # Ref: EID Basis of Preparation (Turner & Townsend, Feb 2024) Tables 13-14
     result['Baseline_ROM'] = result['FSEI_ROM_Declining'] * result['ROM_t']
     result['Baseline_Electricity'] = 0.0
     if 'Site_Electricity_kWh' in result.columns:
         result['Baseline_Electricity'] = result['FSEI_ELEC_Declining'] * (result['Site_Electricity_kWh'] / 1000)
 
-    # Total baseline
+    # Total baseline (sum of both production variable components)
     result['Baseline'] = result['Baseline_ROM'] + result['Baseline_Electricity']
+
+    # Derive effective Baseline_Intensity from actual baseline for chart display
+    # This reflects the TRUE baseline per tonne (including actual electricity component)
+    # Pre-grid: ~0.0256 (matches combined formula)
+    # Post-grid: drops to ~0.018 (electricity component shrinks with site generation)
+    result['Baseline_Intensity'] = 0.0
+    mask_rom = result['ROM_t'] > 0
+    result.loc[mask_rom, 'Baseline_Intensity'] = (
+        result.loc[mask_rom, 'Baseline'] / result.loc[mask_rom, 'ROM_t']
+    )
 
     # Intensity excess (for reporting - positive means above baseline)
     result['Intensity_Excess'] = result['Emission_Intensity'] - result['Baseline_Intensity']
 
-    # SMC Monthly = Baseline - Actual Scope 1
+    # -------------------------------------------------------------------------
+    # SMC CALCULATION - THREE-PHASE MODEL
+    # Per Safeguard Mechanism Rule 2015 (Reformed 2023)
+    #
+    # Phase 1 - SAFEGUARD (Scope 1 >= 100,000 tCO2-e annually):
+    #   Covered facility.  Credits (s22XB) and surrenders (s22XE) both apply.
+    #   SMC = Baseline - Actual (positive = credit, negative = surrender)
+    #
+    # Phase 2 - OPT-IN (Scope 1 < 100,000 tCO2-e, up to 10 years, s58B):
+    #   Facility drops below threshold, opts in to continue earning credits.
+    #   Credits only - no surrender obligations.  Baseline keeps declining.
+    #   Negatives clamped to zero.
+    #
+    # Phase 3 - EXITED (after 10-year opt-in expires):
+    #   No credits, no surrenders.  Existing credits can still be traded.
+    #   SMC = 0
+    # -------------------------------------------------------------------------
+
+    # Step 1: Determine annual Safeguard status (In/Out of threshold)
+    result['In_Safeguard'] = result.groupby(result['Date'].dt.year)['Scope1_tCO2e'].transform('sum') >= 100_000
+
+    # Step 2: Calculate raw SMC (before phase rules)
     result['SMC_Monthly'] = 0.0
     mask = (result['Date'] >= credit_start_date)
     result.loc[mask, 'SMC_Monthly'] = result.loc[mask, 'Baseline'] - result.loc[mask, 'Scope1_tCO2e']
-    # Only allow positive credits (below baseline)
-    result.loc[result['SMC_Monthly'] < 0, 'SMC_Monthly'] = 0.0
 
-    # Apply 10-year exit rule: Find first date emissions drop below 100,000 tCO2-e
+    # Step 3: Find exit date (first FY below threshold)
     exit_date = find_exit_date(result, SAFEGUARD_START_DATE)
 
-    # Add Exit_FY column for visualization
+    # Step 4: Assign SMC_Phase and apply phase-specific rules
+    result['SMC_Phase'] = 'Pre-Safeguard'
+    result.loc[result['Date'] >= credit_start_date, 'SMC_Phase'] = 'Safeguard'
+
     if exit_date:
         from calc_calendar import date_to_fy
         result['Exit_FY'] = date_to_fy(exit_date)
-        # Zero credits after 10 years from exit date
-        stop_date = add_years(exit_date, SMC_EXIT_PERIOD_YEARS)  # Stop after 10 years
-        result.loc[result['Date'] >= stop_date, 'SMC_Monthly'] = 0.0
+        stop_date = add_years(exit_date, SMC_EXIT_PERIOD_YEARS)
+
+        # Opt-in period: below threshold, within 10 years
+        opt_in_mask = (result['Date'] >= exit_date) & (result['Date'] < stop_date)
+        result.loc[opt_in_mask, 'SMC_Phase'] = 'Opt-In'
+
+        # Opt-in: credits only, clamp negatives to zero (no surrender obligations)
+        result.loc[opt_in_mask & (result['SMC_Monthly'] < 0), 'SMC_Monthly'] = 0.0
+
+        # Exited: no credits, no surrenders
+        exited_mask = (result['Date'] >= stop_date)
+        result.loc[exited_mask, 'SMC_Phase'] = 'Exited'
+        result.loc[exited_mask, 'SMC_Monthly'] = 0.0
     else:
         result['Exit_FY'] = None
 
     # SMC Cumulative
     result['SMC_Cumulative'] = result['SMC_Monthly'].cumsum()
-
-    # In Safeguard threshold (100,000 tCO2-e annually)
-    # Mark if month is in a year that exceeds threshold
-    result['In_Safeguard'] = result.groupby(result['Date'].dt.year)['Scope1_tCO2e'].transform('sum') >= 100_000
 
     return result
 
@@ -744,9 +790,17 @@ def smc_credit_value_analysis(projection, credit_start_fy, credit_price_initial,
     years_since_start = result.loc[mask, 'FY_num'] - credit_start_fy
     result.loc[mask, 'Credit_Price'] = credit_price_initial * ((1 + credit_escalation_rate) ** years_since_start)
 
-    # Credit value (SMC credits Ãƒ– escalated price)
+    # Credit value - two measures:
+    # 1. Annual: credits/surrenders earned that year valued at that year's price
+    # 2. Cumulative: mark-to-market - entire credit bank valued at current year's price
+    #    This reflects what the banked credits are WORTH now, not what they cost to earn
+    #    Value keeps growing as price escalates even after credits stop being earned
     result['Credit_Value_Annual'] = result['SMC_Annual'] * result['Credit_Price']
-    result['Credit_Value_Cumulative'] = result['SMC_Cumulative'] * result['Credit_Price']
+    mask_cv = result['FY_num'] >= credit_start_fy
+    result['Credit_Value_Cumulative'] = 0.0
+    result.loc[mask_cv, 'Credit_Value_Cumulative'] = (
+        result.loc[mask_cv, 'SMC_Cumulative'] * result.loc[mask_cv, 'Credit_Price']
+    )
 
     return result
 

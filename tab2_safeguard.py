@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from projections import build_projection, smc_credit_value_analysis
 from calc_calendar import date_to_fy, aggregate_by_year_type
-from config import COLORS, DECLINE_RATE, DECLINE_FROM, DECLINE_TO
+from config import COLORS, DECLINE_RATE, DECLINE_FROM, DECLINE_TO, SAFEGUARD_THRESHOLD
 
 
 def prepare_annual_for_safeguard(monthly):
@@ -37,12 +37,6 @@ def prepare_annual_for_safeguard(monthly):
         agg_dict['Grid_Electricity_kWh'] = 'sum'
     if 'Baseline' in monthly.columns:
         agg_dict['Baseline'] = 'sum'
-    if 'Baseline_Intensity' in monthly.columns:
-        agg_dict['Baseline_Intensity'] = 'mean'  # Average intensity over year
-    if 'Emission_Intensity' in monthly.columns:
-        agg_dict['Emission_Intensity'] = 'mean'  # Average intensity over year
-    if 'Intensity_Excess' in monthly.columns:
-        agg_dict['Intensity_Excess'] = 'mean'    # Average excess over year
     if 'Phase' in monthly.columns:
         agg_dict['Phase'] = 'last'  # Take phase from last month of FY
     if 'SMC_Monthly' in monthly.columns:
@@ -53,8 +47,10 @@ def prepare_annual_for_safeguard(monthly):
         agg_dict['In_Safeguard'] = 'last'  # End-of-year status
     if 'Exit_FY' in monthly.columns:
         agg_dict['Exit_FY'] = 'first'  # Same for all months in year
+    if 'SMC_Phase' in monthly.columns:
+        agg_dict['SMC_Phase'] = 'last'  # End-of-year phase status
 
-    # Aggregate monthly â†’ annual (always Tax Year/FY for Safeguard - legislated)
+    # Aggregate monthly -> annual (always Tax Year/FY for Safeguard - legislated)
     annual = aggregate_by_year_type(monthly, 'FY', agg_dict=agg_dict)
 
     # Add FY column as string for compatibility
@@ -112,7 +108,7 @@ def render_safeguard_tab(df, selected_source, fsei_rom, fsei_elec,
     credit_start_fy = date_to_fy(credit_start_date)
 
     st.subheader("🛡️ Safeguard Mechanism Analysis")
-    st.caption(f"Baseline Intensity: ROM {fsei_rom:.4f} + Elec {fsei_elec:.4f} × 0.00874 MWh/t = 0.0256 tCO2-e/t | Declining at {DECLINE_RATE*100:.1f}% p.a. (FY{DECLINE_FROM}-FY{DECLINE_TO})")
+    st.caption(f"FSEI: ROM {fsei_rom:.4f} tCO2-e/t | Elec {fsei_elec:.4f} tCO2-e/MWh | Baseline declining {DECLINE_RATE*100:.1f}% p.a. (FY{DECLINE_FROM}–FY{DECLINE_TO})")
 
     display_year = st.session_state.get('display_year', 2025)
 
@@ -147,7 +143,7 @@ def render_safeguard_tab(df, selected_source, fsei_rom, fsei_elec,
             decline_rate_phase2=decline_rate_phase2
         )
 
-        # Aggregate monthly â†’ annual
+        # Aggregate monthly -> annual
         proj_base = prepare_annual_for_safeguard(monthly_base)
         proj_npi = prepare_annual_for_safeguard(monthly_npi)
 
@@ -176,7 +172,7 @@ def render_safeguard_tab(df, selected_source, fsei_rom, fsei_elec,
             decline_rate_phase2=decline_rate_phase2
         )
 
-        # Aggregate monthly â†’ annual
+        # Aggregate monthly -> annual
         projection = prepare_annual_for_safeguard(monthly)
 
         # Apply credit value escalation
@@ -193,9 +189,12 @@ def render_safeguard_tab(df, selected_source, fsei_rom, fsei_elec,
 
         for source_name, proj in projections_list:
             # Add source column to each projection
-            proj_copy = proj[['FY', 'Phase', 'ROM_Mt', 'Scope1', 'Baseline',
-                             'Emission_Intensity', 'Baseline_Intensity',
-                             'SMC_Annual', 'SMC_Cumulative']].copy()
+            cols = ['FY', 'Phase', 'ROM_Mt', 'Scope1', 'Baseline',
+                    'SMC_Annual', 'SMC_Cumulative',
+                    'Credit_Price', 'Credit_Value_Annual', 'Credit_Value_Cumulative']
+            # Only include columns that exist (credit values need smc_credit_value_analysis)
+            cols = [c for c in cols if c in proj.columns]
+            proj_copy = proj[cols].copy()
             proj_copy.insert(0, 'Source', source_name)
             combined_data.append(proj_copy)
 
@@ -205,11 +204,19 @@ def render_safeguard_tab(df, selected_source, fsei_rom, fsei_elec,
         # Format numbers
         display_df['ROM_Mt'] = display_df['ROM_Mt'].apply(lambda x: f"{x:.2f}")
         display_df['Scope1'] = display_df['Scope1'].apply(lambda x: f"{x:,.0f}")
-        display_df['Baseline'] = display_df['Baseline'].apply(lambda x: f"{x:,.0f}")
-        display_df['Emission_Intensity'] = display_df['Emission_Intensity'].apply(lambda x: f"{x:.4f}")
-        display_df['Baseline_Intensity'] = display_df['Baseline_Intensity'].apply(lambda x: f"{x:.4f}")
+        display_df.rename(columns={'Baseline': 'Target'}, inplace=True)
+        display_df['Target'] = display_df['Target'].apply(lambda x: f"{x:,.0f}")
         display_df['SMC_Annual'] = display_df['SMC_Annual'].apply(lambda x: f"{x:,.0f}")
         display_df['SMC_Cumulative'] = display_df['SMC_Cumulative'].apply(lambda x: f"{x:,.0f}")
+        if 'Credit_Price' in display_df.columns:
+            display_df.rename(columns={
+                'Credit_Price': 'SMC Price ($/t)',
+                'Credit_Value_Annual': 'SMC $ Annual',
+                'Credit_Value_Cumulative': 'SMC $ Cumulative'
+            }, inplace=True)
+            display_df['SMC Price ($/t)'] = display_df['SMC Price ($/t)'].apply(lambda x: f"${x:,.2f}")
+            display_df['SMC $ Annual'] = display_df['SMC $ Annual'].apply(lambda x: f"${x:,.0f}")
+            display_df['SMC $ Cumulative'] = display_df['SMC $ Cumulative'].apply(lambda x: f"${x:,.0f}")
 
         st.dataframe(display_df, hide_index=True, width="stretch", height=400)
 
@@ -221,9 +228,8 @@ def display_safeguard_single(projection, display_year, source_name, carbon_credi
         show_summary: If False, skip the summary table (used in comparison mode)
     """
 
-    # Apply credit value escalation
-    from projections import smc_credit_value_analysis
-    projection = smc_credit_value_analysis(projection, credit_start_fy, carbon_credit_price, credit_escalation)
+    # Note: smc_credit_value_analysis already applied by render_safeguard_tab
+    # before calling this function - do not apply again
 
     # Gold color palette
     GOLD_METALLIC = '#DBB12A'      # Primary - ROM, main bars
@@ -239,43 +245,19 @@ def display_safeguard_single(projection, display_year, source_name, carbon_credi
             year_data = projection[projection['FY'] == f'FY{display_year}']
 
             if len(year_data) == 0:
-                st.warning(f"âš ï¸ No data for FY{display_year}")
+                st.warning(f"⚠️ No data for FY{display_year}")
             else:
                 row = year_data.iloc[0]
 
                 smc_annual = row['SMC_Annual'] if row['FY'].replace('FY','').isdigit() and int(row['FY'].replace('FY','')) >= credit_start_fy else 0
 
-                # Calculate intensity components
-                SITE_GENERATION_RATIO = 0.008735  # MWh/t ROM
-
-                # Baseline components
-                baseline_rom_component = fsei_rom
-                baseline_elec_component = SITE_GENERATION_RATIO * fsei_elec
-                baseline_total = row['Baseline_Intensity']
-
-                # Actual intensity components (if ROM > 0)
-                if row['ROM_Mt'] > 0:
-                    actual_total = row['Emission_Intensity']
-                    site_mwh = row['Site_Electricity_kWh'] / 1000
-                    actual_site_gen_ratio = site_mwh / (row['ROM_Mt'] * 1_000_000)
-                    actual_elec_component = actual_site_gen_ratio * fsei_elec
-                    actual_rom_component = actual_total - actual_elec_component
-                else:
-                    actual_total = 0.0
-                    actual_rom_component = 0.0
-                    actual_elec_component = 0.0
-
-                # Single row with all data
+                # Summary: actual vs baseline in tCO2-e (the gap = credits/surrenders)
+                baseline = row['Baseline'] if 'Baseline' in row.index else 0
                 summary_data = [{
                     'Source': source_name,
                     'ROM (Mt)': f"{row['ROM_Mt']:.2f}",
                     'Scope 1 (tCO2-e)': f"{row['Scope1']:,.0f}",
-                    'Baseline Int-Total': f"{baseline_total:.4f}",
-                    'Actual Int-Total': f"{actual_total:.4f}" if row['ROM_Mt'] > 0 else "N/A",
-                    'Baseline Int-ROM': f"{baseline_rom_component:.4f}",
-                    'Actual Int-ROM': f"{actual_rom_component:.4f}" if row['ROM_Mt'] > 0 else "N/A",
-                    'Baseline Int-Elec': f"{baseline_elec_component:.4f}",
-                    'Actual Int-Elec': f"{actual_elec_component:.4f}" if row['ROM_Mt'] > 0 else "N/A",
+                    'Target (tCO2-e)': f"{baseline:,.0f}",
                     'SMC Annual': f"{smc_annual:,.0f}",
                     'SMC Cumulative': f"{row['SMC_Cumulative']:,.0f}"
                 }]
@@ -396,8 +378,8 @@ def display_safeguard_single(projection, display_year, source_name, carbon_credi
 
             st.plotly_chart(fig_elec, width="stretch")
 
-    # Scope 1 Emissions & Emission Intensity (dual-axis)
-    with st.expander("📊 Scope 1 Emissions & Emission Intensity", expanded=True):
+    # Scope 1 Emissions vs Baseline Target (dual-axis)
+    with st.expander("📊 Scope 1 Emissions vs Baseline Target", expanded=True):
         fig = make_subplots(specs=[[{"secondary_y": True}]])
 
         # Prepare display years without FY
@@ -423,58 +405,62 @@ def display_safeguard_single(projection, display_year, source_name, carbon_credi
                 annotation_font_size=10
             )
 
-        # Box 2: 10-year exit period (light blue)
-        if exit_fy is not None and exit_fy > 0:
-            exit_fy_str = str(int(exit_fy))
-            exit_end_str = str(int(exit_fy) + 10)
-            if exit_fy_str in projection_display['Year'].values:
-                fig.add_vrect(
-                    x0=exit_fy_str,
-                    x1=exit_end_str,
-                    fillcolor="rgba(255, 200, 100, 0.2)",  # Light orange
-                    opacity=1,
-                    layer="below",
-                    line_width=0,
-                    annotation_text="10-Year Credit Run-out",
-                    annotation_position="top right",
-                    annotation_font_size=10
+        # Opt-in period shown by bar colour change (blue tint)
+
+        # Scope 1 Actual Emissions - separate trace per SMC phase for legend
+        phase_config = [
+            ('Safeguard', GOLD_METALLIC, True),
+            ('Opt-In',    '#B0B0B0',     True),      # Medium grey
+            ('Exited',    '#000000',     True),       # Black
+        ]
+        safeguard_phases = {'Pre-Safeguard', 'Safeguard'}
+        for phase_name, colour, show in phase_config:
+            if 'SMC_Phase' in projection_display.columns:
+                if phase_name == 'Safeguard':
+                    mask = projection_display['SMC_Phase'].isin(safeguard_phases)
+                else:
+                    mask = projection_display['SMC_Phase'] == phase_name
+                phase_df = projection_display[mask]
+            else:
+                phase_df = projection_display if phase_name == 'Safeguard' else pd.DataFrame()
+
+            if len(phase_df) > 0:
+                fig.add_trace(
+                    go.Bar(
+                        x=phase_df['Year'],
+                        y=phase_df['Scope1'],
+                        name=phase_name,
+                        marker_color=colour,
+                        opacity=0.8,
+                        showlegend=show,
+                        hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'
+                    ),
+                    secondary_y=False
                 )
 
-        # Scope 1 Emissions (bars) - consistent gold
-        fig.add_trace(
-            go.Bar(
-                x=projection_display['Year'],
-                y=projection_display['Scope1'],
-                name='Scope 1 Emissions',
-                marker_color=GOLD_METALLIC,
-                opacity=0.8
-            ),
+        # Baseline Target (same axis) - the gap = credits or surrenders
+        if 'Baseline' in projection_display.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=projection_display['Year'],
+                    y=projection_display['Baseline'],
+                    name='Target',
+                    mode='lines+markers',
+                    line=dict(color=CAFE_NOIR, width=3, dash='dash'),
+                    marker=dict(size=5),
+                    hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'
+                ),
+                secondary_y=False
+            )
+
+        # 100k Safeguard threshold reference line
+        fig.add_hline(
+            y=SAFEGUARD_THRESHOLD, line_dash="dot",
+            line_color="rgba(192, 57, 43, 0.5)", line_width=1.5,
+            annotation_text="100k Threshold",
+            annotation_position="bottom right",
+            annotation_font=dict(size=9, color="rgba(192, 57, 43, 0.6)"),
             secondary_y=False
-        )
-
-        # Actual Intensity (line) - consistent dark line
-        fig.add_trace(
-            go.Scatter(
-                x=projection_display['Year'],
-                y=projection_display['Emission_Intensity'],
-                name='Actual Intensity',
-                mode='lines+markers',
-                line=dict(color=CAFE_NOIR, width=3),
-                marker=dict(size=6)
-            ),
-            secondary_y=True
-        )
-
-        # Baseline Intensity (dashed line) - black for regulatory standard
-        fig.add_trace(
-            go.Scatter(
-                x=projection_display['Year'],
-                y=projection_display['Baseline_Intensity'],
-                name='Baseline',
-                mode='lines',
-                line=dict(color='black', width=2, dash='dash')
-            ),
-            secondary_y=True
         )
 
         # Add grid connection marker
@@ -501,7 +487,7 @@ def display_safeguard_single(projection, display_year, source_name, carbon_credi
 
         fig.update_xaxes(title_text="Financial Year")
         fig.update_yaxes(title_text="Scope 1 Emissions (tCO2-e)", secondary_y=False)
-        fig.update_yaxes(title_text="Emission Intensity (tCO2-e/t)", secondary_y=True)
+        fig.update_yaxes(visible=False, secondary_y=True)
 
         fig.update_layout(
             height=500,
@@ -529,67 +515,181 @@ def display_safeguard_single(projection, display_year, source_name, carbon_credi
 
             fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-            # Add shaded boxes FIRST
-            if len(safeguard_years) > 0:
-                fig.add_vrect(
-                    x0=safeguard_years[0],
-                    x1=safeguard_years[-1],
-                    fillcolor="rgba(144, 238, 144, 0.2)",  # Light green
-                    opacity=1,
-                    layer="below",
-                    line_width=0
-                )
-
-            if exit_fy is not None and exit_fy > 0:
-                exit_fy_str = str(int(exit_fy))
-                exit_end_str = str(int(exit_fy) + 10)
-                if exit_fy_str in credit_data['Year'].values:
+            # --- Phase-shaded background regions ---
+            if 'SMC_Phase' in credit_data.columns:
+                # Safeguard period (covered, >= 100k)
+                sg_years = credit_data[credit_data['SMC_Phase'] == 'Safeguard']['Year'].tolist()
+                if sg_years:
                     fig.add_vrect(
-                        x0=exit_fy_str,
-                        x1=exit_end_str,
-                        fillcolor="rgba(255, 200, 100, 0.2)",  # Light orange
-                        opacity=1,
-                        layer="below",
-                        line_width=0
+                        x0=sg_years[0], x1=sg_years[-1],
+                        fillcolor="rgba(144, 238, 144, 0.15)",
+                        layer="below", line_width=0,
+                        annotation_text="Safeguard",
+                        annotation_position="top left",
+                        annotation_font=dict(size=10, color="rgba(0,100,0,0.6)")
+                    )
+                # Opt-in period (below threshold, credits only per s58B)
+                optin_years = credit_data[credit_data['SMC_Phase'] == 'Opt-In']['Year'].tolist()
+                if optin_years:
+                    fig.add_vrect(
+                        x0=optin_years[0], x1=optin_years[-1],
+                        fillcolor="rgba(100, 149, 237, 0.12)",
+                        layer="below", line_width=0,
+                        annotation_text="Opt-In (s58B)",
+                        annotation_position="top left",
+                        annotation_font=dict(size=10, color="rgba(65,105,225,0.7)")
+                    )
+                # Exited period (no credits)
+                exited_years = credit_data[credit_data['SMC_Phase'] == 'Exited']['Year'].tolist()
+                if exited_years:
+                    fig.add_vrect(
+                        x0=exited_years[0], x1=exited_years[-1],
+                        fillcolor="rgba(200, 200, 200, 0.15)",
+                        layer="below", line_width=0,
+                        annotation_text="Exited",
+                        annotation_position="top left",
+                        annotation_font=dict(size=10, color="rgba(128,128,128,0.7)")
                     )
 
-            # Cumulative credits (simple bars)
+            # --- Waterfall chart: bars float at cumulative position ---
+            # Calculate base (bottom) of each waterfall bar
+            annual_vals = credit_data['SMC_Annual'].values
+            cum_vals = credit_data['SMC_Cumulative'].values
+            bases = []
+            for i, (ann, cum) in enumerate(zip(annual_vals, cum_vals)):
+                if ann >= 0:
+                    bases.append(cum - ann)  # Credit: base at previous cumulative
+                else:
+                    bases.append(cum)  # Surrender: base at new (lower) cumulative
+            bar_colors = ['#2A9D8F' if v >= 0 else '#CA564B' for v in annual_vals]
+            bar_heights = [abs(v) for v in annual_vals]
+
+            # Waterfall bars (floating) with rounded corners and labels
+            bar_labels = []
+            for v in annual_vals:
+                if abs(v) >= 1000:
+                    bar_labels.append(f"{v/1000:+,.0f}k")
+                elif v != 0:
+                    bar_labels.append(f"{v:+,.0f}")
+                else:
+                    bar_labels.append("")
+
             fig.add_trace(
                 go.Bar(
                     x=credit_data['Year'],
-                    y=credit_data['SMC_Cumulative'],
-                    name='Cumulative Credits',
-                    marker_color=GOLD_METALLIC,
-                    opacity=0.8
+                    y=bar_heights,
+                    base=bases,
+                    name='Annual SMC',
+                    marker_color=bar_colors,
+                    marker_cornerradius=4,
+                    opacity=0.9,
+                    text=bar_labels,
+                    textposition='outside',
+                    textfont=dict(size=11, color='rgba(57, 37, 11, 0.8)'),
+                    constraintext='none',
+                    hovertext=[f"{v:,.0f} tCO2-e ({'credit' if v >= 0 else 'surrender'})" for v in annual_vals],
+                    hovertemplate='%{hovertext}<extra></extra>'
                 ),
                 secondary_y=False
             )
 
-            # Credit Value line with $ labels
+            # Connector lines between bars (dashed, linking closing to opening)
+            for i in range(1, len(credit_data)):
+                prev_cum = cum_vals[i - 1]
+                fig.add_shape(
+                    type="line",
+                    x0=credit_data['Year'].iloc[i - 1],
+                    x1=credit_data['Year'].iloc[i],
+                    y0=prev_cum,
+                    y1=prev_cum,
+                    line=dict(color='rgba(138, 126, 107, 0.4)', width=1, dash='dot'),
+                )
+
+            # Cumulative value line on secondary axis
             fig.add_trace(
                 go.Scatter(
                     x=credit_data['Year'],
                     y=credit_data['Credit_Value_Cumulative'],
-                    name='Credit Value ($)',
-                    mode='lines+markers+text',
-                    line=dict(color=CAFE_NOIR, width=3),
-                    marker=dict(size=10, color=CAFE_NOIR),
-                    text=credit_data['Credit_Value_Cumulative'].apply(lambda x: f"${x/1e6:.1f}M"),
-                    textposition='top center',
-                    textfont=dict(size=10, color='black')
+                    name='Cumulative Value ($)',
+                    mode='lines+markers',
+                    line=dict(color=GOLD_METALLIC, width=3),
+                    marker=dict(size=6, color=GOLD_METALLIC),
+                    hovertemplate='$%{y:,.0f}<extra></extra>'
                 ),
                 secondary_y=True
             )
 
+            # Labels on value line at 5-year intervals (2025, 2030, 2035, ...)
+            years_list = credit_data['Year'].tolist()
+            value_vals = credit_data['Credit_Value_Cumulative'].values
+            key_indices = set()
+            for idx, yr in enumerate(years_list):
+                if int(yr) % 5 == 0:
+                    key_indices.add(idx)
+            # Always include last year
+            key_indices.add(len(years_list) - 1)
+
+            for idx in key_indices:
+                if idx < len(years_list) and value_vals[idx] > 0:
+                    val_m = value_vals[idx] / 1e6
+                    cum_k = cum_vals[idx] / 1000
+                    # $ value label (top line)
+                    # $ value (top line, above data point)
+                    fig.add_annotation(
+                        x=years_list[idx],
+                        y=value_vals[idx],
+                        yref='y2',
+                        text=f"<b>${val_m:.1f}M</b>",
+                        showarrow=False,
+                        yshift=-16,
+                        font=dict(size=11, color=GOLD_METALLIC),
+                    )
+                    # tCO2 (below $, still above line)
+                    fig.add_annotation(
+                        x=years_list[idx],
+                        y=value_vals[idx],
+                        yref='y2',
+                        text=f"<b>({cum_k:.0f}k)</b>",
+                        showarrow=False,
+                        yshift=-30,
+                        font=dict(size=11, color=GOLD_METALLIC),
+                    )
+
+            # Zero line
+            fig.add_hline(y=0, line_dash="solid", line_color="grey", line_width=0.5, secondary_y=False)
+
+            # Grid connection marker
+            if grid_connected_fy and str(grid_connected_fy) in years_list:
+                fig.add_vline(
+                    x=str(grid_connected_fy),
+                    line_dash="dot", line_color=GRID_GREEN, line_width=2
+                )
+
             fig.update_xaxes(title_text="Financial Year")
-            fig.update_yaxes(title_text="Cumulative Credits (tCO2-e)", secondary_y=False)
-            fig.update_yaxes(title_text=f"Credit Value (AUD, {credit_escalation*100:.1f}% p.a.)", secondary_y=True)
+            fig.update_yaxes(title_text="SMC Balance (tCO2-e)", secondary_y=False)
+            fig.update_yaxes(title_text=f"Cumulative Value (AUD, {credit_escalation*100:.1f}% p.a.)", secondary_y=True)
+
+            # Scale axes so waterfall bars sit in lower portion, value line in upper
+            # Left axis: extend range so bars use ~55% of chart height
+            # Right axis: compress range so line sits at ~80% chart height
+            max_cum = max(credit_data['SMC_Cumulative'].max(), 1)
+            max_value = max(credit_data['Credit_Value_Cumulative'].max(), 1)
+            # Left axis: bars use ~65% height.  Right axis: line at ~80% height
+            fig.update_yaxes(
+                secondary_y=False,
+                range=[0, max_cum * 1.55],
+            )
+            fig.update_yaxes(
+                secondary_y=True,
+                range=[0, max_value * 1.25],
+            )
 
             fig.update_layout(
-                height=400,
+                height=500,
                 hovermode='x unified',
                 showlegend=True,
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                bargap=0.15,
             )
 
             st.plotly_chart(fig, width="stretch")
@@ -599,8 +699,14 @@ def display_safeguard_single(projection, display_year, source_name, carbon_credi
             final_value = credit_data.iloc[-1]['Credit_Value_Cumulative']
             final_price = credit_data.iloc[-1]['Credit_Price']
             final_year = credit_data.iloc[-1]['FY']
+            total_surrenders = credit_data[credit_data['SMC_Annual'] < 0]['SMC_Annual'].sum()
 
-            st.caption(f"📊 {final_year} Cumulative: {final_credits:,.0f} tCO2-e worth ${final_value:,.0f} AUD (price escalated to ${final_price:.2f}/tCO2-e)")
+            summary_parts = [f"{final_year} Net Cumulative: {final_credits:,.0f} tCO2-e"]
+            summary_parts.append(f"Value: ${final_value:,.0f} AUD (price: ${final_price:.2f}/tCO2-e)")
+            if total_surrenders < 0:
+                summary_parts.append(f"Total surrenders: {abs(total_surrenders):,.0f} tCO2-e")
+
+            st.caption(" | ".join(summary_parts))
 
 
 def display_safeguard_comparison(proj_base, proj_npi, display_year, carbon_credit_price, credit_escalation, credit_start_fy, grid_connected_fy, fsei_rom, fsei_elec):
@@ -619,39 +725,21 @@ def display_safeguard_comparison(proj_base, proj_npi, display_year, carbon_credi
         year_npi = proj_npi[proj_npi['FY'] == f'FY{display_year}']
 
         if len(year_base) == 0 or len(year_npi) == 0:
-            st.warning(f"âš ï¸ No data for FY{display_year}")
+            st.warning(f"⚠️ No data for FY{display_year}")
         else:
             row_base = year_base.iloc[0]
             row_npi = year_npi.iloc[0]
 
-            # Calculate intensity components for both datasets
-            SITE_GENERATION_RATIO = 0.008735
             summary_rows = []
 
             for source_name, row in [('Base', row_base), ('NPI-NGERS', row_npi)]:
                 smc_annual = row['SMC_Annual'] if row['FY'].replace('FY','').isdigit() and int(row['FY'].replace('FY','')) >= credit_start_fy else 0
-
-                baseline_rom_component = fsei_rom
-                baseline_elec_component = SITE_GENERATION_RATIO * fsei_elec
-                baseline_total = row['Baseline_Intensity']
-
-                if row['ROM_Mt'] > 0:
-                    actual_total = row['Emission_Intensity']
-                    site_mwh = row['Site_Electricity_kWh'] / 1000
-                    actual_site_gen_ratio = site_mwh / (row['ROM_Mt'] * 1_000_000)
-                    actual_elec_component = actual_site_gen_ratio * fsei_elec
-                    actual_rom_component = actual_total - actual_elec_component
-                else:
-                    actual_total = 0.0
-                    actual_rom_component = 0.0
-                    actual_elec_component = 0.0
-
+                baseline = row['Baseline'] if 'Baseline' in row.index else 0
                 summary_rows.append({
                     'Source': source_name,
                     'ROM (Mt)': f"{row['ROM_Mt']:.2f}",
                     'Scope 1 (tCO2-e)': f"{row['Scope1']:,.0f}",
-                    'Baseline Int-Total': f"{baseline_total:.4f}",
-                    'Actual Int-Total': f"{actual_total:.4f}" if row['ROM_Mt'] > 0 else "N/A",
+                    'Target (tCO2-e)': f"{baseline:,.0f}",
                     'SMC Annual': f"{smc_annual:,.0f}",
                     'SMC Cumulative': f"{row['SMC_Cumulative']:,.0f}"
                 })
@@ -804,8 +892,8 @@ def display_safeguard_comparison(proj_base, proj_npi, display_year, carbon_credi
 
         st.plotly_chart(fig, width="stretch")
 
-    # Scope 1 Emissions & Intensity combined
-    with st.expander("📊 Scope 1 Emissions & Emission Intensity", expanded=True):
+    # Scope 1 Emissions vs Baseline Target
+    with st.expander("📊 Scope 1 Emissions vs Baseline Target", expanded=True):
 
         fig = make_subplots(
             rows=2, cols=1,
@@ -815,87 +903,85 @@ def display_safeguard_comparison(proj_base, proj_npi, display_year, carbon_credi
             row_heights=[0.5, 0.5]
         )
 
-        # Base (top chart)
-        fig.add_trace(
-            go.Bar(
-                x=proj_base['FY'],
-                y=proj_base['Scope1'],
-                name='Scope 1',
-                marker_color=GOLD_METALLIC,
-                opacity=0.8,
-                hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'
-            ),
-            secondary_y=False,
-            row=1, col=1
+        # Base (top chart) - per-phase bar traces
+        safeguard_phases = {'Pre-Safeguard', 'Safeguard'}
+        for phase_name, colour in [('Safeguard', GOLD_METALLIC), ('Opt-In', '#B0B0B0'), ('Exited', '#000000')]:
+            if 'SMC_Phase' in proj_base.columns:
+                mask = proj_base['SMC_Phase'].isin(safeguard_phases) if phase_name == 'Safeguard' else (proj_base['SMC_Phase'] == phase_name)
+                pdf = proj_base[mask]
+            else:
+                pdf = proj_base if phase_name == 'Safeguard' else pd.DataFrame()
+            if len(pdf) > 0:
+                fig.add_trace(
+                    go.Bar(x=pdf['FY'], y=pdf['Scope1'], name=phase_name,
+                           marker_color=colour, opacity=0.8,
+                           hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'),
+                    secondary_y=False, row=1, col=1
+                )
+
+        if 'Baseline' in proj_base.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=proj_base['FY'],
+                    y=proj_base['Baseline'],
+                    name='Target',
+                    mode='lines+markers',
+                    line=dict(color=CAFE_NOIR, width=3, dash='dash'),
+                    marker=dict(size=5),
+                    hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'
+                ),
+                secondary_y=False,
+                row=1, col=1
+            )
+
+        # 100k threshold
+        fig.add_hline(
+            y=SAFEGUARD_THRESHOLD, line_dash="dot",
+            line_color="rgba(192, 57, 43, 0.5)", line_width=1,
+            secondary_y=False, row=1, col=1
         )
 
-        fig.add_trace(
-            go.Scatter(
-                x=proj_base['FY'],
-                y=proj_base['Emission_Intensity'],
-                name='Actual',
-                mode='lines+markers',
-                line=dict(color=CAFE_NOIR, width=3),
-                marker=dict(size=6),
-                hovertemplate='%{y:.5f} tCO2-e/t<extra></extra>'
-            ),
-            secondary_y=True,
-            row=1, col=1
+        # NPI (bottom chart) - per-phase bar traces (no legend duplication)
+        for phase_name, colour in [('Safeguard', GOLD_METALLIC), ('Opt-In', '#B0B0B0'), ('Exited', '#000000')]:
+            if 'SMC_Phase' in proj_npi.columns:
+                mask = proj_npi['SMC_Phase'].isin(safeguard_phases) if phase_name == 'Safeguard' else (proj_npi['SMC_Phase'] == phase_name)
+                pdf = proj_npi[mask]
+            else:
+                pdf = proj_npi if phase_name == 'Safeguard' else pd.DataFrame()
+            if len(pdf) > 0:
+                fig.add_trace(
+                    go.Bar(x=pdf['FY'], y=pdf['Scope1'], name=phase_name,
+                           marker_color=colour, opacity=0.8, showlegend=False,
+                           hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'),
+                    secondary_y=False, row=2, col=1
+                )
+
+        if 'Baseline' in proj_npi.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=proj_npi['FY'],
+                    y=proj_npi['Baseline'],
+                    name="Target'",
+                    mode='lines+markers',
+                    line=dict(color=CAFE_NOIR, width=3, dash='dash'),
+                    marker=dict(size=5),
+                    showlegend=False,
+                    hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'
+                ),
+                secondary_y=False,
+                row=2, col=1
+            )
+
+        # 100k threshold on NPI chart
+        fig.add_hline(
+            y=SAFEGUARD_THRESHOLD, line_dash="dot",
+            line_color="rgba(192, 57, 43, 0.5)", line_width=1,
+            secondary_y=False, row=2, col=1
         )
 
+        # Placeholder for secondary axis compatibility
         fig.add_trace(
-            go.Scatter(
-                x=proj_base['FY'],
-                y=proj_base['Baseline_Intensity'],
-                name='Baseline',
-                mode='lines',
-                line=dict(color='black', width=2, dash='dash'),
-                hovertemplate='%{y:.5f} tCO2-e/t<extra></extra>'
-            ),
-            secondary_y=True,
-            row=1, col=1
-        )
-
-        # NPI (bottom chart) - use prime notation for proper hover labels
-        fig.add_trace(
-            go.Bar(
-                x=proj_npi['FY'],
-                y=proj_npi['Scope1'],
-                name="Scope 1'",
-                marker_color=GOLD_METALLIC,
-                opacity=0.8,
-                showlegend=False,
-                hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'
-            ),
-            secondary_y=False,
-            row=2, col=1
-        )
-
-        fig.add_trace(
-            go.Scatter(
-                x=proj_npi['FY'],
-                y=proj_npi['Emission_Intensity'],
-                name="Actual'",
-                mode='lines+markers',
-                line=dict(color=CAFE_NOIR, width=3),
-                marker=dict(size=6),
-                showlegend=False,
-                hovertemplate='%{y:.5f} tCO2-e/t<extra></extra>'
-            ),
-            secondary_y=True,
-            row=2, col=1
-        )
-
-        fig.add_trace(
-            go.Scatter(
-                x=proj_npi['FY'],
-                y=proj_npi['Baseline_Intensity'],
-                name="Baseline'",
-                mode='lines',
-                line=dict(color='black', width=2, dash='dash'),
-                showlegend=False,
-                hovertemplate='%{y:.5f} tCO2-e/t<extra></extra>'
-            ),
+            go.Scatter(x=[], y=[], showlegend=False),
             secondary_y=True,
             row=2, col=1
         )
@@ -903,9 +989,9 @@ def display_safeguard_comparison(proj_base, proj_npi, display_year, carbon_credi
         # Update axes
         fig.update_xaxes(title_text="Financial Year", row=2, col=1)
         fig.update_yaxes(title_text="Scope 1 (tCO2-e)", secondary_y=False, row=1, col=1)
-        fig.update_yaxes(title_text="Intensity (tCO2-e/t)", secondary_y=True, row=1, col=1)
+        fig.update_yaxes(visible=False, secondary_y=True, row=1, col=1)
         fig.update_yaxes(title_text="Scope 1 (tCO2-e)", secondary_y=False, row=2, col=1)
-        fig.update_yaxes(title_text="Intensity (tCO2-e/t)", secondary_y=True, row=2, col=1)
+        fig.update_yaxes(visible=False, secondary_y=True, row=2, col=1)
 
         fig.update_layout(
             height=700,
@@ -970,69 +1056,93 @@ def display_safeguard_comparison(proj_base, proj_npi, display_year, carbon_credi
             row_heights=[0.5, 0.5]
         )
 
+        # Helper to add waterfall SMC traces for a dataset
+        def add_smc_traces(proj, row, show_legend=True, name_suffix=''):
+            annual_vals = proj['SMC_Annual'].values
+            cum_vals = proj['SMC_Cumulative'].values
+            fy_vals = proj['FY'].tolist()
+            value_vals = proj['Credit_Value_Cumulative'].values
+
+            # Calculate waterfall bases
+            bases = []
+            for i, (ann, cum) in enumerate(zip(annual_vals, cum_vals)):
+                if ann >= 0:
+                    bases.append(cum - ann)
+                else:
+                    bases.append(cum)
+            bar_colors = ['#2A9D8F' if v >= 0 else '#CA564B' for v in annual_vals]
+            bar_heights = [abs(v) for v in annual_vals]
+
+            # Waterfall bars with rounded corners and labels
+            bar_labels = []
+            for v in annual_vals:
+                if abs(v) >= 1000:
+                    bar_labels.append(f"{v/1000:+,.0f}k")
+                elif v != 0:
+                    bar_labels.append(f"{v:+,.0f}")
+                else:
+                    bar_labels.append("")
+
+            fig.add_trace(
+                go.Bar(
+                    x=fy_vals,
+                    y=bar_heights,
+                    base=bases,
+                    name=f'Annual SMC{name_suffix}',
+                    marker_color=bar_colors,
+                    marker_cornerradius=4,
+                    opacity=0.9,
+                    text=bar_labels,
+                    textposition='outside',
+                    textfont=dict(size=10, color='rgba(57, 37, 11, 0.8)'),
+                    constraintext='none',
+                    showlegend=show_legend,
+                    hovertext=[f"{v:,.0f} tCO2-e" for v in annual_vals],
+                    hovertemplate='%{hovertext}<extra></extra>'
+                ),
+                secondary_y=False, row=row, col=1
+            )
+
+            # Connector lines
+            for i in range(1, len(fy_vals)):
+                prev_cum = cum_vals[i - 1]
+                fig.add_shape(
+                    type="line",
+                    x0=fy_vals[i - 1], x1=fy_vals[i],
+                    y0=prev_cum, y1=prev_cum,
+                    line=dict(color='rgba(138, 126, 107, 0.4)', width=1, dash='dot'),
+                    row=row, col=1
+                )
+
+            # Value line
+            fig.add_trace(
+                go.Scatter(
+                    x=fy_vals,
+                    y=value_vals,
+                    name=f'Cumulative Value{name_suffix}',
+                    mode='lines+markers',
+                    line=dict(color=GOLD_METALLIC, width=3),
+                    marker=dict(size=4),
+                    showlegend=show_legend,
+                    hovertemplate='$%{y:,.0f}<extra></extra>'
+                ),
+                secondary_y=True, row=row, col=1
+            )
+
+            # Zero line
+            fig.add_hline(y=0, line_dash="solid", line_color="grey", line_width=0.5,
+                          secondary_y=False, row=row, col=1)
+
         # Base (top chart)
-        fig.add_trace(
-            go.Bar(
-                x=proj_base['FY'],
-                y=proj_base['SMC_Cumulative'],
-                name='SMC Credits',
-                marker_color=GOLD_METALLIC,
-                opacity=0.8,
-                hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'
-            ),
-            secondary_y=False,
-            row=1, col=1
-        )
-
-        fig.add_trace(
-            go.Scatter(
-                x=proj_base['FY'],
-                y=proj_base['Credit_Value_Cumulative'],
-                name='Credit Value',
-                mode='lines+markers',
-                line=dict(color=CAFE_NOIR, width=3),
-                marker=dict(size=6),
-                hovertemplate='$%{y:,.0f}<extra></extra>'
-            ),
-            secondary_y=True,
-            row=1, col=1
-        )
-
-        # NPI-NGERS (bottom chart) - use prime notation for proper hover labels
-        fig.add_trace(
-            go.Bar(
-                x=proj_npi['FY'],
-                y=proj_npi['SMC_Cumulative'],
-                name="SMC Credits'",
-                marker_color=GOLD_METALLIC,
-                opacity=0.8,
-                showlegend=False,
-                hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'
-            ),
-            secondary_y=False,
-            row=2, col=1
-        )
-
-        fig.add_trace(
-            go.Scatter(
-                x=proj_npi['FY'],
-                y=proj_npi['Credit_Value_Cumulative'],
-                name="Credit Value'",
-                mode='lines+markers',
-                line=dict(color=CAFE_NOIR, width=3),
-                marker=dict(size=6),
-                showlegend=False,
-                hovertemplate='$%{y:,.0f}<extra></extra>'
-            ),
-            secondary_y=True,
-            row=2, col=1
-        )
+        add_smc_traces(proj_base, row=1, show_legend=True)
+        # NPI-NGERS (bottom chart)
+        add_smc_traces(proj_npi, row=2, show_legend=False, name_suffix="'")
 
         # Update axes
         fig.update_xaxes(title_text="Financial Year", row=2, col=1)
-        fig.update_yaxes(title_text="Cumulative Credits (tCO2-e)", secondary_y=False, row=1, col=1)
+        fig.update_yaxes(title_text="SMC Credits / Surrenders (tCO2-e)", secondary_y=False, row=1, col=1)
         fig.update_yaxes(title_text="Cumulative Value ($AUD)", secondary_y=True, row=1, col=1)
-        fig.update_yaxes(title_text="Cumulative Credits (tCO2-e)", secondary_y=False, row=2, col=1)
+        fig.update_yaxes(title_text="SMC Credits / Surrenders (tCO2-e)", secondary_y=False, row=2, col=1)
         fig.update_yaxes(title_text="Cumulative Value ($AUD)", secondary_y=True, row=2, col=1)
 
         fig.update_layout(
