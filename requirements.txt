@@ -1,0 +1,21 @@
+# Requirements for Ravenswood Gold Safeguard Mechanism Model
+# Last updated: 2026-02-03
+
+# Core
+streamlit>=1.28.0
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Charting - UPDATED TO PLOTLY
+plotly>=5.18.0
+
+# Data handling
+openpyxl>=3.1.0  # For Excel file reading
+python-dateutil>=2.8.2
+
+# Document generation
+python-docx>=1.1.0
+
+# Image export for package downloads
+kaleido>=0.2.1  # For Plotly chart to PNG/JPG export
+

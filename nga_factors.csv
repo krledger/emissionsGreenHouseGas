@@ -1,0 +1,539 @@
+NGA_Year,Fuel_Type,Fuel_Name,Scope,EF_kgCO2e_per_GJ,Energy_Content,Energy_Unit,EF_kgCO2e_per_unit,EF_Unit,State,Source_Table
+2022,Electricity,Grid electricity,2,,,,0.73,kg CO2-e/kWh,NSW,Table 1
+2022,Electricity,Grid electricity,2,,,,0.58,kg CO2-e/kWh,NWIS,Table 1
+2022,Electricity,Grid electricity,2,,,,0.68,kg CO2-e/kWh,National,Table 1
+2022,Electricity,Grid electricity,2,,,,0.73,kg CO2-e/kWh,QLD,Table 1
+2022,Electricity,Grid electricity,2,,,,0.25,kg CO2-e/kWh,SA,Table 1
+2022,Electricity,Grid electricity,2,,,,0.17,kg CO2-e/kWh,TAS,Table 1
+2022,Electricity,Grid electricity,2,,,,0.85,kg CO2-e/kWh,VIC,Table 1
+2022,Electricity,Grid electricity,3,,,,0.06,kg CO2-e/kWh,NSW,Table 1
+2022,Electricity,Grid electricity,3,,,,0.09,kg CO2-e/kWh,National,Table 1
+2022,Electricity,Grid electricity,3,,,,0.15,kg CO2-e/kWh,QLD,Table 1
+2022,Electricity,Grid electricity,3,,,,0.08,kg CO2-e/kWh,SA,Table 1
+2022,Electricity,Grid electricity,3,,,,0.01,kg CO2-e/kWh,TAS,Table 1
+2022,Electricity,Grid electricity,3,,,,0.07,kg CO2-e/kWh,VIC,Table 1
+2022,Gaseous fuels,"A biogas that is captured for combustion, other than those mentioned in the items above",1,6.43,0.037,GJ/m3,0.23790999999999998,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2022,Gaseous fuels,Biomethane,1,0.13,0.0393,GJ/m3,0.005109000000000001,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2022,Gaseous fuels,Blast furnace gas,1,234.05,0.004,GJ/m3,0.9362,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2022,Gaseous fuels,Coal mine waste gas that is captured for combustion,1,56.8,0.0377,GJ/m3,2.1413599999999997,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2022,Gaseous fuels,Coal seam methane that is captured for combustion,1,51.63,0.0377,GJ/m3,1.946451,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2022,Gaseous fuels,Coke oven gas,1,37.08,0.0181,GJ/m3,0.6711480000000001,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2022,Gaseous fuels,Compressed natural gas (reverting to standard conditions),1,51.53,0.0393,GJ/m3,2.025129,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2022,Gaseous fuels,Ethane,1,56.56,0.0629,GJ/m3,3.557624,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2022,Gaseous fuels,Ethane-New South Wales,3,23.7,0.0629,GJ/m3,1.4907299999999999,kg CO2-e/m3,,Table 5 Indirect (Scope 3) emissions from the consumption of ethane
+2022,Gaseous fuels,Ethane-Victoria,3,5.7,0.0629,GJ/m3,0.35853,kg CO2-e/m3,,Table 5 Indirect (Scope 3) emissions from the consumption of ethane
+2022,Gaseous fuels,Gaseous fossil fuels other than those mentioned in the items above,1,51.53,0.039,GJ/m3,2.00967,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2022,Gaseous fuels,Landfill biogas that is captured for combustion (methane only),1,6.43,0.0377,GJ/m3,0.24241099999999996,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2022,Gaseous fuels,Liquefied natural gas,1,51.53,25.3,GJ/kL,1303.709,kg CO2-e/kL,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2022,Gaseous fuels,Natural Gas-Metro -New South Wales and ACT,3,13.1,0.0393,GJ/m3,0.51483,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2022,Gaseous fuels,Natural Gas-Metro -Queensland,3,8.8,0.0393,GJ/m3,0.34584000000000004,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2022,Gaseous fuels,Natural Gas-Metro -South Australia,3,10.7,0.0393,GJ/m3,0.42051,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2022,Gaseous fuels,Natural Gas-Metro -Victoria,3,4.0,0.0393,GJ/m3,0.1572,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2022,Gaseous fuels,Natural Gas-Metro -Western Australia,3,4.1,0.0393,GJ/m3,0.16113,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2022,Gaseous fuels,Natural Gas-Non-metro-New South Wales and ACT,3,14.0,0.0393,GJ/m3,0.5502,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2022,Gaseous fuels,Natural Gas-Non-metro-Queensland,3,7.9,0.0393,GJ/m3,0.31047,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2022,Gaseous fuels,Natural Gas-Non-metro-South Australia,3,10.6,0.0393,GJ/m3,0.41658,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2022,Gaseous fuels,Natural Gas-Non-metro-Victoria,3,4.0,0.0393,GJ/m3,0.1572,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2022,Gaseous fuels,Natural Gas-Non-metro-Western Australia,3,4.0,0.0393,GJ/m3,0.1572,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2022,Gaseous fuels,Natural gas distributed in a pipeline,1,51.53,0.0393,GJ/m3,2.025129,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2022,Gaseous fuels,Sludge biogas that is captured for combustion (methane only),1,6.43,0.0377,GJ/m3,0.24241099999999996,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2022,Gaseous fuels,Town gas,1,60.27,0.039,GJ/m3,2.35053,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2022,Gaseous fuels,Unprocessed natural gas,1,51.53,0.0393,GJ/m3,2.025129,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2022,Liquid fuels,Automotive gasoline/petrol (other than for use as fuel in an aircraft),1,67.8,34.2,GJ/kL,2318.76,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Automotive gasoline/petrol (other than for use as fuel in an aircraft),3,17.2,34.2,GJ/kL,588.24,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Aviation gasoline,1,67.4,33.1,GJ/kL,2230.9400000000005,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Aviation gasoline,3,18.0,33.1,GJ/kL,595.8000000000001,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Aviation turbine fuel/kerosene,1,69.82,36.8,GJ/kL,2569.3759999999997,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Aviation turbine fuel/kerosene,3,18.0,36.8,GJ/kL,662.4,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Biodiesel,1,0.28,34.6,GJ/kL,9.688,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Biodiesel-Cars and light commercial vehicles,1,2.5,34.6,GJ/kL,86.5,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Biofuels other than those mentioned in the items above,1,0.28,23.4,GJ/kL,6.5520000000000005,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Compressed natural gas-Heavy duty vehicles,1,54.5,0.0393,GJ/m3,2.1418500000000003,kg CO2-e/m3,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Compressed natural gas-Heavy duty vehicles,3,18.0,0.0393,GJ/m3,0.7074,kg CO2-e/m3,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Compressed natural gas-Light duty vehicles,1,59.0,0.0393,GJ/m3,2.3187,kg CO2-e/m3,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Compressed natural gas-Light duty vehicles,3,18.0,0.0393,GJ/m3,0.7074,kg CO2-e/m3,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Crude oil including crude oil condensates,1,69.88,45.3,GJ/t,3165.5639999999994,kg CO2-e/t,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Diesel oil,1,70.2,38.6,GJ/kL,2709.7200000000003,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Diesel oil,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Diesel oil - Euro i-Heavy duty vehicles,1,70.5,38.6,GJ/kL,2721.3,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Diesel oil - Euro i-Heavy duty vehicles,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Diesel oil - Euro iii-Heavy duty vehicles,1,70.4,38.6,GJ/kL,2717.4400000000005,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Diesel oil - Euro iii-Heavy duty vehicles,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Diesel oil - Euro iv or higher-Heavy duty vehicles,1,70.37,38.6,GJ/kL,2716.282,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Diesel oil - Euro iv or higher-Heavy duty vehicles,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Diesel oil-Cars and light commercial vehicles,1,70.41,38.6,GJ/kL,2717.826,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Diesel oil-Cars and light commercial vehicles,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Ethanol for use as a fuel in an internal combustion engine,1,0.28,23.4,GJ/kL,6.5520000000000005,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Ethanol-Cars and light commercial vehicles,1,0.4,23.4,GJ/kL,9.36,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Fuel oil,1,73.84,39.7,GJ/kL,2931.4480000000003,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Fuel oil,3,18.0,39.7,GJ/kL,714.6,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Fuel oil-Cars and light commercial vehicles,1,74.18,39.7,GJ/kL,2944.9460000000004,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Fuel oil-Cars and light commercial vehicles,3,18.0,39.7,GJ/kL,714.6,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Gasoline for use as fuel in an aircraft-Aviation,1,67.66,33.1,GJ/kL,2239.546,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Gasoline for use as fuel in an aircraft-Aviation,3,18.0,33.1,GJ/kL,595.8000000000001,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Gasoline-Cars and light commercial vehicles,1,67.62,34.2,GJ/kL,2312.6040000000003,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Gasoline-Cars and light commercial vehicles,3,17.2,34.2,GJ/kL,588.24,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Heating oil,1,69.73,37.3,GJ/kL,2600.929,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Heating oil,3,18.0,37.3,GJ/kL,671.4,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Kerosene (other than for use as fuel in an aircraft),1,69.11,37.5,GJ/kL,2591.625,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Kerosene (other than for use as fuel in an aircraft),3,18.0,37.5,GJ/kL,675.0,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Kerosene for use as fuel in an aircraft-Aviation,1,70.21,36.8,GJ/kL,2583.7279999999996,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Kerosene for use as fuel in an aircraft-Aviation,3,18.0,36.8,GJ/kL,662.4,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Liquefied aromatic hydrocarbons,1,69.93,34.4,GJ/kL,2405.592,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Liquefied aromatic hydrocarbons,3,18.0,34.4,GJ/kL,619.1999999999999,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Liquefied natural gas-Heavy duty vehicles,1,54.5,25.3,GJ/kL,1378.8500000000001,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Liquefied natural gas-Heavy duty vehicles,3,18.0,25.3,GJ/kL,455.40000000000003,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Liquefied natural gas-Light duty vehicles,1,59.0,25.3,GJ/kL,1492.7,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Liquefied natural gas-Light duty vehicles,3,18.0,25.3,GJ/kL,455.40000000000003,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Liquefied petroleum gas (LPG),1,60.6,25.7,GJ/kL,1557.42,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Liquefied petroleum gas (LPG),3,20.2,25.7,GJ/kL,519.14,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Liquefied petroleum gas (LPG)-Cars and light commercial vehicles,1,61.0,26.2,GJ/kL,1598.2,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Liquefied petroleum gas (LPG)-Cars and light commercial vehicles,3,20.2,26.2,GJ/kL,529.24,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Naphtha,1,69.82,31.4,GJ/kL,2192.3479999999995,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Naphtha,3,18.0,31.4,GJ/kL,565.1999999999999,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Other biofuels-Cars and light commercial vehicles,1,2.5,23.4,GJ/kL,58.5,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2022,Liquid fuels,Other natural gas liquids,1,61.28,46.5,GJ/t,2849.52,kg CO2-e/t,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Petroleum based greases,1,3.5,38.8,GJ/kL,135.79999999999998,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Petroleum based greases,3,18.0,38.8,GJ/kL,698.4,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,"Petroleum based oils (other than petroleum based oil used as fuel), e.g. lubricants",1,13.9,38.8,GJ/kL,539.3199999999999,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,"Petroleum based oils (other than petroleum based oil used as fuel), e.g. lubricants",3,18.0,38.8,GJ/kL,698.4,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Petroleum based products other than mentioned in the items above,1,69.92,34.4,GJ/kL,2405.248,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Petroleum based products other than mentioned in the items above,3,18.0,34.4,GJ/kL,619.1999999999999,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Petroleum coke,1,92.88,34.2,GJ/t,3176.496,kg CO2-e/t,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Petroleum coke,3,18.0,34.2,GJ/t,615.6,kg CO2-e/t,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Refinery coke,1,92.88,34.2,GJ/t,3176.496,kg CO2-e/t,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Refinery coke,3,18.0,34.2,GJ/t,615.6,kg CO2-e/t,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Refinery gas and liquids,1,54.76,42.9,GJ/t,2349.2039999999997,kg CO2-e/t,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Refinery gas and liquids,3,18.0,42.9,GJ/t,772.1999999999999,kg CO2-e/t,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Solvents: mineral turpentine or white spirits,1,69.93,34.4,GJ/kL,2405.592,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Liquid fuels,Solvents: mineral turpentine or white spirits,3,18.0,34.4,GJ/kL,619.1999999999999,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2022,Solid fuels,Anthracite,1,90.24,29.0,GJ/t,2616.96,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Bagasse,1,1.4,9.6,GJ/t,13.44,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,"Biomass, municipal and industrial materials, if combusted to produce heat or electricity",1,1.8,12.2,GJ/t,21.96,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Bituminous coal,1,90.24,27.0,GJ/t,2436.48,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Bituminous coal,3,3.0,27.0,GJ/t,81.0,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Brown coal (lignite),1,93.82,10.2,GJ/t,956.9639999999998,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Brown coal (lignite),3,0.4,10.2,GJ/t,4.08,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Charcoal,1,6.3,31.1,GJ/t,195.93,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Coal briquettes,1,95.38,22.1,GJ/t,2107.898,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Coal coke,1,107.23,27.0,GJ/t,2895.21,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Coal tar,1,82.03,37.5,GJ/t,3076.125,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Coking coal,1,92.03,30.0,GJ/t,2760.9,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Coking coal,3,6.4,30.0,GJ/t,192.0,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Dry wood,1,1.2,16.2,GJ/t,19.439999999999998,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Green and air dried wood,1,1.2,10.4,GJ/t,12.48,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,"Industrial materials that are derived from fossil fuels, if recycled and combusted to produce heat or electricity",1,81.83,26.3,GJ/t,2152.129,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,"Non‑biomass municipal materials, if combusted to produce heat or electricity",1,88.9,10.5,GJ/t,933.45,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,"Passenger car tyres, if recycled and combusted to produce heat or electricity",1,63.03,32.0,GJ/t,2016.96,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Primary solid biomass fuels other than those mentioned in the items above,1,1.8,12.2,GJ/t,21.96,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Solid fossil fuels other than those mentioned in the items above,1,95.28,22.1,GJ/t,2105.688,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Sub-bituminous coal,1,90.24,21.0,GJ/t,1895.04,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Sub-bituminous coal,3,2.5,21.0,GJ/t,52.5,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,Sulphite lyes,1,0.58,12.4,GJ/t,7.191999999999999,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2022,Solid fuels,"Truck and off-road tyres, if recycled and combusted to produce heat or electricity",1,56.13,27.1,GJ/t,1521.123,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Electricity,Grid electricity,2,,,,0.68,kg CO2-e/kWh,NSW,Table 1
+2023,Electricity,Grid electricity,2,,,,0.62,kg CO2-e/kWh,NWIS,Table 1
+2023,Electricity,Grid electricity,2,,,,0.65,kg CO2-e/kWh,National,Table 1
+2023,Electricity,Grid electricity,2,,,,0.73,kg CO2-e/kWh,QLD,Table 1
+2023,Electricity,Grid electricity,2,,,,0.25,kg CO2-e/kWh,SA,Table 1
+2023,Electricity,Grid electricity,2,,,,0.12,kg CO2-e/kWh,TAS,Table 1
+2023,Electricity,Grid electricity,2,,,,0.79,kg CO2-e/kWh,VIC,Table 1
+2023,Electricity,Grid electricity,3,,,,0.05,kg CO2-e/kWh,NSW,Table 1
+2023,Electricity,Grid electricity,3,,,,0.07,kg CO2-e/kWh,NWIS,Table 1
+2023,Electricity,Grid electricity,3,,,,0.08,kg CO2-e/kWh,National,Table 1
+2023,Electricity,Grid electricity,3,,,,0.15,kg CO2-e/kWh,QLD,Table 1
+2023,Electricity,Grid electricity,3,,,,0.08,kg CO2-e/kWh,SA,Table 1
+2023,Electricity,Grid electricity,3,,,,0.01,kg CO2-e/kWh,TAS,Table 1
+2023,Electricity,Grid electricity,3,,,,0.07,kg CO2-e/kWh,VIC,Table 1
+2023,Gaseous fuels,"A biogas that is captured for combustion, other than those mentioned in the items above",1,6.43,0.037,GJ/m3,0.23790999999999998,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2023,Gaseous fuels,Biomethane,1,0.13,0.0393,GJ/m3,0.005109000000000001,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2023,Gaseous fuels,Blast furnace gas,1,234.05,0.004,GJ/m3,0.9362,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2023,Gaseous fuels,Coal mine waste gas that is captured for combustion,1,56.8,0.0377,GJ/m3,2.1413599999999997,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2023,Gaseous fuels,Coal seam methane that is captured for combustion,1,51.63,0.0377,GJ/m3,1.946451,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2023,Gaseous fuels,Coke oven gas,1,37.08,0.0181,GJ/m3,0.6711480000000001,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2023,Gaseous fuels,Compressed natural gas (reverting to standard conditions),1,51.53,0.0393,GJ/m3,2.025129,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2023,Gaseous fuels,Ethane,1,56.56,0.0629,GJ/m3,3.557624,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2023,Gaseous fuels,Ethane-New South Wales,3,23.7,0.0629,GJ/m3,1.4907299999999999,kg CO2-e/m3,,Table 5 Indirect (Scope 3) emissions from the consumption of ethane
+2023,Gaseous fuels,Ethane-Victoria,3,5.7,0.0629,GJ/m3,0.35853,kg CO2-e/m3,,Table 5 Indirect (Scope 3) emissions from the consumption of ethane
+2023,Gaseous fuels,Gaseous fossil fuels other than those mentioned in the items above,1,51.53,0.039,GJ/m3,2.00967,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2023,Gaseous fuels,Landfill biogas that is captured for combustion (methane only),1,6.43,0.0377,GJ/m3,0.24241099999999996,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2023,Gaseous fuels,Liquefied natural gas,1,51.53,25.3,GJ/kL,1303.709,kg CO2-e/kL,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2023,Gaseous fuels,Natural Gas-Metro -New South Wales and ACT,3,13.1,0.0393,GJ/m3,0.51483,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2023,Gaseous fuels,Natural Gas-Metro -Queensland,3,8.8,0.0393,GJ/m3,0.34584000000000004,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2023,Gaseous fuels,Natural Gas-Metro -South Australia,3,10.7,0.0393,GJ/m3,0.42051,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2023,Gaseous fuels,Natural Gas-Metro -Victoria,3,4.0,0.0393,GJ/m3,0.1572,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2023,Gaseous fuels,Natural Gas-Metro -Western Australia,3,4.1,0.0393,GJ/m3,0.16113,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2023,Gaseous fuels,Natural Gas-Non-metro-New South Wales and ACT,3,14.0,0.0393,GJ/m3,0.5502,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2023,Gaseous fuels,Natural Gas-Non-metro-Queensland,3,7.9,0.0393,GJ/m3,0.31047,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2023,Gaseous fuels,Natural Gas-Non-metro-South Australia,3,10.6,0.0393,GJ/m3,0.41658,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2023,Gaseous fuels,Natural Gas-Non-metro-Victoria,3,4.0,0.0393,GJ/m3,0.1572,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2023,Gaseous fuels,Natural Gas-Non-metro-Western Australia,3,4.0,0.0393,GJ/m3,0.1572,kg CO2-e/m3,,Table 4 Indirect (Scope 3) emissions from consumption of natural gas
+2023,Gaseous fuels,Natural gas distributed in a pipeline,1,51.53,0.0393,GJ/m3,2.025129,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2023,Gaseous fuels,Sludge biogas that is captured for combustion (methane only),1,6.43,0.0377,GJ/m3,0.24241099999999996,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2023,Gaseous fuels,Town gas,1,60.27,0.039,GJ/m3,2.35053,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2023,Gaseous fuels,Unprocessed natural gas,1,51.53,0.0393,GJ/m3,2.025129,kg CO2-e/m3,,Table 3 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2023,Liquid fuels,Automotive gasoline/petrol (other than for use as fuel in an aircraft),1,67.8,34.2,GJ/kL,2318.76,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Automotive gasoline/petrol (other than for use as fuel in an aircraft),3,17.2,34.2,GJ/kL,588.24,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Aviation gasoline,1,67.4,33.1,GJ/kL,2230.9400000000005,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Aviation gasoline,3,18.0,33.1,GJ/kL,595.8000000000001,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Aviation turbine fuel/kerosene,1,69.82,36.8,GJ/kL,2569.3759999999997,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Aviation turbine fuel/kerosene,3,18.0,36.8,GJ/kL,662.4,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Biodiesel,1,0.28,34.6,GJ/kL,9.688,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Biodiesel-Cars and light commercial vehicles,1,2.5,34.6,GJ/kL,86.5,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Biofuels other than those mentioned in the items above,1,0.28,23.4,GJ/kL,6.5520000000000005,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Compressed natural gas-Heavy duty vehicles,1,54.5,0.0393,GJ/m3,2.1418500000000003,kg CO2-e/m3,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Compressed natural gas-Heavy duty vehicles,3,18.0,0.0393,GJ/m3,0.7074,kg CO2-e/m3,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Compressed natural gas-Light duty vehicles,1,59.0,0.0393,GJ/m3,2.3187,kg CO2-e/m3,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Compressed natural gas-Light duty vehicles,3,18.0,0.0393,GJ/m3,0.7074,kg CO2-e/m3,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Crude oil including crude oil condensates,1,69.88,45.3,GJ/t,3165.5639999999994,kg CO2-e/t,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Diesel oil,1,70.2,38.6,GJ/kL,2709.7200000000003,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Diesel oil,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Diesel oil - Euro i-Heavy duty vehicles,1,70.5,38.6,GJ/kL,2721.3,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Diesel oil - Euro i-Heavy duty vehicles,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Diesel oil - Euro iii-Heavy duty vehicles,1,70.4,38.6,GJ/kL,2717.4400000000005,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Diesel oil - Euro iii-Heavy duty vehicles,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Diesel oil - Euro iv or higher-Heavy duty vehicles,1,70.37,38.6,GJ/kL,2716.282,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Diesel oil - Euro iv or higher-Heavy duty vehicles,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Diesel oil-Cars and light commercial vehicles,1,70.41,38.6,GJ/kL,2717.826,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Diesel oil-Cars and light commercial vehicles,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Ethanol for use as a fuel in an internal combustion engine,1,0.28,23.4,GJ/kL,6.5520000000000005,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Ethanol-Cars and light commercial vehicles,1,0.4,23.4,GJ/kL,9.36,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Fuel oil,1,73.84,39.7,GJ/kL,2931.4480000000003,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Fuel oil,3,18.0,39.7,GJ/kL,714.6,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Fuel oil-Cars and light commercial vehicles,1,74.18,39.7,GJ/kL,2944.9460000000004,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Fuel oil-Cars and light commercial vehicles,3,18.0,39.7,GJ/kL,714.6,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Gasoline for use as fuel in an aircraft-Aviation,1,67.66,33.1,GJ/kL,2239.546,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Gasoline for use as fuel in an aircraft-Aviation,3,18.0,33.1,GJ/kL,595.8000000000001,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Gasoline-Cars and light commercial vehicles,1,67.62,34.2,GJ/kL,2312.6040000000003,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Gasoline-Cars and light commercial vehicles,3,17.2,34.2,GJ/kL,588.24,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Heating oil,1,69.73,37.3,GJ/kL,2600.929,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Heating oil,3,18.0,37.3,GJ/kL,671.4,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Kerosene (other than for use as fuel in an aircraft),1,69.11,37.5,GJ/kL,2591.625,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Kerosene (other than for use as fuel in an aircraft),3,18.0,37.5,GJ/kL,675.0,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Kerosene for use as fuel in an aircraft-Aviation,1,70.21,36.8,GJ/kL,2583.7279999999996,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Kerosene for use as fuel in an aircraft-Aviation,3,18.0,36.8,GJ/kL,662.4,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Liquefied aromatic hydrocarbons,1,69.93,34.4,GJ/kL,2405.592,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Liquefied aromatic hydrocarbons,3,18.0,34.4,GJ/kL,619.1999999999999,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Liquefied natural gas-Heavy duty vehicles,1,54.5,25.3,GJ/kL,1378.8500000000001,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Liquefied natural gas-Heavy duty vehicles,3,18.0,25.3,GJ/kL,455.40000000000003,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Liquefied natural gas-Light duty vehicles,1,59.0,25.3,GJ/kL,1492.7,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Liquefied natural gas-Light duty vehicles,3,18.0,25.3,GJ/kL,455.40000000000003,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Liquefied petroleum gas (LPG),1,60.6,25.7,GJ/kL,1557.42,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Liquefied petroleum gas (LPG),3,20.2,25.7,GJ/kL,519.14,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Liquefied petroleum gas (LPG)-Cars and light commercial vehicles,1,61.0,26.2,GJ/kL,1598.2,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Liquefied petroleum gas (LPG)-Cars and light commercial vehicles,3,20.2,26.2,GJ/kL,529.24,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Naphtha,1,69.82,31.4,GJ/kL,2192.3479999999995,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Naphtha,3,18.0,31.4,GJ/kL,565.1999999999999,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Other biofuels-Cars and light commercial vehicles,1,2.5,23.4,GJ/kL,58.5,kg CO2-e/kL,,Table 7 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2023,Liquid fuels,Other natural gas liquids,1,61.28,46.5,GJ/t,2849.52,kg CO2-e/t,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Petroleum based greases,1,3.5,38.8,GJ/kL,135.79999999999998,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Petroleum based greases,3,18.0,38.8,GJ/kL,698.4,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,"Petroleum based oils (other than petroleum based oil used as fuel), e.g. lubricants",1,13.9,38.8,GJ/kL,539.3199999999999,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,"Petroleum based oils (other than petroleum based oil used as fuel), e.g. lubricants",3,18.0,38.8,GJ/kL,698.4,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Petroleum based products other than mentioned in the items above,1,69.92,34.4,GJ/kL,2405.248,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Petroleum based products other than mentioned in the items above,3,18.0,34.4,GJ/kL,619.1999999999999,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Petroleum coke,1,92.88,34.2,GJ/t,3176.496,kg CO2-e/t,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Petroleum coke,3,18.0,34.2,GJ/t,615.6,kg CO2-e/t,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Refinery coke,1,92.88,34.2,GJ/t,3176.496,kg CO2-e/t,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Refinery coke,3,18.0,34.2,GJ/t,615.6,kg CO2-e/t,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Refinery gas and liquids,1,54.76,42.9,GJ/t,2349.2039999999997,kg CO2-e/t,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Refinery gas and liquids,3,18.0,42.9,GJ/t,772.1999999999999,kg CO2-e/t,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Solvents: mineral turpentine or white spirits,1,69.93,34.4,GJ/kL,2405.592,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Liquid fuels,Solvents: mineral turpentine or white spirits,3,18.0,34.4,GJ/kL,619.1999999999999,kg CO2-e/kL,,Table 6 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2023,Solid fuels,Anthracite,1,90.24,29.0,GJ/t,2616.96,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Bagasse,1,1.4,9.6,GJ/t,13.44,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,"Biomass, municipal and industrial materials, if combusted to produce heat or electricity",1,1.8,12.2,GJ/t,21.96,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Bituminous coal,1,90.24,27.0,GJ/t,2436.48,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Bituminous coal,3,3.0,27.0,GJ/t,81.0,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Brown coal (lignite),1,93.82,10.2,GJ/t,956.9639999999998,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Brown coal (lignite),3,0.4,10.2,GJ/t,4.08,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Charcoal,1,6.3,31.1,GJ/t,195.93,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Coal briquettes,1,95.38,22.1,GJ/t,2107.898,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Coal coke,1,107.23,27.0,GJ/t,2895.21,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Coal tar,1,82.03,37.5,GJ/t,3076.125,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Coking coal,1,92.03,30.0,GJ/t,2760.9,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Coking coal,3,6.4,30.0,GJ/t,192.0,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Dry wood,1,1.2,16.2,GJ/t,19.439999999999998,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Green and air dried wood,1,1.2,10.4,GJ/t,12.48,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,"Industrial materials that are derived from fossil fuels, if recycled and combusted to produce heat or electricity",1,81.83,26.3,GJ/t,2152.129,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,"Non‑biomass municipal materials, if combusted to produce heat or electricity",1,88.9,10.5,GJ/t,933.45,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,"Passenger car tyres, if recycled and combusted to produce heat or electricity",1,63.03,32.0,GJ/t,2016.96,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Primary solid biomass fuels other than those mentioned in the items above,1,1.8,12.2,GJ/t,21.96,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Solid fossil fuels other than those mentioned in the items above,1,95.28,22.1,GJ/t,2105.688,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Sub-bituminous coal,1,90.24,21.0,GJ/t,1895.04,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Sub-bituminous coal,3,2.5,21.0,GJ/t,52.5,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,Sulphite lyes,1,0.58,12.4,GJ/t,7.191999999999999,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2023,Solid fuels,"Truck and off-road tyres, if recycled and combusted to produce heat or electricity",1,56.13,27.1,GJ/t,1521.123,kg CO2-e/t,,Table 2 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Electricity,Grid electricity,2,,,,0.66,kg CO2-e/kWh,NSW,Table 1
+2024,Electricity,Grid electricity,2,,,,0.61,kg CO2-e/kWh,NWIS,Table 1
+2024,Electricity,Grid electricity,2,,,,0.63,kg CO2-e/kWh,National,Table 1
+2024,Electricity,Grid electricity,2,,,,0.71,kg CO2-e/kWh,QLD,Table 1
+2024,Electricity,Grid electricity,2,,,,0.23,kg CO2-e/kWh,SA,Table 1
+2024,Electricity,Grid electricity,2,,,,0.15,kg CO2-e/kWh,TAS,Table 1
+2024,Electricity,Grid electricity,2,,,,0.77,kg CO2-e/kWh,VIC,Table 1
+2024,Electricity,Grid electricity,3,,,,0.04,kg CO2-e/kWh,NSW,Table 1
+2024,Electricity,Grid electricity,3,,,,0.09,kg CO2-e/kWh,NWIS,Table 1
+2024,Electricity,Grid electricity,3,,,,0.07,kg CO2-e/kWh,National,Table 1
+2024,Electricity,Grid electricity,3,,,,0.1,kg CO2-e/kWh,QLD,Table 1
+2024,Electricity,Grid electricity,3,,,,0.05,kg CO2-e/kWh,SA,Table 1
+2024,Electricity,Grid electricity,3,,,,0.03,kg CO2-e/kWh,TAS,Table 1
+2024,Electricity,Grid electricity,3,,,,0.09,kg CO2-e/kWh,VIC,Table 1
+2024,Gaseous fuels,"A biogas that is captured for combustion, other than those mentioned in the items above",1,6.43,0.037,GJ/m3,0.23790999999999998,kg CO2-e/m3,,Table 4 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2024,Gaseous fuels,Biomethane,1,0.13,0.0393,GJ/m3,0.005109000000000001,kg CO2-e/m3,,Table 4 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2024,Gaseous fuels,Blast furnace gas,1,234.05,0.004,GJ/m3,0.9362,kg CO2-e/m3,,Table 4 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2024,Gaseous fuels,Coal mine waste gas that is captured for combustion,1,56.8,0.0377,GJ/m3,2.1413599999999997,kg CO2-e/m3,,Table 4 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2024,Gaseous fuels,Coal seam methane that is captured for combustion,1,51.63,0.0377,GJ/m3,1.946451,kg CO2-e/m3,,Table 4 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2024,Gaseous fuels,Coke oven gas,1,37.08,0.0181,GJ/m3,0.6711480000000001,kg CO2-e/m3,,Table 4 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2024,Gaseous fuels,Compressed natural gas (reverting to standard conditions),1,51.53,0.0393,GJ/m3,2.025129,kg CO2-e/m3,,Table 4 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2024,Gaseous fuels,Ethane,1,56.56,0.0629,GJ/m3,3.557624,kg CO2-e/m3,,Table 4 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2024,Gaseous fuels,Ethane-New South Wales,3,23.7,0.0629,GJ/m3,1.4907299999999999,kg CO2-e/m3,,Table 6 Indirect (Scope 3) emissions from the consumption of ethane
+2024,Gaseous fuels,Ethane-Victoria,3,5.7,0.0629,GJ/m3,0.35853,kg CO2-e/m3,,Table 6 Indirect (Scope 3) emissions from the consumption of ethane
+2024,Gaseous fuels,Gaseous fossil fuels other than those mentioned in the items above,1,51.53,0.039,GJ/m3,2.00967,kg CO2-e/m3,,Table 4 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2024,Gaseous fuels,Landfill biogas that is captured for combustion (methane only),1,6.43,0.0377,GJ/m3,0.24241099999999996,kg CO2-e/m3,,Table 4 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2024,Gaseous fuels,Liquefied natural gas,1,51.53,25.3,GJ/kL,1303.709,kg CO2-e/kL,,Table 4 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2024,Gaseous fuels,Natural Gas-Metro -New South Wales and ACT,3,13.1,0.0393,GJ/m3,0.51483,kg CO2-e/m3,,Table 5 Indirect (Scope 3) emissions from consumption of natural gas
+2024,Gaseous fuels,Natural Gas-Metro -Queensland,3,8.8,0.0393,GJ/m3,0.34584000000000004,kg CO2-e/m3,,Table 5 Indirect (Scope 3) emissions from consumption of natural gas
+2024,Gaseous fuels,Natural Gas-Metro -South Australia,3,10.7,0.0393,GJ/m3,0.42051,kg CO2-e/m3,,Table 5 Indirect (Scope 3) emissions from consumption of natural gas
+2024,Gaseous fuels,Natural Gas-Metro -Victoria,3,4.0,0.0393,GJ/m3,0.1572,kg CO2-e/m3,,Table 5 Indirect (Scope 3) emissions from consumption of natural gas
+2024,Gaseous fuels,Natural Gas-Metro -Western Australia,3,4.1,0.0393,GJ/m3,0.16113,kg CO2-e/m3,,Table 5 Indirect (Scope 3) emissions from consumption of natural gas
+2024,Gaseous fuels,Natural Gas-Non-metro-New South Wales and ACT,3,14.0,0.0393,GJ/m3,0.5502,kg CO2-e/m3,,Table 5 Indirect (Scope 3) emissions from consumption of natural gas
+2024,Gaseous fuels,Natural Gas-Non-metro-Queensland,3,7.9,0.0393,GJ/m3,0.31047,kg CO2-e/m3,,Table 5 Indirect (Scope 3) emissions from consumption of natural gas
+2024,Gaseous fuels,Natural Gas-Non-metro-South Australia,3,10.6,0.0393,GJ/m3,0.41658,kg CO2-e/m3,,Table 5 Indirect (Scope 3) emissions from consumption of natural gas
+2024,Gaseous fuels,Natural Gas-Non-metro-Victoria,3,4.0,0.0393,GJ/m3,0.1572,kg CO2-e/m3,,Table 5 Indirect (Scope 3) emissions from consumption of natural gas
+2024,Gaseous fuels,Natural Gas-Non-metro-Western Australia,3,4.0,0.0393,GJ/m3,0.1572,kg CO2-e/m3,,Table 5 Indirect (Scope 3) emissions from consumption of natural gas
+2024,Gaseous fuels,Natural gas distributed in a pipeline,1,51.53,0.0393,GJ/m3,2.025129,kg CO2-e/m3,,Table 4 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2024,Gaseous fuels,Sludge biogas that is captured for combustion (methane only),1,6.43,0.0377,GJ/m3,0.24241099999999996,kg CO2-e/m3,,Table 4 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2024,Gaseous fuels,Town gas,1,60.27,0.039,GJ/m3,2.35053,kg CO2-e/m3,,Table 4 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2024,Gaseous fuels,Unprocessed natural gas,1,51.53,0.0393,GJ/m3,2.025129,kg CO2-e/m3,,Table 4 Direct (Scope 1) emissions from consumption of gaseous fuels including l
+2024,Liquid fuels,Automotive gasoline/petrol (other than for use as fuel in an aircraft),1,67.8,34.2,GJ/kL,2318.76,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Automotive gasoline/petrol (other than for use as fuel in an aircraft),3,17.2,34.2,GJ/kL,588.24,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Aviation gasoline,1,67.4,33.1,GJ/kL,2230.9400000000005,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Aviation gasoline,3,18.0,33.1,GJ/kL,595.8000000000001,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Aviation turbine fuel/kerosene,1,69.82,36.8,GJ/kL,2569.3759999999997,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Aviation turbine fuel/kerosene,3,18.0,36.8,GJ/kL,662.4,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Biodiesel,1,0.28,34.6,GJ/kL,9.688,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Biodiesel-Cars and light commercial vehicles,1,2.5,34.6,GJ/kL,86.5,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Biofuels other than those mentioned in the items above,1,0.28,23.4,GJ/kL,6.5520000000000005,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Compressed natural gas-Heavy duty vehicles,1,54.5,0.0393,GJ/m3,2.1418500000000003,kg CO2-e/m3,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Compressed natural gas-Heavy duty vehicles,3,18.0,0.0393,GJ/m3,0.7074,kg CO2-e/m3,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Compressed natural gas-Light duty vehicles,1,59.0,0.0393,GJ/m3,2.3187,kg CO2-e/m3,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Compressed natural gas-Light duty vehicles,3,18.0,0.0393,GJ/m3,0.7074,kg CO2-e/m3,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Crude oil including crude oil condensates,1,69.88,45.3,GJ/t,3165.5639999999994,kg CO2-e/t,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Diesel oil,1,70.2,38.6,GJ/kL,2709.7200000000003,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Diesel oil,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Diesel oil - Euro i-Heavy duty vehicles,1,70.5,38.6,GJ/kL,2721.3,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Diesel oil - Euro i-Heavy duty vehicles,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Diesel oil - Euro iii-Heavy duty vehicles,1,70.4,38.6,GJ/kL,2717.4400000000005,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Diesel oil - Euro iii-Heavy duty vehicles,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Diesel oil - Euro iv or higher-Heavy duty vehicles,1,70.37,38.6,GJ/kL,2716.282,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Diesel oil - Euro iv or higher-Heavy duty vehicles,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Diesel oil-Cars and light commercial vehicles,1,70.41,38.6,GJ/kL,2717.826,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Diesel oil-Cars and light commercial vehicles,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Ethanol for use as a fuel in an internal combustion engine,1,0.28,23.4,GJ/kL,6.5520000000000005,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Ethanol-Cars and light commercial vehicles,1,0.4,23.4,GJ/kL,9.36,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Fuel oil,1,73.84,39.7,GJ/kL,2931.4480000000003,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Fuel oil,3,18.0,39.7,GJ/kL,714.6,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Fuel oil-Cars and light commercial vehicles,1,74.18,39.7,GJ/kL,2944.9460000000004,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Fuel oil-Cars and light commercial vehicles,3,18.0,39.7,GJ/kL,714.6,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Gasoline for use as fuel in an aircraft-Aviation,1,67.66,33.1,GJ/kL,2239.546,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Gasoline for use as fuel in an aircraft-Aviation,3,18.0,33.1,GJ/kL,595.8000000000001,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Gasoline-Cars and light commercial vehicles,1,67.62,34.2,GJ/kL,2312.6040000000003,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Gasoline-Cars and light commercial vehicles,3,17.2,34.2,GJ/kL,588.24,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Heating oil,1,69.73,37.3,GJ/kL,2600.929,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Heating oil,3,18.0,37.3,GJ/kL,671.4,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Kerosene (other than for use as fuel in an aircraft),1,69.11,37.5,GJ/kL,2591.625,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Kerosene (other than for use as fuel in an aircraft),3,18.0,37.5,GJ/kL,675.0,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Kerosene for use as fuel in an aircraft-Aviation,1,70.21,36.8,GJ/kL,2583.7279999999996,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Kerosene for use as fuel in an aircraft-Aviation,3,18.0,36.8,GJ/kL,662.4,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Liquefied aromatic hydrocarbons,1,69.93,34.4,GJ/kL,2405.592,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Liquefied aromatic hydrocarbons,3,18.0,34.4,GJ/kL,619.1999999999999,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Liquefied natural gas-Heavy duty vehicles,1,54.5,25.3,GJ/kL,1378.8500000000001,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Liquefied natural gas-Heavy duty vehicles,3,18.0,25.3,GJ/kL,455.40000000000003,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Liquefied natural gas-Light duty vehicles,1,59.0,25.3,GJ/kL,1492.7,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Liquefied natural gas-Light duty vehicles,3,18.0,25.3,GJ/kL,455.40000000000003,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Liquefied petroleum gas (LPG),1,60.6,25.7,GJ/kL,1557.42,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Liquefied petroleum gas (LPG),3,20.2,25.7,GJ/kL,519.14,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Liquefied petroleum gas (LPG)-Cars and light commercial vehicles,1,61.0,26.2,GJ/kL,1598.2,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Liquefied petroleum gas (LPG)-Cars and light commercial vehicles,3,20.2,26.2,GJ/kL,529.24,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Naphtha,1,69.82,31.4,GJ/kL,2192.3479999999995,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Naphtha,3,18.0,31.4,GJ/kL,565.1999999999999,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Other biofuels-Cars and light commercial vehicles,1,2.5,23.4,GJ/kL,58.5,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Other natural gas liquids,1,61.28,46.5,GJ/t,2849.52,kg CO2-e/t,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Petroleum based greases,1,3.5,38.8,GJ/kL,135.79999999999998,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Petroleum based greases,3,18.0,38.8,GJ/kL,698.4,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,"Petroleum based oils (other than petroleum based oil used as fuel), e.g. lubricants",1,13.9,38.8,GJ/kL,539.3199999999999,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,"Petroleum based oils (other than petroleum based oil used as fuel), e.g. lubricants",3,18.0,38.8,GJ/kL,698.4,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Petroleum based products other than mentioned in the items above,1,69.92,34.4,GJ/kL,2405.248,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Petroleum based products other than mentioned in the items above,3,18.0,34.4,GJ/kL,619.1999999999999,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Petroleum coke,1,92.88,34.2,GJ/t,3176.496,kg CO2-e/t,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Petroleum coke,3,18.0,34.2,GJ/t,615.6,kg CO2-e/t,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Refinery coke,1,92.88,34.2,GJ/t,3176.496,kg CO2-e/t,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Refinery coke,3,18.0,34.2,GJ/t,615.6,kg CO2-e/t,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Refinery gas and liquids,1,54.76,42.9,GJ/t,2349.2039999999997,kg CO2-e/t,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Refinery gas and liquids,3,18.0,42.9,GJ/t,772.1999999999999,kg CO2-e/t,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Renewable aviation kerosene,1,0.22,36.8,GJ/t,8.096,kg CO2-e/t,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Renewable aviation kerosene,1,0.61,36.8,GJ/kL,22.447999999999997,kg CO2-e/kL,,Table 8 Direct (scope 1) and indirect (scope 3) emissions from consumption of tr
+2024,Liquid fuels,Renewable diesel,1,0.3,38.6,GJ/t,11.58,kg CO2-e/t,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Solvents: mineral turpentine or white spirits,1,69.93,34.4,GJ/kL,2405.592,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Liquid fuels,Solvents: mineral turpentine or white spirits,3,18.0,34.4,GJ/kL,619.1999999999999,kg CO2-e/kL,,Table 7 Direct (Scope 1) and indirect (scope 3) emissions from consumption of li
+2024,Solid fuels,Anthracite,1,90.24,29.0,GJ/t,2616.96,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Bagasse,1,1.4,9.6,GJ/t,13.44,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,"Biomass, municipal and industrial materials, if combusted to produce heat or electricity",1,1.8,12.2,GJ/t,21.96,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Bituminous coal,1,90.24,27.0,GJ/t,2436.48,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Bituminous coal,3,3.0,27.0,GJ/t,81.0,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Brown coal (lignite),1,93.82,10.2,GJ/t,956.9639999999998,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Brown coal (lignite),3,0.4,10.2,GJ/t,4.08,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Charcoal,1,6.3,31.1,GJ/t,195.93,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Coal briquettes,1,95.38,22.1,GJ/t,2107.898,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Coal coke,1,107.23,27.0,GJ/t,2895.21,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Coal tar,1,82.03,37.5,GJ/t,3076.125,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Coking coal,1,92.03,30.0,GJ/t,2760.9,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Coking coal,3,6.4,30.0,GJ/t,192.0,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Dry wood,1,1.2,16.2,GJ/t,19.439999999999998,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Green and air dried wood,1,1.2,10.4,GJ/t,12.48,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,"Industrial materials that are derived from fossil fuels, if recycled and combusted to produce heat or electricity",1,81.83,26.3,GJ/t,2152.129,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,"Non‑biomass municipal materials, if combusted to produce heat or electricity",1,88.9,10.5,GJ/t,933.45,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,"Passenger car tyres, if recycled and combusted to produce heat or electricity",1,63.03,32.0,GJ/t,2016.96,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Primary solid biomass fuels other than those mentioned in the items above,1,1.8,12.2,GJ/t,21.96,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Solid fossil fuels other than those mentioned in the items above,1,95.28,22.1,GJ/t,2105.688,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Sub-bituminous coal,1,90.24,21.0,GJ/t,1895.04,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Sub-bituminous coal,3,2.5,21.0,GJ/t,52.5,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,Sulphite lyes,1,0.58,12.4,GJ/t,7.191999999999999,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2024,Solid fuels,"Truck and off-road tyres, if recycled and combusted to produce heat or electricity",1,56.13,27.1,GJ/t,1521.123,kg CO2-e/t,,Table 3 Direct (scope 1) and Indirect (scope 3) emissions from combustion of sol
+2025,Electricity,Grid electricity,2,,,,0.64,kg CO2-e/kWh,NSW,Table 1
+2025,Electricity,Grid electricity,2,,,,0.56,kg CO2-e/kWh,NWIS,Table 1
+2025,Electricity,Grid electricity,2,,,,0.62,kg CO2-e/kWh,National,Table 1
+2025,Electricity,Grid electricity,2,,,,0.67,kg CO2-e/kWh,QLD,Table 1
+2025,Electricity,Grid electricity,2,,,,0.22,kg CO2-e/kWh,SA,Table 1
+2025,Electricity,Grid electricity,2,,,,0.2,kg CO2-e/kWh,TAS,Table 1
+2025,Electricity,Grid electricity,2,,,,0.78,kg CO2-e/kWh,VIC,Table 1
+2025,Electricity,Grid electricity,3,,,,0.03,kg CO2-e/kWh,NSW,Table 1
+2025,Electricity,Grid electricity,3,,,,0.09,kg CO2-e/kWh,NWIS,Table 1
+2025,Electricity,Grid electricity,3,,,,0.07,kg CO2-e/kWh,National,Table 1
+2025,Electricity,Grid electricity,3,,,,0.09,kg CO2-e/kWh,QLD,Table 1
+2025,Electricity,Grid electricity,3,,,,0.04,kg CO2-e/kWh,SA,Table 1
+2025,Electricity,Grid electricity,3,,,,0.03,kg CO2-e/kWh,TAS,Table 1
+2025,Electricity,Grid electricity,3,,,,0.09,kg CO2-e/kWh,VIC,Table 1
+2025,Gaseous fuels,"A biogas that is captured for combustion, other than those mentioned in the items above",1,6.43,0.037,GJ/m3,0.23790999999999998,kg CO2-e/m3,,Table 5 Direct (Scope 1) emission factors for the consumption of gaseous fuels i
+2025,Gaseous fuels,Biomethane,1,0.13,0.0393,GJ/m3,0.005109000000000001,kg CO2-e/m3,,Table 5 Direct (Scope 1) emission factors for the consumption of gaseous fuels i
+2025,Gaseous fuels,Blast furnace gas,1,234.05,0.004,GJ/m3,0.9362,kg CO2-e/m3,,Table 5 Direct (Scope 1) emission factors for the consumption of gaseous fuels i
+2025,Gaseous fuels,Coal mine waste gas that is captured for combustion,1,56.8,0.0377,GJ/m3,2.1413599999999997,kg CO2-e/m3,,Table 5 Direct (Scope 1) emission factors for the consumption of gaseous fuels i
+2025,Gaseous fuels,Coal seam methane that is captured for combustion,1,51.63,0.0377,GJ/m3,1.946451,kg CO2-e/m3,,Table 5 Direct (Scope 1) emission factors for the consumption of gaseous fuels i
+2025,Gaseous fuels,Coke oven gas,1,37.08,0.0181,GJ/m3,0.6711480000000001,kg CO2-e/m3,,Table 5 Direct (Scope 1) emission factors for the consumption of gaseous fuels i
+2025,Gaseous fuels,Compressed natural gas (reverting to standard conditions),1,51.53,0.0393,GJ/m3,2.025129,kg CO2-e/m3,,Table 5 Direct (Scope 1) emission factors for the consumption of gaseous fuels i
+2025,Gaseous fuels,Ethane,1,56.56,0.0629,GJ/m3,3.557624,kg CO2-e/m3,,Table 5 Direct (Scope 1) emission factors for the consumption of gaseous fuels i
+2025,Gaseous fuels,Ethane-New South Wales,3,23.7,0.0629,GJ/m3,1.4907299999999999,kg CO2-e/m3,,Table 7 Indirect (Scope 3) emission factors for the consumption of ethane
+2025,Gaseous fuels,Ethane-Victoria,3,5.7,0.0629,GJ/m3,0.35853,kg CO2-e/m3,,Table 7 Indirect (Scope 3) emission factors for the consumption of ethane
+2025,Gaseous fuels,Gaseous fossil fuels other than those mentioned in the items above,1,51.53,0.039,GJ/m3,2.00967,kg CO2-e/m3,,Table 5 Direct (Scope 1) emission factors for the consumption of gaseous fuels i
+2025,Gaseous fuels,Hydrogen,1,0.05,0.0122,GJ/m3,0.0006100000000000001,kg CO2-e/m3,,Table 5 Direct (Scope 1) emission factors for the consumption of gaseous fuels i
+2025,Gaseous fuels,Landfill biogas that is captured for combustion (methane only),1,6.43,0.0377,GJ/m3,0.24241099999999996,kg CO2-e/m3,,Table 5 Direct (Scope 1) emission factors for the consumption of gaseous fuels i
+2025,Gaseous fuels,Liquefied natural gas,1,51.53,25.3,GJ/kL,1303.709,kg CO2-e/kL,,Table 5 Direct (Scope 1) emission factors for the consumption of gaseous fuels i
+2025,Gaseous fuels,Natural Gas-Metro -New South Wales and ACT,3,13.1,0.0393,GJ/m3,0.51483,kg CO2-e/m3,,Table 6 Indirect (Scope 3) emission factors for the consumption of natural gas
+2025,Gaseous fuels,Natural Gas-Metro -Queensland,3,8.8,0.0393,GJ/m3,0.34584000000000004,kg CO2-e/m3,,Table 6 Indirect (Scope 3) emission factors for the consumption of natural gas
+2025,Gaseous fuels,Natural Gas-Metro -South Australia,3,10.7,0.0393,GJ/m3,0.42051,kg CO2-e/m3,,Table 6 Indirect (Scope 3) emission factors for the consumption of natural gas
+2025,Gaseous fuels,Natural Gas-Metro -Victoria,3,4.0,0.0393,GJ/m3,0.1572,kg CO2-e/m3,,Table 6 Indirect (Scope 3) emission factors for the consumption of natural gas
+2025,Gaseous fuels,Natural Gas-Metro -Western Australia,3,4.1,0.0393,GJ/m3,0.16113,kg CO2-e/m3,,Table 6 Indirect (Scope 3) emission factors for the consumption of natural gas
+2025,Gaseous fuels,Natural Gas-Non-metro-New South Wales and ACT,3,14.0,0.0393,GJ/m3,0.5502,kg CO2-e/m3,,Table 6 Indirect (Scope 3) emission factors for the consumption of natural gas
+2025,Gaseous fuels,Natural Gas-Non-metro-Queensland,3,7.9,0.0393,GJ/m3,0.31047,kg CO2-e/m3,,Table 6 Indirect (Scope 3) emission factors for the consumption of natural gas
+2025,Gaseous fuels,Natural Gas-Non-metro-South Australia,3,10.6,0.0393,GJ/m3,0.41658,kg CO2-e/m3,,Table 6 Indirect (Scope 3) emission factors for the consumption of natural gas
+2025,Gaseous fuels,Natural Gas-Non-metro-Victoria,3,4.0,0.0393,GJ/m3,0.1572,kg CO2-e/m3,,Table 6 Indirect (Scope 3) emission factors for the consumption of natural gas
+2025,Gaseous fuels,Natural Gas-Non-metro-Western Australia,3,4.0,0.0393,GJ/m3,0.1572,kg CO2-e/m3,,Table 6 Indirect (Scope 3) emission factors for the consumption of natural gas
+2025,Gaseous fuels,Natural gas distributed in a pipeline,1,51.53,0.0393,GJ/m3,2.025129,kg CO2-e/m3,,Table 5 Direct (Scope 1) emission factors for the consumption of gaseous fuels i
+2025,Gaseous fuels,Sludge biogas that is captured for combustion (methane only),1,6.43,0.0377,GJ/m3,0.24241099999999996,kg CO2-e/m3,,Table 5 Direct (Scope 1) emission factors for the consumption of gaseous fuels i
+2025,Gaseous fuels,Town gas,1,60.27,0.039,GJ/m3,2.35053,kg CO2-e/m3,,Table 5 Direct (Scope 1) emission factors for the consumption of gaseous fuels i
+2025,Gaseous fuels,Unprocessed natural gas,1,51.53,0.0393,GJ/m3,2.025129,kg CO2-e/m3,,Table 5 Direct (Scope 1) emission factors for the consumption of gaseous fuels i
+2025,Liquid fuels,Automotive gasoline/petrol (other than for use as fuel in an aircraft),1,67.8,34.2,GJ/kL,2318.76,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Automotive gasoline/petrol (other than for use as fuel in an aircraft),3,17.2,34.2,GJ/kL,588.24,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Aviation gasoline,1,67.4,33.1,GJ/kL,2230.9400000000005,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Aviation gasoline,3,18.0,33.1,GJ/kL,595.8000000000001,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Aviation turbine fuel/kerosene,1,69.82,36.8,GJ/kL,2569.3759999999997,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Aviation turbine fuel/kerosene,3,18.0,36.8,GJ/kL,662.4,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Biodiesel,1,0.28,34.6,GJ/kL,9.688,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Biodiesel-Cars and light commercial vehicles,1,2.5,34.6,GJ/kL,86.5,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Biofuels other than those mentioned in the items above,1,0.28,23.4,GJ/kL,6.5520000000000005,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Compressed natural gas-Heavy duty vehicles,1,54.5,0.0393,GJ/m3,2.1418500000000003,kg CO2-e/m3,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Compressed natural gas-Heavy duty vehicles,3,18.0,0.0393,GJ/m3,0.7074,kg CO2-e/m3,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Compressed natural gas-Light duty vehicles,1,59.0,0.0393,GJ/m3,2.3187,kg CO2-e/m3,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Compressed natural gas-Light duty vehicles,3,18.0,0.0393,GJ/m3,0.7074,kg CO2-e/m3,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Crude oil including crude oil condensates,1,69.88,45.3,GJ/t,3165.5639999999994,kg CO2-e/t,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Diesel oil,1,70.2,38.6,GJ/kL,2709.7200000000003,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Diesel oil,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Diesel oil - Euro i-Heavy duty vehicles,1,70.5,38.6,GJ/kL,2721.3,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Diesel oil - Euro i-Heavy duty vehicles,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Diesel oil - Euro iii-Heavy duty vehicles,1,70.4,38.6,GJ/kL,2717.4400000000005,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Diesel oil - Euro iii-Heavy duty vehicles,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Diesel oil - Euro iv or higher-Heavy duty vehicles,1,70.37,38.6,GJ/kL,2716.282,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Diesel oil - Euro iv or higher-Heavy duty vehicles,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Diesel oil-Cars and light commercial vehicles,1,70.41,38.6,GJ/kL,2717.826,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Diesel oil-Cars and light commercial vehicles,3,17.3,38.6,GJ/kL,667.7800000000001,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Ethanol for use as a fuel in an internal combustion engine,1,0.28,23.4,GJ/kL,6.5520000000000005,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Ethanol-Cars and light commercial vehicles,1,0.4,23.4,GJ/kL,9.36,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Fuel oil,1,73.84,39.7,GJ/kL,2931.4480000000003,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Fuel oil,3,18.0,39.7,GJ/kL,714.6,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Fuel oil-Cars and light commercial vehicles,1,74.18,39.7,GJ/kL,2944.9460000000004,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Fuel oil-Cars and light commercial vehicles,3,18.0,39.7,GJ/kL,714.6,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Gasoline for use as fuel in an aircraft-Aviation,1,67.66,33.1,GJ/kL,2239.546,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Gasoline for use as fuel in an aircraft-Aviation,3,18.0,33.1,GJ/kL,595.8000000000001,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Gasoline-Cars and light commercial vehicles,1,67.62,34.2,GJ/kL,2312.6040000000003,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Gasoline-Cars and light commercial vehicles,3,17.2,34.2,GJ/kL,588.24,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Heating oil,1,69.73,37.3,GJ/kL,2600.929,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Heating oil,3,18.0,37.3,GJ/kL,671.4,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Kerosene (other than for use as fuel in an aircraft),1,69.11,37.5,GJ/kL,2591.625,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Kerosene (other than for use as fuel in an aircraft),3,18.0,37.5,GJ/kL,675.0,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Kerosene for use as fuel in an aircraft-Aviation,1,70.21,36.8,GJ/kL,2583.7279999999996,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Kerosene for use as fuel in an aircraft-Aviation,3,18.0,36.8,GJ/kL,662.4,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Liquefied aromatic hydrocarbons,1,69.93,34.4,GJ/kL,2405.592,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Liquefied aromatic hydrocarbons,3,18.0,34.4,GJ/kL,619.1999999999999,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Liquefied natural gas-Heavy duty vehicles,1,54.5,25.3,GJ/kL,1378.8500000000001,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Liquefied natural gas-Heavy duty vehicles,3,18.0,25.3,GJ/kL,455.40000000000003,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Liquefied natural gas-Light duty vehicles,1,59.0,25.3,GJ/kL,1492.7,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Liquefied natural gas-Light duty vehicles,3,18.0,25.3,GJ/kL,455.40000000000003,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Liquefied petroleum gas (LPG),1,60.6,25.7,GJ/kL,1557.42,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Liquefied petroleum gas (LPG),3,20.2,25.7,GJ/kL,519.14,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Liquefied petroleum gas (LPG)-Cars and light commercial vehicles,1,61.0,26.2,GJ/kL,1598.2,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Liquefied petroleum gas (LPG)-Cars and light commercial vehicles,3,20.2,26.2,GJ/kL,529.24,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Naphtha,1,69.82,31.4,GJ/kL,2192.3479999999995,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Naphtha,3,18.0,31.4,GJ/kL,565.1999999999999,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Other biofuels-Cars and light commercial vehicles,1,2.5,23.4,GJ/kL,58.5,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Other natural gas liquids,1,61.28,46.5,GJ/t,2849.52,kg CO2-e/t,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Petroleum based greases,1,3.5,38.8,GJ/kL,135.79999999999998,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Petroleum based greases,3,18.0,38.8,GJ/kL,698.4,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,"Petroleum based oils (other than petroleum based oil used as fuel), e.g. lubricants",1,13.9,38.8,GJ/kL,539.3199999999999,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,"Petroleum based oils (other than petroleum based oil used as fuel), e.g. lubricants",3,18.0,38.8,GJ/kL,698.4,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Petroleum based products other than mentioned in the items above,1,69.92,34.4,GJ/kL,2405.248,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Petroleum based products other than mentioned in the items above,3,18.0,34.4,GJ/kL,619.1999999999999,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Petroleum coke,1,92.88,34.2,GJ/t,3176.496,kg CO2-e/t,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Petroleum coke,3,18.0,34.2,GJ/t,615.6,kg CO2-e/t,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Refinery coke,1,92.88,34.2,GJ/t,3176.496,kg CO2-e/t,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Refinery coke,3,18.0,34.2,GJ/t,615.6,kg CO2-e/t,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Refinery gas and liquids,1,54.76,42.9,GJ/t,2349.2039999999997,kg CO2-e/t,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Refinery gas and liquids,3,18.0,42.9,GJ/t,772.1999999999999,kg CO2-e/t,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Renewable aviation kerosene,1,0.22,36.8,GJ/t,8.096,kg CO2-e/t,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Renewable aviation kerosene,1,0.61,36.8,GJ/kL,22.447999999999997,kg CO2-e/kL,,Table 9 Direct (scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Renewable diesel,1,0.3,38.6,GJ/t,11.58,kg CO2-e/t,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Solvents: mineral turpentine or white spirits,1,69.93,34.4,GJ/kL,2405.592,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Liquid fuels,Solvents: mineral turpentine or white spirits,3,18.0,34.4,GJ/kL,619.1999999999999,kg CO2-e/kL,,Table 8 Direct (Scope 1) and indirect (scope 3) emission factors for the consump
+2025,Solid fuels,Anthracite,1,90.24,29.0,GJ/t,2616.96,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Bagasse,1,1.4,9.6,GJ/t,13.44,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,"Biomass, municipal and industrial materials, if combusted to produce heat or electricity",1,1.8,12.2,GJ/t,21.96,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Bituminous coal,1,90.24,27.0,GJ/t,2436.48,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Bituminous coal,3,3.0,27.0,GJ/t,81.0,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Brown coal (lignite),1,93.82,10.2,GJ/t,956.9639999999998,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Brown coal (lignite),3,0.4,10.2,GJ/t,4.08,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Charcoal,1,6.3,31.1,GJ/t,195.93,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Coal briquettes,1,95.38,22.1,GJ/t,2107.898,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Coal coke,1,107.23,27.0,GJ/t,2895.21,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Coal tar,1,82.03,37.5,GJ/t,3076.125,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Coking coal,1,92.03,30.0,GJ/t,2760.9,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Coking coal,3,6.4,30.0,GJ/t,192.0,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Dry wood,1,1.2,16.2,GJ/t,19.439999999999998,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Green and air dried wood,1,1.2,10.4,GJ/t,12.48,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,"Industrial materials that are derived from fossil fuels, if recycled and combusted to produce heat or electricity",1,81.83,26.3,GJ/t,2152.129,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,"Non‑biomass municipal materials, if combusted to produce heat or electricity",1,88.9,10.5,GJ/t,933.45,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,"Passenger car tyres, if recycled and combusted to produce heat or electricity",1,63.03,32.0,GJ/t,2016.96,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Primary solid biomass fuels other than those mentioned in the items above,1,1.8,12.2,GJ/t,21.96,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Solid fossil fuels other than those mentioned in the items above,1,95.28,22.1,GJ/t,2105.688,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Sub-bituminous coal,1,90.24,21.0,GJ/t,1895.04,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Sub-bituminous coal,3,2.5,21.0,GJ/t,52.5,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,Sulphite lyes,1,0.58,12.4,GJ/t,7.191999999999999,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
+2025,Solid fuels,"Truck and off-road tyres, if recycled and combusted to produce heat or electricity",1,56.13,27.1,GJ/t,1521.123,kg CO2-e/t,,Table 4 Direct (scope 1) and Indirect (scope 3) emission factors for the combust
