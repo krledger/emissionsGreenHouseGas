@@ -292,6 +292,7 @@ def display_tax_single(carbon_tax, tax_start_fy, show_summary=True, year_type='F
                            range=[0, max_cum * 1.25])
 
             fig.update_layout(
+                title="Carbon Tax Liability",
                 hovermode='x unified',
                 height=500,
                 showlegend=True,

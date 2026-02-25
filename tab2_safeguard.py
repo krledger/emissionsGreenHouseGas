@@ -429,6 +429,7 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
         fig.update_yaxes(visible=False, secondary_y=True)
 
         fig.update_layout(
+            title="Scope 1 Emissions vs Baseline Target",
             height=500,
             hovermode='x unified',
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
@@ -627,6 +628,7 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
             )
 
             fig.update_layout(
+                title="Safeguard Mechanism Credits (SMC)",
                 height=500,
                 hovermode='x unified',
                 showlegend=True,

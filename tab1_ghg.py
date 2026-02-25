@@ -145,6 +145,89 @@ def _build_raw_data_summary(df, display_year, year_type='FY'):
 
 
 
+def _build_monthly_detail(df, display_year, year_type='FY'):
+    """Build monthly detail table for the selected year with NGA factors shown.
+
+    Shows every fuel row by month with the emission factor that was applied.
+    Covers both Actual and Budget data for the display year.
+    Designed for CSV download so users get the full audit trail.
+
+    The emission factor is back-calculated from the stored results:
+        EF (kgCO2-e/unit) = Scope_tCO2e / Quantity * 1000
+
+    Args:
+        df: Loaded DataFrame from load_all_data()
+        display_year: Year number (e.g. 2025)
+        year_type: 'FY' or 'CY'
+
+    Returns:
+        DataFrame ready for display and download, or None if no data
+    """
+    # Filter to the selected year (all datasets)
+    if year_type == 'FY':
+        year_data = df[df['FY'] == display_year].copy()
+    else:
+        year_data = df[df['Year'] == display_year].copy()
+
+    if len(year_data) == 0:
+        return None
+
+    # Fuel items only (has NGAFuel)
+    has_fuel = year_data['NGAFuel'].notna() & (year_data['NGAFuel'] != '')
+    year_data = year_data[has_fuel]
+    if len(year_data) == 0:
+        return None
+
+    # Back-calculate the emission factor applied
+    # EF_S1 = Scope1_tCO2e / Quantity * 1000 (kgCO2-e per native unit)
+    year_data['EF_S1_kgCO2e'] = 0.0
+    year_data['EF_S2_kgCO2e'] = 0.0
+    year_data['EF_S3_kgCO2e'] = 0.0
+    qty_mask = year_data['Quantity'].abs() > 0
+    if qty_mask.any():
+        year_data.loc[qty_mask, 'EF_S1_kgCO2e'] = (
+            year_data.loc[qty_mask, 'Scope1_tCO2e'] / year_data.loc[qty_mask, 'Quantity'] * 1000
+        )
+        year_data.loc[qty_mask, 'EF_S2_kgCO2e'] = (
+            year_data.loc[qty_mask, 'Scope2_tCO2e'] / year_data.loc[qty_mask, 'Quantity'] * 1000
+        )
+        year_data.loc[qty_mask, 'EF_S3_kgCO2e'] = (
+            year_data.loc[qty_mask, 'Scope3_tCO2e'] / year_data.loc[qty_mask, 'Quantity'] * 1000
+        )
+
+    # Build the output table
+    import calendar
+    year_data['Month_Name'] = year_data['Month'].apply(
+        lambda m: calendar.month_abbr[int(m)] if pd.notna(m) and 1 <= int(m) <= 12 else ''
+    )
+
+    result = pd.DataFrame({
+        'Month': year_data['Month_Name'],
+        'DataSet': year_data['DataSet'],
+        'Description': year_data['Description'],
+        'Department': year_data['Department'],
+        'CostCentre': year_data['CostCentre'],
+        'NGAFuel': year_data['NGAFuel'],
+        'UOM': year_data['UOM'],
+        'Quantity': year_data['Quantity'],
+        'EF S1 (kgCO2e/unit)': year_data['EF_S1_kgCO2e'],
+        'EF S2 (kgCO2e/unit)': year_data['EF_S2_kgCO2e'],
+        'EF S3 (kgCO2e/unit)': year_data['EF_S3_kgCO2e'],
+        'Scope 1 (tCO2-e)': year_data['Scope1_tCO2e'],
+        'Scope 2 (tCO2-e)': year_data['Scope2_tCO2e'],
+        'Scope 3 (tCO2-e)': year_data['Scope3_tCO2e'],
+        'Energy (GJ)': year_data['Energy_GJ'] if 'Energy_GJ' in year_data.columns else 0,
+    })
+
+    # Sort by month then description
+    month_order = {calendar.month_abbr[i]: i for i in range(1, 13)}
+    result['_month_sort'] = result['Month'].map(month_order).fillna(0)
+    result = result.sort_values(['_month_sort', 'Description', 'CostCentre']).drop(columns=['_month_sort'])
+    result = result.reset_index(drop=True)
+
+    return result
+
+
 def prepare_annual_for_display(monthly, year_type='FY'):
     """Aggregate monthly data to annual and prepare for display
 
@@ -301,15 +384,6 @@ def display_single_source(projection, display_year, df, show_summary=True, year_
                 }]
 
                 st.dataframe(pd.DataFrame(summary_data), hide_index=True, width="stretch")
-
-        # Raw data summary table - consumption quantities and emissions by fuel type
-        if df is not None:
-            with st.expander(f"\U0001f4cb Fuel Consumption Detail ({year_label})", expanded=False):
-                raw_table = _build_raw_data_summary(df, display_year, year_type)
-                if raw_table is not None:
-                    st.dataframe(raw_table, hide_index=True, width="stretch")
-                else:
-                    st.info(f"No actual data for {year_label}")
 
     # Charts
     with st.expander("Emissions Charts", expanded=True):
@@ -479,7 +553,16 @@ def display_single_source(projection, display_year, df, show_summary=True, year_
 
                 st.plotly_chart(fig_dept, width="stretch", key="pie_dept")
 
-    # Data table (moved to bottom)
+        # Raw data summary table - consumption quantities and emissions by fuel type
+        if df is not None:
+            with st.expander(f"\U0001f4cb Fuel Consumption Detail ({year_label})", expanded=False):
+                raw_table = _build_raw_data_summary(df, display_year, year_type)
+                if raw_table is not None:
+                    st.dataframe(raw_table, hide_index=True, width="stretch")
+                else:
+                    st.info(f"No actual data for {year_label}")
+
+        # Data table (moved to bottom)
     with st.expander("Emissions Data Table", expanded=False):
         display_df = projection[['FY', 'Phase', 'ROM_Mt', 'Scope1', 'Scope2', 'Scope3', 'Total']].copy()
         display_df['ROM_Mt'] = display_df['ROM_Mt'].apply(lambda x: f"{x:.2f}")
@@ -489,3 +572,19 @@ def display_single_source(projection, display_year, df, show_summary=True, year_
         display_df['Total'] = display_df['Total'].apply(lambda x: f"{x:,.0f}")
 
         st.dataframe(display_df, hide_index=True, width="stretch", height=400)
+
+    # Monthly detail with emission factors
+    if df is not None:
+        with st.expander(f"\U0001f4e5 Monthly Emission Detail ({year_label})", expanded=False):
+            detail_table = _build_monthly_detail(df, display_year, year_type)
+            if detail_table is not None:
+                st.dataframe(detail_table, hide_index=True, use_container_width=True, height=400)
+                csv_data = detail_table.to_csv(index=False)
+                st.download_button(
+                    label=f"Download {year_label} detail as CSV",
+                    data=csv_data,
+                    file_name=f"emissions_detail_{year_label}.csv",
+                    mime="text/csv",
+                )
+            else:
+                st.info(f"No emissions data for {year_label}")
