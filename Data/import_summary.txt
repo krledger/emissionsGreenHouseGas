@@ -1,0 +1,51 @@
+================================================================================
+CONSOLIDATED DATA IMPORT SUMMARY
+Generated: 2026-01-30 11:29:38
+================================================================================
+
+[11:29:36] INFO: STARTING CONSOLIDATED DATA IMPORT
+[11:29:36] INFO: Output: Data/consolidated_emissions_data.csv
+[11:29:36] INFO: Summary: Data/import_summary.txt
+[11:29:36] INFO: ============================================================
+[11:29:36] INFO: EXTRACTING BASE (Energy.xlsx) DATA
+[11:29:36] INFO: ============================================================
+[11:29:37] INFO: Loaded Energy.xlsx: 1533 rows
+[11:29:38] INFO: Extracted 70 daily records from Energy.xlsx
+[11:29:38] INFO: Date range: 2020-04-01 00:00:00 to 2026-01-01 00:00:00
+[11:29:38] INFO:   GridPower_kWh: 673,090,342
+[11:29:38] INFO:   Diesel_L: 194,437,600
+[11:29:38] INFO:   LPG_kg: 2,925,657
+[11:29:38] INFO:   Petroleum_Greases_kg: 430,398
+[11:29:38] INFO:   Petroleum_Oils_L: 44,830
+[11:29:38] INFO:   Acetylene_m3: 198
+[11:29:38] INFO:   SitePower_kWh: 321,926,831
+[11:29:38] INFO: 
+Extracting ROM data from PhysicalsActual.xlsx...
+[11:29:38] INFO:   Extracted 12 ROM records from sheet '2021'
+[11:29:38] INFO:   Extracted 12 ROM records from sheet '2022'
+[11:29:38] INFO:   Extracted 12 ROM records from sheet '2023'
+[11:29:38] INFO:   Extracted 12 ROM records from sheet '2024'
+[11:29:38] INFO:   Extracted 10 ROM records from sheet '2025'
+[11:29:38] INFO: Total ROM records: 58, Total ROM: 29,949,403 tonnes
+[11:29:38] INFO: 
+Merged Base data: 70 records
+[11:29:38] INFO: 
+============================================================
+[11:29:38] INFO: EXTRACTING NPI-NGERS DATA
+[11:29:38] INFO: ============================================================
+[11:29:38] WARNING: No NPI-NGERS files found
+[11:29:38] INFO: 
+============================================================
+[11:29:38] INFO: WRITING OUTPUT
+[11:29:38] INFO: ============================================================
+[11:29:38] INFO: Wrote 70 records to Data/consolidated_emissions_data.csv
+[11:29:38] INFO: Columns: Date, Data_Source, GridPower_kWh, Diesel_L, LPG_kg, Petroleum_Greases_kg, Petroleum_Oils_L, Acetylene_m3, SitePower_kWh, Year, Month, ROM
+[11:29:38] INFO: 
+Data Source Breakdown:
+[11:29:38] INFO:   Base: 70 records
+[11:29:38] INFO:   NPI-NGERS: 0 records
+
+================================================================================
+ERRORS: 0
+WARNINGS: 1
+================================================================================
