@@ -579,12 +579,5 @@ def display_single_source(projection, display_year, df, show_summary=True, year_
             detail_table = _build_monthly_detail(df, display_year, year_type)
             if detail_table is not None:
                 st.dataframe(detail_table, hide_index=True, use_container_width=True, height=400)
-                csv_data = detail_table.to_csv(index=False)
-                st.download_button(
-                    label=f"Download {year_label} detail as CSV",
-                    data=csv_data,
-                    file_name=f"emissions_detail_{year_label}.csv",
-                    mime="text/csv",
-                )
             else:
                 st.info(f"No emissions data for {year_label}")

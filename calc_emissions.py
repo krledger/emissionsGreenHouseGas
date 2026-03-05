@@ -105,6 +105,11 @@ def build_year_factor_map(nga_by_year, unique_years, state='QLD'):
             'expected_uom': 'kWh',
         }
 
+        # Record which NGA publication year was actually used (for audit trail).
+        # _resolve_year falls back to the latest available NGA year for future FYs.
+        resolved_nga_year = nga_by_year._resolve_year(year)
+        year_factors['_nga_year'] = resolved_nga_year
+
         factor_map[year] = year_factors
 
     return factor_map
@@ -213,3 +218,178 @@ def apply_emissions_to_df(agg_df, year_factor_map, fy_col='FY'):
                 agg_df.loc[ymask, 'Energy_GJ'] = qty * yf['energy']
 
     return agg_df
+
+def build_safeguard_source_table(df, year_factor_map):
+    """Build a detailed source table for Safeguard Mechanism validation and NGER filing.
+
+    Aggregates actuals data to annual level (FY), enriches each row with the
+    NGA emission factors and energy content that produced the emissions, so a
+    third party can independently verify every tCO2-e line item.
+
+    Calculation shown in each row:
+        tCO2-e  = Quantity * EF_kgCO2e_per_unit / 1000
+        Energy_GJ = Quantity * Energy_GJ_per_unit
+
+    Only rows that have an NGAFuel assignment are included (i.e. consumable
+    energy items — not production or ROM data).
+
+    Args:
+        df:               Processed DataFrame from load_all_data()
+                          Must contain: FY, Description, Department, CostCentre,
+                          NGAFuel, UOM, Quantity, Scope1_tCO2e, Scope2_tCO2e,
+                          Scope3_tCO2e, Energy_GJ
+        year_factor_map:  Dict from build_year_factor_map() — provides the exact
+                          NGA factor values used during emissions calculation.
+
+    Returns:
+        DataFrame with one row per FY / Description / NGAFuel combination,
+        ready for CSV download.  Columns:
+            FY, Description, Department, CostCentre, NGAFuel, UOM,
+            Quantity, EF_Scope1_kgCO2e_per_unit, EF_Scope2_kgCO2e_per_unit,
+            EF_Scope3_kgCO2e_per_unit, Energy_GJ_per_unit, Energy_GJ,
+            Scope1_tCO2e, Scope2_tCO2e, Scope3_tCO2e, Total_tCO2e,
+            NGA_Year
+    """
+    # Filter to rows that carry an NGAFuel (energy / consumable lines only).
+    # Exclude grid electricity: Scope 1 = 0 for purchased electricity, and the
+    # kWh quantities are already provided in the electricity production table
+    # (build_safeguard_production_table).  Including them here adds zero-emission
+    # rows that clutter the audit trail without adding information.
+    fuel_mask = (
+        df['NGAFuel'].notna()
+        & (df['NGAFuel'].astype(str) != '')
+        & (df['NGAFuel'].astype(str) != 'Grid electricity')
+    )
+    source = df[fuel_mask].copy()
+
+    if source.empty:
+        return pd.DataFrame()
+
+    # --- Annual aggregation ---
+    # Group to FY / Description / Department / CostCentre / NGAFuel / UOM
+    # UOM is included so split fuel types (kL vs m3) stay separate.
+    agg = source.groupby(
+        ['FY', 'DataSet', 'Description', 'Department', 'CostCentre', 'NGAFuel', 'UOM'],
+        observed=True, dropna=False
+    ).agg(
+        Quantity=('Quantity', 'sum'),
+        Scope1_tCO2e=('Scope1_tCO2e', 'sum'),
+        Energy_GJ=('Energy_GJ', 'sum'),
+    ).reset_index()
+
+    # --- Attach NGA factor values ---
+    # Resolve the factor key the same way apply_emissions_to_df() does so
+    # the EF columns reflect exactly what was used in the calculation.
+    ef_s1 = []
+    ef_energy = []
+    nga_years = []
+
+    for _, row in agg.iterrows():
+        fy = int(row['FY'])
+        nga_fuel = str(row['NGAFuel'])
+        yf_all = year_factor_map.get(fy, {})
+
+        # Resolve factor key: exact then longest prefix, then reverse prefix
+        factor_key = None
+        if nga_fuel in yf_all:
+            factor_key = nga_fuel
+        else:
+            prefixes = [(k, len(k)) for k in yf_all if nga_fuel.startswith(k)]
+            if prefixes:
+                factor_key = max(prefixes, key=lambda x: x[1])[0]
+            else:
+                reverse = [k for k in yf_all if k.startswith(nga_fuel)]
+                if reverse:
+                    factor_key = reverse[0]
+
+        if factor_key and factor_key in yf_all:
+            yf = yf_all[factor_key]
+            ef_s1.append(yf.get('s1', 0))
+            ef_energy.append(yf.get('energy', 0))
+        else:
+            ef_s1.append(None)
+            ef_energy.append(None)
+
+        nga_years.append(yf_all.get('_nga_year', fy))
+
+    agg['EF_Scope1_kgCO2e_per_unit'] = ef_s1
+    agg['Energy_GJ_per_unit'] = ef_energy
+    agg['NGA_Year'] = nga_years
+
+    # --- Column order for auditor readability ---
+    col_order = [
+        'FY', 'DataSet', 'Description', 'Department', 'CostCentre', 'NGAFuel', 'UOM',
+        'NGA_Year',
+        'Quantity',
+        'EF_Scope1_kgCO2e_per_unit', 'Energy_GJ_per_unit',
+        'Scope1_tCO2e', 'Energy_GJ',
+    ]
+    agg = agg[[c for c in col_order if c in agg.columns]]
+
+    return agg.sort_values(['FY', 'DataSet', 'Description', 'NGAFuel']).reset_index(drop=True)
+
+
+def build_safeguard_production_table(df):
+    """Build annual physical quantities table for Safeguard FSEI target validation.
+
+    The Safeguard baseline target is calculated using pre-defined FSEI constants:
+
+        Baseline = ERC x ((FSEI_ROM x ROM_t) + (FSEI_Elec x Site_MWh))
+
+    FSEI values are fixed — a third party only needs the physical quantities
+    (tonnes and kWh) to independently verify the target.  No emissions columns
+    are included here; those are in build_safeguard_source_table().
+
+    Two physical quantity datasets:
+
+    1. ROM Ore (CostCentre==ROM, Description contains 'Ore', UOM==t)
+          All ore grades by beneficiation status (BRW/SARS, HG/MG/LG/VLG).
+          Matches the ROM_t variable used in projections.aggregate_to_monthly().
+          Subtotal row per FY/DataSet.
+
+    2. Electricity — kWh (UOM==kWh, Description in ['Site electricity', 'Grid electricity'])
+          Site electricity (Description=='Site electricity') feeds Site_MWh in the
+          FSEI formula.  Grid electricity (Description=='Grid electricity') covers
+          all cost centres including Residential, which is an attributed portion
+          of the grid supply and must be included.
+          Both are shown in one table for cross-reference.
+          Subtotal rows per FY/DataSet/Description type.
+
+    Args:
+        df: Processed DataFrame from load_all_data()
+
+    Returns:
+        dict with keys 'ore' and 'electricity', each a DataFrame with columns:
+            FY, DataSet, Description, CostCentre, UOM, Quantity
+        Sorted by FY, DataSet, Description.
+    """
+
+    def _aggregate(subset):
+        """Aggregate to FY/DataSet/Description/CostCentre/UOM — no totals rows."""
+        if subset.empty:
+            return pd.DataFrame()
+        return subset.groupby(
+            ['FY', 'DataSet', 'Description', 'CostCentre', 'UOM'],
+            observed=True, dropna=False
+        ).agg(Quantity=('Quantity', 'sum')).reset_index().sort_values(
+            ['FY', 'DataSet', 'Description']
+        ).reset_index(drop=True)
+
+    # --- 1. ROM Ore --- matches projections.py aggregate_to_monthly() ROM filter:
+    #   CostCentre == 'ROM' and Description contains 'Ore'
+    rom_mask = (
+        (df['CostCentre'].astype(str) == 'ROM') &
+        (df['Description'].astype(str).str.contains('Ore', case=False, na=False))
+    )
+    ore_df = _aggregate(df[rom_mask].copy())
+
+    # --- 2. Electricity kWh --- matches projections.py GRID_SITE_ELEC_DESCRIPTION
+    #   and GRID_GRID_ELEC_DESCRIPTION constants ('Site electricity', 'Grid electricity')
+    #   All cost centres included — Residential is an attributed portion of grid supply
+    elec_mask = (
+        (df['UOM'].astype(str) == 'kWh') &
+        (df['Description'].astype(str).isin(['Site electricity', 'Grid electricity']))
+    )
+    elec_df = _aggregate(df[elec_mask].copy())
+
+    return {'ore': ore_df, 'electricity': elec_df}

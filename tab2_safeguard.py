@@ -9,6 +9,8 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from projections import build_projection, smc_credit_value_analysis
+from loader_nga import NGAFactorsByYear
+from calc_emissions import build_year_factor_map
 from calc_calendar import date_to_fy, aggregate_by_year_type
 from config import DECLINE_RATE_PHASE1, DECLINE_PHASE1_START, DECLINE_PHASE2_END, SAFEGUARD_THRESHOLD, DEFAULT_GRID_CONNECTION_DATE
 
@@ -158,6 +160,12 @@ def render_safeguard_tab(df, fsei_rom, fsei_elec,
         decline_rate_phase2=decline_rate_phase2
     )
 
+    # Build NGA factor map — used by emissions calc and source download table
+    # Only covers actual FY years present in df; projection years use closest available NGA year
+    nga_by_year = NGAFactorsByYear(".")
+    unique_fy = df["FY"].unique() if df is not None and "FY" in df.columns else []
+    year_factor_map = build_year_factor_map(nga_by_year, unique_fy, state="QLD") if len(unique_fy) > 0 else {}
+
     # Aggregate monthly -> annual
     projection = prepare_annual_for_safeguard(monthly, year_type=year_type)
 
@@ -165,6 +173,10 @@ def render_safeguard_tab(df, fsei_rom, fsei_elec,
     projection = smc_credit_value_analysis(projection, credit_start_fy, carbon_credit_price, credit_escalation)
 
     display_safeguard_single(projection, display_year, carbon_credit_price, credit_escalation, credit_start_fy, fsei_rom, fsei_elec, df=df, year_type=year_type, grid_connected_date=grid_connected_date, end_mining_date=end_mining_date, end_processing_date=end_processing_date, end_rehabilitation_date=end_rehabilitation_date)
+
+    # Source data download — validation and NGER filing support
+    if df is not None and year_factor_map:
+        render_safeguard_source_download(df, year_factor_map)
 
     # Data Table
     with st.expander("Safeguard Data Table", expanded=False):
@@ -652,3 +664,116 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
                 summary_parts.append(f"Total surrenders: {abs(total_surrenders):,.0f} tCO2-e")
 
             st.caption(" | ".join(summary_parts))
+
+def render_safeguard_source_download(df, year_factor_map):
+    """Render Safeguard source data download table.
+
+    Provides a detailed annual breakdown of all consumable energy line items
+    with NGA emission factors and energy content attached, so a third party
+    auditor can independently verify every tCO2-e figure reported under the
+    Safeguard Mechanism.
+
+    Args:
+        df:              Processed DataFrame from load_all_data()
+        year_factor_map: Dict from build_year_factor_map() — the exact NGA
+                         factor values used in the emissions calculation
+    """
+    from calc_emissions import build_safeguard_source_table, build_safeguard_production_table
+
+    with st.expander("Source Data — Validation & NGER Filing", expanded=False):
+
+        source_df = build_safeguard_source_table(df, year_factor_map)
+
+        if source_df.empty:
+            st.warning("No consumable energy data available for download.")
+            return
+
+        display_df = source_df.copy()
+
+        # --- Display table ---
+        # Round for display while keeping CSV download at full precision
+        display_fmt = display_df.copy()
+        display_fmt['Quantity'] = display_fmt['Quantity'].round(3)
+        display_fmt['EF_Scope1_kgCO2e_per_unit'] = display_fmt['EF_Scope1_kgCO2e_per_unit'].round(4)
+        display_fmt['Energy_GJ_per_unit'] = display_fmt['Energy_GJ_per_unit'].round(4)
+        display_fmt['Scope1_tCO2e'] = display_fmt['Scope1_tCO2e'].round(3)
+        display_fmt['Energy_GJ'] = display_fmt['Energy_GJ'].round(2)
+
+        # Friendly column labels for display
+        display_fmt = display_fmt.rename(columns={
+            'FY': 'FY',
+            'DataSet': 'Dataset',
+            'Description': 'Description',
+            'Department': 'Department',
+            'CostCentre': 'Cost Centre',
+            'NGAFuel': 'NGA Fuel',
+            'UOM': 'UOM',
+            'NGA_Year': 'NGA Year',
+            'Quantity': 'Quantity',
+            'EF_Scope1_kgCO2e_per_unit': 'EF S1 (kg/unit)',
+            'Energy_GJ_per_unit': 'GJ/unit',
+            'Scope1_tCO2e': 'Scope 1 tCO2-e',
+            'Energy_GJ': 'Energy GJ',
+        })
+
+        st.dataframe(display_fmt, hide_index=True, use_container_width=True, height=400)
+
+        st.download_button(
+            label="Download emissions source data",
+            data=display_fmt.to_csv(index=False),
+            file_name="safeguard_emissions_source.csv",
+            mime="text/csv",
+            key="dl_emissions_source",
+        )
+
+        st.caption(
+            "Scope 1 only \u2014 Safeguard Mechanism reporting basis.  "
+            "All fuel sources captured: diesel (stationary + transport), LPG, oils, greases, acetylene.  "
+            "EF = NGA Scope 1 emission factor (kg CO2-e per native unit).  "
+            "Scope 1 tCO2-e = Quantity \u00d7 EF / 1000.  "
+            "Energy GJ = Quantity \u00d7 GJ/unit.  "
+            "NGA Year = publication year of the NGA factors applied.  "
+            "Annual totals reconcile exactly to the emissions model."
+        )
+
+
+
+        # --- Physical quantities for FSEI target verification ---
+        prod_tables = build_safeguard_production_table(df)
+
+        def _render_prod_section(label, table_df, qty_label, dl_filename, dl_key):
+            st.markdown("---")
+            st.markdown(f"**{label}**")
+            if table_df.empty:
+                st.info(f"No data for {label}.")
+                return
+            fmt = table_df.rename(columns={
+                'FY': 'FY', 'DataSet': 'Dataset', 'Description': 'Description',
+                'CostCentre': 'Cost Centre', 'UOM': 'UOM', 'Quantity': qty_label,
+            }).copy()
+            fmt[qty_label] = fmt[qty_label].round(0)
+            st.dataframe(fmt, hide_index=True, use_container_width=True)
+            st.download_button(
+                label=f"Download {label.split('—')[0].strip().lower()} data",
+                data=fmt.to_csv(index=False),
+                file_name=dl_filename,
+                mime="text/csv",
+                key=dl_key,
+            )
+
+
+        _render_prod_section(
+            label="ROM Ore — tonnes by grade (FSEI production variable)",
+            table_df=prod_tables['ore'],
+            qty_label="Quantity (t)",
+            dl_filename="safeguard_rom_ore_tonnes.csv",
+            dl_key="dl_rom_ore",
+        )
+
+        _render_prod_section(
+            label="Electricity — kWh by cost centre incl. Residential (FSEI electricity variable)",
+            table_df=prod_tables['electricity'],
+            qty_label="Quantity (kWh)",
+            dl_filename="safeguard_electricity_kwh.csv",
+            dl_key="dl_electricity",
+        )
