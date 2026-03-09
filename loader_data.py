@@ -230,3 +230,34 @@ def load_rom_data(*args, **kwargs):
 def load_energy_data(*args, **kwargs):
     """Deprecated - use load_all_data()"""
     raise NotImplementedError("load_energy_data() deprecated - use load_all_data()")
+
+def load_smc_transactions(filepath='smc_transactions.csv'):
+    """Load SMC transaction log for reconciling model against registry actuals.
+
+    Transaction types:
+        Issuance   — CER issues credits (positive quantity)
+        Sale       — credits sold / transferred out (negative quantity)
+        Surrender  — credits used for compliance (negative quantity)
+        Correction — manual adjustment, positive or negative
+
+    Returns DataFrame with columns:
+        Date, FY, Type, Quantity, Unit_Price, Total_Value, Reference, Notes
+
+    Sales and surrenders should have negative Quantity.
+    Adjustments to the SMC bank are summed by FY and applied to the model.
+    """
+    from calc_calendar import date_to_fy
+
+    path = Path(filepath)
+    if not path.exists():
+        return pd.DataFrame(columns=['Date', 'FY', 'Type', 'Quantity',
+                                      'Unit_Price', 'Total_Value',
+                                      'Reference', 'Notes'])
+
+    df = pd.read_csv(path, parse_dates=['Date'])
+
+    # Applies_To_FY is the reporting year the transaction relates to
+    # (issuances lag — CER issues FY2024 credits in Feb 2025)
+    df['Applies_To_FY'] = df['Applies_To_FY'].astype(int)
+
+    return df

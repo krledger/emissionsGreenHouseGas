@@ -8,7 +8,8 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from projections import build_projection, smc_credit_value_analysis
+from projections import build_projection, smc_credit_value_analysis, apply_smc_transactions
+from loader_data import load_smc_transactions
 from loader_nga import NGAFactorsByYear
 from calc_emissions import build_year_factor_map
 from calc_calendar import date_to_fy, aggregate_by_year_type
@@ -112,7 +113,7 @@ def _add_phase_markers(fig, years_list, grid_connected_date,
         fig.add_shape(type="line", x0=yr, x1=yr, y0=0, y1=1, yref="paper",
                      line=dict(color=colour, width=1.5, dash=dash))
         fig.add_annotation(x=yr, y=1.0, yref="paper", text=label, showarrow=False,
-                          yshift=10 + i * 14, font=dict(size=9, color=colour))
+                          yshift=10, font=dict(size=9, color=colour))
 
 
 def render_safeguard_tab(df, fsei_rom, fsei_elec,
@@ -168,6 +169,11 @@ def render_safeguard_tab(df, fsei_rom, fsei_elec,
 
     # Aggregate monthly -> annual
     projection = prepare_annual_for_safeguard(monthly, year_type=year_type)
+
+    # Load and apply SMC registry transactions (sales, surrenders, corrections)
+    smc_txns = load_smc_transactions()
+    if not smc_txns.empty:
+        projection = apply_smc_transactions(projection, smc_txns)
 
     # Apply credit value escalation
     projection = smc_credit_value_analysis(projection, credit_start_fy, carbon_credit_price, credit_escalation)
@@ -321,7 +327,7 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
                 height=400,
                 barmode='stack',
                 hovermode='x unified',
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="right", x=1)
             )
 
             _add_phase_markers(fig_elec, years_list, grid_connected_date, end_mining_date, end_processing_date, end_rehabilitation_date, year_type=year_type)
@@ -444,7 +450,7 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
             title="Scope 1 Emissions vs Baseline Target",
             height=500,
             hovermode='x unified',
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="right", x=1)
         )
 
         _add_phase_markers(fig, years_list, grid_connected_date, end_mining_date, end_processing_date, end_rehabilitation_date, year_type=year_type)
@@ -466,7 +472,7 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
             safeguard_years = credit_data[credit_data['In_Safeguard'] == True]['Year'].tolist()
             exit_fy = credit_data['Exit_FY'].iloc[0] if 'Exit_FY' in credit_data.columns and credit_data['Exit_FY'].notna().any() else None
 
-            fig = make_subplots(specs=[[{"secondary_y": True}]])
+            fig = go.Figure()
 
             # --- Phase-shaded background regions ---
             if 'SMC_Phase' in credit_data.columns:
@@ -504,112 +510,84 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
                         annotation_font=dict(size=10, color="rgba(128,128,128,0.7)")
                     )
 
-            # --- Waterfall chart: bars float at cumulative position ---
-            # Calculate base (bottom) of each waterfall bar
+            # --- Grouped bar chart: two traces, no gaps ---
+            # Earned/Surrendered in one trace (per-bar colour: teal or red)
+            # Sold in second trace (gold)
+            # barmode='group' gives side-by-side with no empty slot
             annual_vals = credit_data['SMC_Annual'].values
             cum_vals = credit_data['SMC_Cumulative'].values
-            bases = []
-            for i, (ann, cum) in enumerate(zip(annual_vals, cum_vals)):
-                if ann >= 0:
-                    bases.append(cum - ann)  # Credit: base at previous cumulative
-                else:
-                    bases.append(cum)  # Surrender: base at new (lower) cumulative
-            bar_colors = ['#2A9D8F' if v >= 0 else '#CA564B' for v in annual_vals]
-            bar_heights = [abs(v) for v in annual_vals]
+            iss_vals = credit_data['SMC_Issuance'].values if 'SMC_Issuance' in credit_data.columns else [0] * len(annual_vals)
+            sold_vals = credit_data['SMC_Sold'].values if 'SMC_Sold' in credit_data.columns else [0] * len(annual_vals)
+            years_list = credit_data['Year'].tolist()
 
-            # Waterfall bars (floating) with rounded corners and labels
-            bar_labels = []
-            for v in annual_vals:
-                if abs(v) >= 1000:
-                    bar_labels.append(f"{v/1000:+,.0f}k")
-                elif v != 0:
-                    bar_labels.append(f"{v:+,.0f}")
-                else:
-                    bar_labels.append("")
+            credit_vals = []    # absolute height
+            credit_colors = []  # teal or red per bar
+            sold_abs = []       # gold
 
+            for ann, iss, sold in zip(annual_vals, iss_vals, sold_vals):
+                net = iss if iss > 0 else (ann - sold)
+                credit_vals.append(abs(net))
+                credit_colors.append('#2A9D8F' if net >= 0 else '#CA564B')
+                sold_abs.append(abs(sold))
+
+            # Earned/Surrendered bars (teal for earned, red for surrendered)
             fig.add_trace(
                 go.Bar(
-                    x=credit_data['Year'],
-                    y=bar_heights,
-                    base=bases,
-                    name='Annual SMC',
-                    marker_color=bar_colors,
-                    marker_cornerradius=4,
+                    x=credit_data['Year'], y=credit_vals,
+                    name='Earned / Surrendered',
+                    marker_color=credit_colors, marker_cornerradius=4,
                     opacity=0.9,
-                    text=bar_labels,
-                    textposition='outside',
-                    textfont=dict(size=11, color='rgba(57, 37, 11, 0.8)'),
-                    constraintext='none',
-                    hovertext=[f"{v:,.0f} tCO2-e ({'credit' if v >= 0 else 'surrender'})" for v in annual_vals],
-                    hovertemplate='%{hovertext}<extra></extra>'
-                ),
-                secondary_y=False
+                    hovertemplate='%{y:,.0f} tCO\u2082-e<extra></extra>'
+                )
             )
 
-            # Connector lines between bars (dashed, linking closing to opening)
-            for i in range(1, len(credit_data)):
-                prev_cum = cum_vals[i - 1]
-                fig.add_shape(
-                    type="line",
-                    x0=credit_data['Year'].iloc[i - 1],
-                    x1=credit_data['Year'].iloc[i],
-                    y0=prev_cum,
-                    y1=prev_cum,
-                    line=dict(color='rgba(138, 126, 107, 0.4)', width=1, dash='dot'),
+            # Sold bars (gold)
+            fig.add_trace(
+                go.Bar(
+                    x=credit_data['Year'], y=sold_abs,
+                    name='Sold', marker_color=BRIGHT_GOLD, marker_cornerradius=4,
+                    opacity=0.9,
+                    hovertemplate='Sold: %{y:,.0f} tCO\u2082-e<extra></extra>'
                 )
+            )
 
-            # Cumulative value line on secondary axis
+            # Cumulative SMC line (secondary axis — dollar value)
             fig.add_trace(
                 go.Scatter(
                     x=credit_data['Year'],
-                    y=credit_data['Credit_Value_Cumulative'],
-                    name='Cumulative Value ($)',
+                    y=cum_vals,
+                    name='Cumulative Balance',
                     mode='lines+markers',
                     line=dict(color=GOLD_METALLIC, width=3),
                     marker=dict(size=6, color=GOLD_METALLIC),
-                    hovertemplate='$%{y:,.0f}<extra></extra>'
-                ),
-                secondary_y=True
+                    hovertemplate='Balance: %{y:,.0f} tCO\u2082-e<extra></extra>',
+                    yaxis='y2'
+                )
             )
 
-            # Labels on value line at 5-year intervals (2025, 2030, 2035, ...)
-            years_list = credit_data['Year'].tolist()
+            # Value + balance labels at 5-year intervals on cumulative line
             value_vals = credit_data['Credit_Value_Cumulative'].values
             key_indices = set()
             for idx, yr in enumerate(years_list):
                 if int(yr) % 5 == 0:
                     key_indices.add(idx)
-            # Always include last year
             key_indices.add(len(years_list) - 1)
 
             for idx in key_indices:
-                if idx < len(years_list) and value_vals[idx] > 0:
+                if idx < len(years_list) and cum_vals[idx] > 0:
                     val_m = value_vals[idx] / 1e6
                     cum_k = cum_vals[idx] / 1000
-                    # $ value label (top line)
-                    # $ value (top line, above data point)
                     fig.add_annotation(
                         x=years_list[idx],
-                        y=value_vals[idx],
+                        y=cum_vals[idx],
                         yref='y2',
-                        text=f"<b>${val_m:.1f}M</b>",
-                        showarrow=False,
-                        yshift=-16,
-                        font=dict(size=11, color=GOLD_METALLIC),
-                    )
-                    # tCO2 (below $, still above line)
-                    fig.add_annotation(
-                        x=years_list[idx],
-                        y=value_vals[idx],
-                        yref='y2',
-                        text=f"<b>({cum_k:.0f}k)</b>",
-                        showarrow=False,
-                        yshift=-30,
+                        text=f"<b>${val_m:.1f}M</b><br><b>({cum_k:.0f}k)</b>",
+                        showarrow=False, yshift=20,
                         font=dict(size=11, color=GOLD_METALLIC),
                     )
 
             # Zero line
-            fig.add_hline(y=0, line_dash="solid", line_color="grey", line_width=0.5, secondary_y=False)
+            fig.add_hline(y=0, line_dash="solid", line_color="grey", line_width=0.5)
 
             # Grid connection marker
             if grid_connected_date:
@@ -620,32 +598,32 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
                         line_dash="dot", line_color=GRID_GREEN, line_width=2
                     )
 
-            fig.update_xaxes(title_text="Calendar Year" if year_type == "CY" else "Financial Year")
-            fig.update_yaxes(title_text="SMC Balance (tCO2-e)", secondary_y=False)
-            fig.update_yaxes(title_text=f"Cumulative Value (AUD, {credit_escalation*100:.1f}% p.a.)", secondary_y=True)
+            # Axis scaling — bars and cumulative share the same unit (tCO2-e)
+            # but separate axes so the line sits above the bars
+            max_bar = max(max(credit_vals), max(sold_abs), 1)
+            max_cum_val = max(cum_vals.max(), 1)
 
-            # Scale axes so waterfall bars sit in lower portion, value line in upper
-            # Left axis: extend range so bars use ~55% of chart height
-            # Right axis: compress range so line sits at ~80% chart height
-            max_cum = max(credit_data['SMC_Cumulative'].max(), 1)
-            max_value = max(credit_data['Credit_Value_Cumulative'].max(), 1)
-            # Left axis: bars use ~65% height.  Right axis: line at ~80% height
-            fig.update_yaxes(
-                secondary_y=False,
-                range=[0, max_cum * 1.55],
-            )
-            fig.update_yaxes(
-                secondary_y=True,
-                range=[0, max_value * 1.25],
-            )
+            fig.update_xaxes(title_text="Calendar Year" if year_type == "CY" else "Financial Year")
 
             fig.update_layout(
                 title="Safeguard Mechanism Credits (SMC)",
                 height=500,
                 hovermode='x unified',
                 showlegend=True,
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="right", x=1),
                 bargap=0.15,
+                barmode='group',
+                yaxis=dict(
+                    title="Annual SMC (tCO\u2082-e)",
+                    range=[0, max_bar * 1.3],
+                ),
+                yaxis2=dict(
+                    title="Cumulative Balance (tCO\u2082-e)",
+                    overlaying='y',
+                    side='right',
+                    range=[0, max_cum_val * 1.35],
+                    showgrid=False,
+                ),
             )
 
             _add_phase_markers(fig, years_list, grid_connected_date, end_mining_date, end_processing_date, end_rehabilitation_date, year_type=year_type)
@@ -658,12 +636,16 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
             final_year = credit_data.iloc[-1]['FY']
             total_surrenders = credit_data[credit_data['SMC_Annual'] < 0]['SMC_Annual'].sum()
 
-            summary_parts = [f"{final_year} Net Cumulative: {final_credits:,.0f} tCO2-e"]
-            summary_parts.append(f"Value: ${final_value:,.0f} AUD (price: ${final_price:.2f}/tCO2-e)")
+            summary_parts = [f"{final_year} Net Cumulative: {final_credits:,.0f} tCO\u2082-e"]
+            summary_parts.append(f"Value: {final_value:,.0f} AUD (price: {final_price:.2f}/tCO\u2082-e)")
             if total_surrenders < 0:
-                summary_parts.append(f"Total surrenders: {abs(total_surrenders):,.0f} tCO2-e")
+                summary_parts.append(f"Total surrenders: {abs(total_surrenders):,.0f} tCO\u2082-e")
 
-            st.caption(" | ".join(summary_parts))
+            st.markdown(
+                f'<p style="font-size:13px; color:#6B7280; margin-top:4px;">'
+                f'{" | ".join(summary_parts)}</p>',
+                unsafe_allow_html=True
+            )
 
 def render_safeguard_source_download(df, year_factor_map):
     """Render Safeguard source data download table.
@@ -716,7 +698,7 @@ def render_safeguard_source_download(df, year_factor_map):
             'Energy_GJ': 'Energy GJ',
         })
 
-        st.dataframe(display_fmt, hide_index=True, use_container_width=True, height=400)
+        st.dataframe(display_fmt, hide_index=True, width='stretch', height=400)
 
         st.download_button(
             label="Download emissions source data",
@@ -752,7 +734,7 @@ def render_safeguard_source_download(df, year_factor_map):
                 'CostCentre': 'Cost Centre', 'UOM': 'UOM', 'Quantity': qty_label,
             }).copy()
             fmt[qty_label] = fmt[qty_label].round(0)
-            st.dataframe(fmt, hide_index=True, use_container_width=True)
+            st.dataframe(fmt, hide_index=True, width='stretch')
             st.download_button(
                 label=f"Download {label.split('—')[0].strip().lower()} data",
                 data=fmt.to_csv(index=False),

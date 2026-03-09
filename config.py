@@ -214,8 +214,9 @@ DEFAULT_CARBON_CREDIT_PRICE = 35.0
 DEFAULT_CREDIT_ESCALATION = 0.03
 
 DEFAULT_TAX_START_DATE = datetime(2029, 7, 1)
-DEFAULT_TAX_RATE = 15.0
-DEFAULT_TAX_ESCALATION = 0.02
+DEFAULT_TAX_RATE = 48.0           # Lower bound of derived Australian range (OECD modifier method)
+DEFAULT_TAX_ESCALATION = 0.08     # 8% p.a. escalation
+DEFAULT_EF2_DECLINE_RATE = 0.05   # 5% p.a. decline in grid emission factor (NGA EF2) for future years
 
 
 # =============================================================================

@@ -1,39 +1,37 @@
 """
 tab3_carbon_tax.py
-Carbon Tax Analysis tab - date-based architecture
-Last updated: 2026-02-05 20:35 AEDT
+Carbon Tax Analysis tab — Scope 1 + Scope 2 pass-through
+Last updated: 2026-03-09
+
+Chart: Waterfall with S1/S2 stacked within each floating bar.
+Uses barmode='overlay' with explicit base offsets so bars occupy the
+same x position (not side-by-side).
 """
 
+import os
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from projections import build_projection, carbon_tax_analysis
 from calc_calendar import date_to_fy, aggregate_by_year_type
-from config import DEFAULT_GRID_CONNECTION_DATE
+from loader_nga import NGAFactorsByYear
+from config import DEFAULT_GRID_CONNECTION_DATE, DEFAULT_EF2_DECLINE_RATE
 
 
 def prepare_annual_for_tax(monthly, year_type='FY'):
-    """Aggregate monthly data to annual and prepare for tax analysis display
-
-    Args:
-        monthly: Monthly DataFrame from build_projection
-        year_type: 'FY' (Financial Year) or 'CY' (Calendar Year)
-
-    Returns:
-        Annual DataFrame with display-ready columns
-    """
-    # Define aggregation for different column types
+    """Aggregate monthly data to annual and prepare for tax analysis display"""
     agg_dict = {
         'Scope1_tCO2e': 'sum',
         'Scope2_tCO2e': 'sum',
         'Scope3_tCO2e': 'sum',
         'ROM_t': 'sum',
+        'Grid_Electricity_kWh': 'sum',
+        'Site_Electricity_kWh': 'sum',
     }
 
-    # Add optional columns if present
     if 'Phase' in monthly.columns:
-        agg_dict['Phase'] = 'last'  # Take phase from last month of FY
+        agg_dict['Phase'] = 'last'
     if 'Baseline' in monthly.columns:
         agg_dict['Baseline'] = 'sum'
     if 'SMC_Monthly' in monthly.columns:
@@ -41,25 +39,16 @@ def prepare_annual_for_tax(monthly, year_type='FY'):
     if 'SMC_Cumulative' in monthly.columns:
         agg_dict['SMC_Cumulative'] = 'last'
 
-    # Aggregate monthly → annual (Tax Year/FY)
     annual = aggregate_by_year_type(monthly, year_type, agg_dict=agg_dict)
-
-    # Add FY column as string for compatibility
     annual['FY'] = annual['Year']
-
-    # Add compatibility columns
     annual['Scope1'] = annual['Scope1_tCO2e']
     annual['Scope2'] = annual['Scope2_tCO2e']
     annual['Scope3'] = annual['Scope3_tCO2e']
     annual['Total'] = annual['Scope1'] + annual['Scope2'] + annual['Scope3']
-
-    # Convert ROM from tonnes to megatonnes
+    annual['Grid_Electricity_MWh'] = annual['Grid_Electricity_kWh'] / 1000.0
     annual['ROM_Mt'] = annual['ROM_t'] / 1_000_000
-
-    # If Phase column is missing, add a default
     if 'Phase' not in annual.columns:
         annual['Phase'] = 'Unknown'
-
     return annual
 
 
@@ -69,32 +58,35 @@ def render_carbon_tax_tab(df, fsei_rom, fsei_elec,
                           carbon_credit_price, credit_escalation,
                           tax_start_date, tax_rate, tax_escalation,
                           credit_start_date,
-                          decline_rate_phase2, year_type='FY'):
+                          decline_rate_phase2, year_type='FY',
+                          include_scope2=False):
     """Render Carbon Tax Analysis tab
 
     Args:
-        df: Unified DataFrame from load_all_data()
-        fsei_rom: ROM emission intensity
-        fsei_elec: Electricity generation emission intensity
-        Phase parameters (dates)
-        carbon_credit_price: SMC market price
-        credit_escalation: Annual price increase
-        tax_start_date: Date tax starts
-        tax_rate: Initial tax rate ($/tCO2-e)
-        tax_escalation: Annual tax rate increase
-        credit_start_date: First date credits can be earned
-        decline_rate_phase2: Phase 2 decline rate
-        year_type: 'FY' (Financial Year, July-June) or 'CY' (Calendar Year, Jan-Dec)
+        include_scope2: If True, includes Scope 2 electricity pass-through
+                        (sensitivity case).  If False, Scope 1 only (base case).
     """
-
-    # Convert dates to FY for display
     tax_start_fy = date_to_fy(tax_start_date)
-    credit_start_fy = date_to_fy(credit_start_date)
 
     st.subheader("Carbon Tax Scenario Analysis")
-    st.caption(f"Tax starts FY{tax_start_fy} ({tax_start_date.strftime('%d %b %Y')}) at ${tax_rate:.2f}/tCO2-e, escalating {tax_escalation*100:.1f}% p.a. Based on Scope 1 emissions only.")
+    scope_label = "Scope 1 (direct) + Scope 2 (electricity pass-through)" if include_scope2 else "Scope 1 (direct emissions) only — base case"
+    st.caption(
+        f"Tax starts FY{tax_start_fy} ({tax_start_date.strftime('%d %b %Y')}) "
+        f"at ${tax_rate:.2f}/tCO\u2082-e, escalating {tax_escalation*100:.1f}% p.a.  "
+        f"{scope_label}."
+    )
 
     display_year = st.session_state.get('display_year', 2025)
+
+    # Load NGA factors for Scope 2 electricity emission factor lookup
+    nga_folder = os.path.dirname(os.path.abspath(__file__))
+    if not os.path.exists(os.path.join(nga_folder, 'nga_factors.csv')):
+        nga_folder = '/mnt/project'
+    try:
+        nga_by_year = NGAFactorsByYear(nga_folder)
+    except FileNotFoundError:
+        nga_by_year = None
+        st.warning("nga_factors.csv not found — Scope 2 tax will not be calculated.")
 
     monthly = build_projection(
         df,
@@ -109,9 +101,15 @@ def render_carbon_tax_tab(df, fsei_rom, fsei_elec,
         decline_rate_phase2=decline_rate_phase2
     )
 
-    # Aggregate monthly -> annual
     projection = prepare_annual_for_tax(monthly, year_type)
-    carbon_tax = carbon_tax_analysis(projection, tax_start_fy, tax_rate, tax_escalation)
+    # Base case: Scope 1 only (nga_by_year=None suppresses Scope 2)
+    # Sensitivity case: include Scope 2 electricity pass-through
+    carbon_tax = carbon_tax_analysis(
+        projection, tax_start_fy, tax_rate, tax_escalation,
+        nga_by_year=nga_by_year if include_scope2 else None,
+        state='QLD',
+        ef2_decline_rate=DEFAULT_EF2_DECLINE_RATE
+    )
 
     display_tax_single(carbon_tax, tax_start_fy, year_type=year_type)
 
@@ -119,90 +117,152 @@ def render_carbon_tax_tab(df, fsei_rom, fsei_elec,
     with st.expander("Tax Data Table", expanded=False):
         tax_period = carbon_tax[carbon_tax['FY_num'] >= tax_start_fy].copy()
         if len(tax_period) > 0:
-            display_df = tax_period[['FY', 'Scope1', 'Tax_Rate', 'Tax_Annual', 'Tax_Cumulative']].copy()
+            display_cols = ['FY', 'Scope1', 'Grid_MWh', 'NGA_EF2',
+                           'Tax_Rate', 'S2_Cost_per_MWh',
+                           'Tax_S1_Annual', 'Tax_S2_Annual', 'Tax_Annual',
+                           'Tax_Cumulative']
+            display_cols = [c for c in display_cols if c in tax_period.columns]
+            display_df = tax_period[display_cols].copy()
 
-            # Format numbers
-            display_df['Scope1'] = display_df['Scope1'].apply(lambda x: f"{x:,.0f}")
-            display_df['Tax_Rate'] = display_df['Tax_Rate'].apply(lambda x: f"${x:.2f}")
-            display_df['Tax_Annual'] = display_df['Tax_Annual'].apply(lambda x: f"${x:,.0f}")
-            display_df['Tax_Cumulative'] = display_df['Tax_Cumulative'].apply(lambda x: f"${x:,.0f}")
+            fmt_map = {
+                'Scope1': lambda x: f"{x:,.0f}",
+                'Grid_MWh': lambda x: f"{x:,.0f}",
+                'NGA_EF2': lambda x: f"{x:.4f}",
+                'Tax_Rate': lambda x: f"${x:.2f}",
+                'S2_Cost_per_MWh': lambda x: f"${x:.2f}",
+                'Tax_S1_Annual': lambda x: f"${x:,.0f}",
+                'Tax_S2_Annual': lambda x: f"${x:,.0f}",
+                'Tax_Annual': lambda x: f"${x:,.0f}",
+                'Tax_Cumulative': lambda x: f"${x:,.0f}",
+            }
+            for col, fn in fmt_map.items():
+                if col in display_df.columns:
+                    display_df[col] = display_df[col].apply(fn)
 
-            st.dataframe(display_df, hide_index=True, width="stretch", height=400)
+            rename_map = {
+                'Scope1': 'Scope 1 (tCO\u2082-e)',
+                'Grid_MWh': 'Grid Elec (MWh)',
+                'NGA_EF2': 'NGA EF\u2082 (t/MWh)',
+                'Tax_Rate': 'Rate ($/t)',
+                'S2_Cost_per_MWh': 'S2 $/MWh',
+                'Tax_S1_Annual': 'S1 Tax ($)',
+                'Tax_S2_Annual': 'S2 Tax ($)',
+                'Tax_Annual': 'Total Tax ($)',
+                'Tax_Cumulative': 'Cumulative ($)',
+            }
+            display_df = display_df.rename(columns=rename_map)
+            st.dataframe(display_df, hide_index=True, width='stretch', height=400)
         else:
             st.info(f"Tax period starts FY{tax_start_fy}")
 
 
 def display_tax_single(carbon_tax, tax_start_fy, show_summary=True, year_type='FY'):
-    """Display tax analysis for single data source
+    """Display tax analysis — waterfall chart with stacked S1/S2.
 
-    Waterfall chart style matching SMC Credits & Value chart:
-    - Floating bars show annual tax (green = tax owed, red = refund/credit)
-    - Gold line shows cumulative tax liability on secondary axis
-    - Connector lines link bar tops between years
-    - Labels at 5-year intervals on cumulative line
+    Uses barmode='overlay' with explicit base= on each trace so S1 and S2
+    occupy the same x position.  S1 sits on the waterfall base, S2 sits
+    on top of S1.  Connector lines link cumulative positions.
     """
 
-    # Construct year label based on year_type
     year_prefix = 'CY' if year_type == 'CY' else 'FY'
     display_year = st.session_state.get('display_year', 2025)
     year_label = f'{year_prefix}{display_year}'
 
-    # Gold color palette
+    # Pastel palette
     GOLD_METALLIC = '#DBB12A'
     CAFE_NOIR = '#39250B'
+    S1_COLOR = '#CA564B'       # Warm red-brown (tax = cost)
+    S2_COLOR = '#D4A084'       # Dusty peach (electricity pass-through)
+    CONNECTOR = 'rgba(138, 126, 107, 0.4)'
 
-    # Filter to tax period
     tax_data = carbon_tax[carbon_tax['FY_num'] >= tax_start_fy]
 
-    # Summary table
+    # --- Summary ---
     if show_summary:
         with st.expander("Summary", expanded=True):
             year_data = tax_data[tax_data['FY'] == year_label]
-
             if len(year_data) == 0:
                 st.warning(f"No tax data for {year_label} (tax starts FY{tax_start_fy})")
             else:
                 row = year_data.iloc[0]
+                summary = {
+                    'Scope 1 (tCO\u2082-e)': f"{row['Scope1']:,.0f}",
+                    'Tax Rate ($/tCO\u2082-e)': f"${row['Tax_Rate']:.2f}",
+                    'S1 Tax ($)': f"${row.get('Tax_S1_Annual', row.get('Tax_Annual', 0)):,.0f}",
+                }
+                if 'Grid_MWh' in row.index and row.get('Grid_MWh', 0) > 0:
+                    summary['Grid Elec (MWh)'] = f"{row['Grid_MWh']:,.0f}"
+                    summary['NGA EF\u2082 (t/MWh)'] = f"{row.get('NGA_EF2', 0):.4f}"
+                    summary['S2 $/MWh'] = f"${row.get('S2_Cost_per_MWh', 0):.2f}"
+                    summary['S2 Tax ($)'] = f"${row.get('Tax_S2_Annual', 0):,.0f}"
+                summary['Total Tax ($)'] = f"${row['Tax_Annual']:,.0f}"
+                summary['Cumulative ($)'] = f"${row['Tax_Cumulative']:,.0f}"
+                st.dataframe(pd.DataFrame([summary]), hide_index=True, width='stretch')
 
-                summary_data = [{
-                    'Scope 1 (tCO2-e)': f"{row['Scope1']:,.0f}",
-                    'Tax Rate ($/tCO2-e)': f"${row['Tax_Rate']:.2f}",
-                    'Tax Annual ($)': f"${row['Tax_Annual']:,.0f}",
-                    'Tax Cumulative ($)': f"${row['Tax_Cumulative']:,.0f}"
-                }]
-
-                df_summary = pd.DataFrame(summary_data)
-                st.dataframe(df_summary, hide_index=True, width="stretch")
-
-    # Tax Liability chart - waterfall style (matching SMC Credits & Value)
+    # --- Chart ---
     with st.expander("Tax Liability", expanded=True):
-
         if len(tax_data) == 0:
             st.info(f"Tax period starts FY{tax_start_fy}")
         else:
-            # Prepare display years
             tax_data = tax_data.copy()
-            tax_data['Year'] = tax_data['FY'].str.replace(r'^[A-Z]{2}', '', regex=True)
+            tax_data['Year_Display'] = tax_data['FY'].str.replace(r'^[A-Z]{2}', '', regex=True)
 
-            fig = make_subplots(specs=[[{"secondary_y": True}]])
+            has_s2 = ('Tax_S2_Annual' in tax_data.columns
+                      and tax_data['Tax_S2_Annual'].sum() > 0)
 
-            # --- Waterfall bars: annual tax floating at cumulative position ---
+            fig = go.Figure()
+
+            # --- Waterfall calculations ---
+            s1_vals = tax_data.get('Tax_S1_Annual', tax_data['Tax_Annual']).values
+            s2_vals = tax_data['Tax_S2_Annual'].values if has_s2 else [0] * len(s1_vals)
             annual_vals = tax_data['Tax_Annual'].values
             cum_vals = tax_data['Tax_Cumulative'].values
 
-            # Calculate base (bottom) of each waterfall bar
+            # Waterfall base: each bar floats at previous cumulative
             bases = []
             for i, (ann, cum) in enumerate(zip(annual_vals, cum_vals)):
                 if ann >= 0:
-                    bases.append(cum - ann)  # Tax: base at previous cumulative
+                    bases.append(cum - ann)
                 else:
-                    bases.append(cum)  # Refund: base at new (lower) cumulative
+                    bases.append(cum)
 
-            # Green = tax owed, Red = refund/credit offset
-            bar_colors = ['#CA564B' if v >= 0 else '#2A9D8F' for v in annual_vals]
-            bar_heights = [abs(v) for v in annual_vals]
+            # S2 base sits on top of S1 within the same waterfall position
+            s2_bases = [b + abs(s1) for b, s1 in zip(bases, s1_vals)]
 
-            # Bar labels
+            # --- S1 bars (bottom layer) ---
+            fig.add_trace(
+                go.Bar(
+                    x=tax_data['Year_Display'],
+                    y=[abs(v) for v in s1_vals],
+                    base=bases,
+                    name='Scope 1 Tax',
+                    marker_color=S1_COLOR,
+                    marker_cornerradius=4,
+                    opacity=0.9,
+                    width=0.6,
+                    customdata=[abs(v) for v in s1_vals],
+                    hovertemplate='S1: $%{customdata:,.0f}<extra></extra>'
+                )
+            )
+
+            # --- S2 bars (top layer, same x position) ---
+            if has_s2:
+                fig.add_trace(
+                    go.Bar(
+                        x=tax_data['Year_Display'],
+                        y=[abs(v) for v in s2_vals],
+                        base=s2_bases,
+                        name='Scope 2 Tax (Electricity)',
+                        marker_color=S2_COLOR,
+                        marker_cornerradius=4,
+                        opacity=0.9,
+                        width=0.6,
+                        customdata=[abs(v) for v in s2_vals],
+                        hovertemplate='S2: $%{customdata:,.0f}<extra></extra>'
+                    )
+                )
+
+            # --- Bar labels (total annual) ---
             bar_labels = []
             for v in annual_vals:
                 if abs(v) >= 1_000_000:
@@ -214,97 +274,124 @@ def display_tax_single(carbon_tax, tax_start_fy, show_summary=True, year_type='F
                 else:
                     bar_labels.append("")
 
-            fig.add_trace(
-                go.Bar(
-                    x=tax_data['Year'],
-                    y=bar_heights,
-                    base=bases,
-                    name='Annual Tax',
-                    marker_color=bar_colors,
-                    marker_cornerradius=4,
-                    opacity=0.9,
-                    text=bar_labels,
-                    textposition='outside',
-                    textfont=dict(size=11, color='rgba(57, 37, 11, 0.8)'),
-                    constraintext='none',
-                    hovertext=[f"${v:,.0f} ({'tax' if v >= 0 else 'refund'})" for v in annual_vals],
-                    hovertemplate='%{hovertext}<extra></extra>'
-                ),
-                secondary_y=False
-            )
+            # Text labels at bar tops — use annotations not a scatter trace
+            # so they scale correctly with the primary axis
+            for i, label in enumerate(bar_labels):
+                if label:
+                    fig.add_annotation(
+                        x=tax_data['Year_Display'].iloc[i],
+                        y=bases[i],
+                        text=label,
+                        showarrow=False,
+                        yshift=-14,
+                        font=dict(size=10, color='rgba(57, 37, 11, 0.7)'),
+                    )
 
-            # Connector lines between bars
+            # --- Connector lines between bars ---
             for i in range(1, len(tax_data)):
                 prev_cum = cum_vals[i - 1]
                 fig.add_shape(
                     type="line",
-                    x0=tax_data['Year'].iloc[i - 1],
-                    x1=tax_data['Year'].iloc[i],
+                    x0=tax_data['Year_Display'].iloc[i - 1],
+                    x1=tax_data['Year_Display'].iloc[i],
                     y0=prev_cum,
                     y1=prev_cum,
-                    line=dict(color='rgba(138, 126, 107, 0.4)', width=1, dash='dot'),
+                    line=dict(color=CONNECTOR, width=1, dash='dot'),
                 )
 
-            # Cumulative value line on secondary axis
+            # --- Cumulative line on secondary axis ---
+            # Offset line above bars for visual separation
+            max_cum = max(tax_data['Tax_Cumulative'].max(), 1)
+            line_offset = max_cum * 0.08
+            cum_vals_display = cum_vals + line_offset
+
             fig.add_trace(
                 go.Scatter(
-                    x=tax_data['Year'],
-                    y=cum_vals,
+                    x=tax_data['Year_Display'],
+                    y=cum_vals_display,
                     name='Cumulative Tax ($)',
                     mode='lines+markers',
                     line=dict(color=GOLD_METALLIC, width=3),
                     marker=dict(size=6, color=GOLD_METALLIC),
                     hovertemplate='$%{y:,.0f}<extra></extra>'
-                ),
-                secondary_y=True
+                )
             )
 
-            # Labels at 5-year intervals on cumulative line
-            years_list = tax_data['Year'].tolist()
+            # --- Labels at 5-year intervals on cumulative line ---
+            years_list = tax_data['Year_Display'].tolist()
             key_indices = set()
             for idx, yr in enumerate(years_list):
-                if int(yr) % 5 == 0:
-                    key_indices.add(idx)
-            key_indices.add(len(years_list) - 1)  # Always include last year
+                try:
+                    if int(yr) % 5 == 0:
+                        key_indices.add(idx)
+                except ValueError:
+                    pass
+            key_indices.add(len(years_list) - 1)
 
             for idx in key_indices:
                 if idx < len(years_list) and cum_vals[idx] > 0:
                     val_m = cum_vals[idx] / 1e6
                     fig.add_annotation(
                         x=years_list[idx],
-                        y=cum_vals[idx],
-                        yref='y2',
+                        y=cum_vals_display[idx],
+
                         text=f"<b>${val_m:.1f}M</b>",
                         showarrow=False,
-                        yshift=-16,
+                        yshift=14,
                         font=dict(size=11, color=GOLD_METALLIC),
                     )
 
             # Zero line
-            fig.add_hline(y=0, line_dash="solid", line_color="grey", line_width=0.5, secondary_y=False)
+            fig.add_hline(y=0, line_dash="solid", line_color="grey",
+                         line_width=0.5)
 
-            # Axis scaling: bars in upper portion, cumulative line below
-            max_cum = max(tax_data['Tax_Cumulative'].max(), 1)
-            fig.update_xaxes(title_text="Calendar Year" if year_type == "CY" else "Financial Year")
-            fig.update_yaxes(title_text="Tax Liability (AUD)", secondary_y=False,
-                           range=[0, max_cum * 1.55])
-            fig.update_yaxes(title_text="Cumulative Tax ($AUD)", secondary_y=True,
-                           range=[0, max_cum * 1.25])
+            # Axis scaling — match original waterfall proportions
+            fig.update_xaxes(
+                title_text="Calendar Year" if year_type == "CY" else "Financial Year"
+            )
+            fig.update_yaxes(
+                title_text="Tax Liability (AUD)",
+                range=[0, max_cum * 1.5]
+            )
 
+            # barmode='overlay' is critical — both traces use explicit base=
+            # so overlay lets them share the same x position
             fig.update_layout(
-                title="Carbon Tax Liability",
+                title="Carbon Tax Liability \u2014 Scope 1 + Scope 2",
                 hovermode='x unified',
                 height=500,
                 showlegend=True,
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=0.95),
+                legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="right", x=1),
+                barmode='overlay',
                 bargap=0.15,
             )
 
-            st.plotly_chart(fig, width="stretch", key="tax_liability")
+            st.plotly_chart(fig, width='stretch', key="tax_liability")
 
-            # Summary caption
+            # Caption — use st.markdown with inline style to avoid
+            # st.caption's markdown rendering mangling $ signs as LaTeX
             if len(tax_data) > 0:
                 final_year = tax_data['FY'].iloc[-1]
                 final_cumulative = tax_data['Tax_Cumulative'].iloc[-1]
                 final_rate = tax_data['Tax_Rate'].iloc[-1]
-                st.caption(f"{final_year} Cumulative Tax: ${final_cumulative:,.0f} AUD at ${final_rate:.2f}/tCO2-e")
+                final_s1 = tax_data.get('Tax_S1_Cumulative',
+                                        pd.Series([0])).iloc[-1]
+                final_s2 = tax_data.get('Tax_S2_Cumulative',
+                                        pd.Series([0])).iloc[-1]
+
+                caption_text = (
+                    f"{final_year} Cumulative: ${final_cumulative:,.0f} AUD "
+                    f"at ${final_rate:.2f}/tCO\u2082-e"
+                )
+                if final_s2 > 0 and final_cumulative > 0:
+                    s1_pct = final_s1 / final_cumulative * 100
+                    s2_pct = final_s2 / final_cumulative * 100
+                    caption_text += (
+                        f" &nbsp;(S1: ${final_s1:,.0f} [{s1_pct:.0f}%] "
+                        f"| S2: ${final_s2:,.0f} [{s2_pct:.0f}%])"
+                    )
+                st.markdown(
+                    f'<p style="font-size:13px; color:#6B7280; margin-top:4px;">'
+                    f'{caption_text}</p>',
+                    unsafe_allow_html=True
+                )

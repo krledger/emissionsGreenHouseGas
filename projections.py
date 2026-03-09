@@ -1,7 +1,7 @@
 """
 projections.py
 Build monthly projections from consolidated emissions data
-Last updated: 2026-02-12
+Last updated: 2026-03-09
 
 ARCHITECTURE:
     - Consolidated CSV contains all adjustments pre-baked (ROM ratios, processing
@@ -528,25 +528,142 @@ def find_exit_date(monthly, safeguard_start_date):
 # =============================================================================
 
 
-def carbon_tax_analysis(projection, tax_start_fy, tax_rate_initial, tax_escalation_rate):
-    """Calculate carbon tax liability per year.
+def carbon_tax_analysis(projection, tax_start_fy, tax_rate_initial, tax_escalation_rate,
+                        nga_by_year=None, state='QLD', ef2_decline_rate=0.05):
+    """Calculate carbon tax liability per year — Scope 1 + Scope 2.
 
-    Tax applies to Scope 1 emissions only, escalating annually.
+    Scope 1: Direct tax on facility emissions
+        S1_Tax = Scope1_tCO2e × Tax_Rate
+
+    Scope 2: Carbon cost pass-through on grid electricity
+        S2_Tax = Grid_MWh × Tax_Rate × NGA_EF2 (tCO2e/MWh)
+
+    The NGA Scope 2 emission factor is the published state-level grid
+    intensity from NGA Factors Table 1.  It converts the per-tonne carbon
+    rate into a per-MWh electricity cost — this is the pass-through
+    mechanism by which a carbon tax on generators flows to consumers.
+
+    The tax stacks on top of existing Safeguard Mechanism pass-through
+    already embedded in electricity prices.  This calculates the additional
+    carbon tax component only.
+
+    Args:
+        projection: Annual DataFrame from prepare_annual_for_tax()
+                    Must contain: Year, Scope1
+                    Optional: Grid_Electricity_kWh or Grid_Electricity_MWh
+        tax_start_fy: First FY the tax applies (int, e.g. 2031)
+        tax_rate_initial: Starting tax rate ($/tCO2-e)
+        tax_escalation_rate: Annual escalation as decimal (e.g. 0.05 = 5%)
+        nga_by_year: NGAFactorsByYear instance for Scope 2 EF lookup.
+                     If None, Scope 2 tax columns are zero (backwards compat).
+        state: NEM state for electricity emission factor (default 'QLD')
+        ef2_decline_rate: Annual decline in grid emission factor for years
+                          beyond last published NGA value (default 0.05 = 5%)
+
+    Returns:
+        DataFrame with columns:
+            Tax_Rate, Tax_S1_Annual, Tax_S2_Annual, Tax_Annual,
+            Tax_S1_Cumulative, Tax_S2_Cumulative, Tax_Cumulative,
+            Grid_MWh, NGA_EF2, S2_Cost_per_MWh
     """
     result = projection.copy()
     result['FY_num'] = result['Year'].str.extract(r'(\d+)')[0].astype(int)
 
+    # --- Tax rate schedule ---
     result['Tax_Rate'] = 0.0
     mask = result['FY_num'] >= tax_start_fy
     years = result.loc[mask, 'FY_num'] - tax_start_fy
     result.loc[mask, 'Tax_Rate'] = tax_rate_initial * ((1 + tax_escalation_rate) ** years)
 
-    result['Tax_Annual'] = 0.0
-    result.loc[mask, 'Tax_Annual'] = result.loc[mask, 'Scope1'] * result.loc[mask, 'Tax_Rate']
+    # --- Grid electricity in MWh ---
+    if 'Grid_Electricity_MWh' in result.columns:
+        result['Grid_MWh'] = result['Grid_Electricity_MWh']
+    elif 'Grid_Electricity_kWh' in result.columns:
+        result['Grid_MWh'] = result['Grid_Electricity_kWh'] / 1000.0
+    else:
+        result['Grid_MWh'] = 0.0
 
+    # --- NGA Scope 2 emission factor per year ---
+    # kgCO2-e/kWh is numerically equal to tCO2-e/MWh
+    # For years beyond last published NGA factor, apply annual decline rate
+    # to reflect grid decarbonisation (renewables displacing fossil generation)
+    result['NGA_EF2'] = 0.0
+    if nga_by_year is not None:
+        last_nga_year = max(nga_by_year.available_years)
+        base_ef2 = nga_by_year.get_electricity_factor(last_nga_year, state, 2)
+        for idx, row in result.iterrows():
+            fy = int(row['FY_num'])
+            ef2 = nga_by_year.get_electricity_factor(fy, state, 2)
+            if ef2 is not None and fy <= last_nga_year:
+                # Use published NGA factor
+                result.at[idx, 'NGA_EF2'] = ef2
+            elif base_ef2 is not None and fy > last_nga_year:
+                # Decline from last published value
+                years_beyond = fy - last_nga_year
+                result.at[idx, 'NGA_EF2'] = base_ef2 * ((1 - ef2_decline_rate) ** years_beyond)
+
+    # --- Scope 2 cost per MWh (rate × emission factor) ---
+    result['S2_Cost_per_MWh'] = result['Tax_Rate'] * result['NGA_EF2']
+
+    # --- Scope 1 tax ---
+    result['Tax_S1_Annual'] = 0.0
+    result.loc[mask, 'Tax_S1_Annual'] = result.loc[mask, 'Scope1'] * result.loc[mask, 'Tax_Rate']
+
+    # --- Scope 2 tax (electricity pass-through) ---
+    result['Tax_S2_Annual'] = 0.0
+    result.loc[mask, 'Tax_S2_Annual'] = (
+        result.loc[mask, 'Grid_MWh'] * result.loc[mask, 'S2_Cost_per_MWh']
+    )
+
+    # --- Combined annual ---
+    result['Tax_Annual'] = result['Tax_S1_Annual'] + result['Tax_S2_Annual']
+
+    # --- Cumulative ---
+    result['Tax_S1_Cumulative'] = 0.0
+    result['Tax_S2_Cumulative'] = 0.0
     result['Tax_Cumulative'] = 0.0
+    result.loc[mask, 'Tax_S1_Cumulative'] = result.loc[mask, 'Tax_S1_Annual'].cumsum()
+    result.loc[mask, 'Tax_S2_Cumulative'] = result.loc[mask, 'Tax_S2_Annual'].cumsum()
     result.loc[mask, 'Tax_Cumulative'] = result.loc[mask, 'Tax_Annual'].cumsum()
 
+    return result
+
+
+def apply_smc_transactions(projection, transactions):
+    """Reconcile model SMC against CER registry transactions (smc_transactions.csv).
+
+    Issuances use Applies_To_FY (the reporting year, not the transaction date)
+    to override the model calc — CER issues FY2024 credits in Feb 2025.
+    Sales/surrenders/corrections use Applies_To_FY to adjust the bank.
+    Projection years with no issuance row keep the model value.
+
+    Adds SMC_Issuance and SMC_Sold columns for chart breakdown.
+    """
+    result = projection.copy()
+    result['SMC_Issuance'] = 0.0
+    result['SMC_Sold'] = 0.0
+
+    if transactions is None or transactions.empty:
+        return result
+
+    if 'FY_num' not in result.columns:
+        result['FY_num'] = result['FY'].str.replace(r'^[A-Z]+', '', regex=True).astype(int)
+
+    # Issuances replace model-calculated SMC_Annual using reporting FY
+    for fy, qty in transactions[transactions['Type'] == 'Issuance'].groupby('Applies_To_FY')['Quantity'].sum().items():
+        mask = result['FY_num'] == fy
+        if mask.any():
+            result.loc[mask, 'SMC_Annual'] = qty
+            result.loc[mask, 'SMC_Issuance'] = qty
+
+    # Sales, surrenders, corrections adjust using reporting FY
+    for fy, qty in transactions[transactions['Type'] != 'Issuance'].groupby('Applies_To_FY')['Quantity'].sum().items():
+        mask = result['FY_num'] == fy
+        if mask.any():
+            result.loc[mask, 'SMC_Annual'] += qty
+            result.loc[mask, 'SMC_Sold'] = qty  # negative value
+
+    result['SMC_Cumulative'] = result['SMC_Annual'].cumsum()
     return result
 
 

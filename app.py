@@ -277,13 +277,21 @@ with st.sidebar:
         tax_escalation = st.slider(
             "Tax Rate Escalation (%/year)",
             0.0,
-            10.0,
+            20.0,
             DEFAULT_TAX_ESCALATION * 100,
             step=0.5
         ) / 100
 
         # Tax start date: 1 July of the selected FY (tax operates on FY)
         tax_start_date = datetime(tax_start_fy - 1, 7, 1)
+
+        include_scope2 = st.checkbox(
+            "Include Scope 2 electricity pass-through (sensitivity case)",
+            value=False,
+            help="Base case: industry-only tax, no electricity pass-through. "
+                 "Sensitivity case: carbon tax applied to electricity generators, "
+                 "cost passed through in wholesale prices via NGA Scope 2 emission factor."
+        )
 
 
 
@@ -329,7 +337,8 @@ with tab3:
         tax_start_date, tax_rate, tax_escalation,
         CREDIT_START_DATE,
         decline_rate_phase2,
-        selected_year_type
+        selected_year_type,
+        include_scope2=include_scope2
     )
 
 with tab4:
