@@ -752,10 +752,103 @@ def render_safeguard_source_download(df, year_factor_map):
             dl_key="dl_rom_ore",
         )
 
-        _render_prod_section(
-            label="Electricity — kWh by cost centre incl. Residential (FSEI electricity variable)",
-            table_df=prod_tables['electricity'],
-            qty_label="Quantity (kWh)",
-            dl_filename="safeguard_electricity_kwh.csv",
-            dl_key="dl_electricity",
-        )
+        # --- Electricity table enriched with NGA factors and tCO2-e ---
+        st.markdown("---")
+        st.markdown("**Electricity — kWh by cost centre incl. Residential (FSEI electricity variable)**")
+        elec_df = prod_tables['electricity']
+        if elec_df.empty:
+            st.info("No electricity data available.")
+        else:
+            elec_enriched = elec_df.copy()
+
+            # Extract FY number for factor lookup
+            elec_enriched['_fy_num'] = elec_enriched['FY'].astype(int) if elec_enriched['FY'].dtype != object else \
+                elec_enriched['FY'].str.replace(r'^[A-Z]+', '', regex=True).astype(int)
+
+            # Add NGA Year, EF, Energy, tCO2-e per row
+            nga_years, ef_s2, ef_s3, energy_gj_unit, scope2, scope3, energy_gj = [], [], [], [], [], [], []
+            for _, row in elec_enriched.iterrows():
+                fy = row['_fy_num']
+                desc = str(row['Description'])
+                qty = row['Quantity']
+
+                if fy in year_factor_map:
+                    nga_yr = year_factor_map[fy].get('_nga_year', '')
+                    if desc == 'Grid electricity' and 'Grid electricity' in year_factor_map[fy]:
+                        fac = year_factor_map[fy]['Grid electricity']
+                        nga_years.append(nga_yr)
+                        ef_s2.append(fac['s2'])
+                        ef_s3.append(fac['s3'])
+                        energy_gj_unit.append(fac['energy'])
+                        scope2.append(qty * fac['s2'] / 1000)
+                        scope3.append(qty * fac['s3'] / 1000)
+                        energy_gj.append(qty * fac['energy'])
+                    else:
+                        # Site electricity: kWh have no direct emission factor
+                        # (emissions are in the diesel that generated them)
+                        nga_years.append(nga_yr)
+                        ef_s2.append(0)
+                        ef_s3.append(0)
+                        energy_gj_unit.append(0.0036)  # physical constant
+                        scope2.append(0)
+                        scope3.append(0)
+                        energy_gj.append(qty * 0.0036)
+                else:
+                    nga_years.append('')
+                    ef_s2.append(0)
+                    ef_s3.append(0)
+                    energy_gj_unit.append(0)
+                    scope2.append(0)
+                    scope3.append(0)
+                    energy_gj.append(0)
+
+            elec_enriched['NGA_Year'] = nga_years
+            elec_enriched['EF_S2_kgCO2e_per_kWh'] = ef_s2
+            elec_enriched['EF_S3_kgCO2e_per_kWh'] = ef_s3
+            elec_enriched['Energy_GJ_per_kWh'] = energy_gj_unit
+            elec_enriched['Scope2_tCO2e'] = scope2
+            elec_enriched['Scope3_tCO2e'] = scope3
+            elec_enriched['Energy_GJ'] = energy_gj
+
+            # Drop temp column, round, rename for display
+            elec_enriched = elec_enriched.drop(columns=['_fy_num'])
+            elec_fmt = elec_enriched.copy()
+            elec_fmt['Quantity'] = elec_fmt['Quantity'].round(0)
+            elec_fmt['EF_S2_kgCO2e_per_kWh'] = elec_fmt['EF_S2_kgCO2e_per_kWh'].round(4)
+            elec_fmt['EF_S3_kgCO2e_per_kWh'] = elec_fmt['EF_S3_kgCO2e_per_kWh'].round(4)
+            elec_fmt['Energy_GJ_per_kWh'] = elec_fmt['Energy_GJ_per_kWh'].round(4)
+            elec_fmt['Scope2_tCO2e'] = elec_fmt['Scope2_tCO2e'].round(3)
+            elec_fmt['Scope3_tCO2e'] = elec_fmt['Scope3_tCO2e'].round(3)
+            elec_fmt['Energy_GJ'] = elec_fmt['Energy_GJ'].round(2)
+
+            elec_fmt = elec_fmt.rename(columns={
+                'FY': 'FY',
+                'DataSet': 'Dataset',
+                'Description': 'Description',
+                'CostCentre': 'Cost Centre',
+                'UOM': 'UOM',
+                'Quantity': 'Quantity (kWh)',
+                'NGA_Year': 'NGA Year',
+                'EF_S2_kgCO2e_per_kWh': 'EF S2 (kg/kWh)',
+                'EF_S3_kgCO2e_per_kWh': 'EF S3 (kg/kWh)',
+                'Energy_GJ_per_kWh': 'GJ/kWh',
+                'Scope2_tCO2e': 'Scope 2 tCO2-e',
+                'Scope3_tCO2e': 'Scope 3 tCO2-e',
+                'Energy_GJ': 'Energy GJ',
+            })
+
+            st.dataframe(elec_fmt, hide_index=True, width='stretch')
+            st.download_button(
+                label="Download electricity data",
+                data=elec_fmt.to_csv(index=False),
+                file_name="safeguard_electricity_kwh.csv",
+                mime="text/csv",
+                key="dl_electricity",
+            )
+            st.caption(
+                "Grid electricity: Scope 2 EF from NGA Table 1 (state-specific).  "
+                "Site electricity: no direct EF (emissions captured in diesel fuel source).  "
+                "Scope 2 tCO2-e = kWh \u00d7 EF S2 / 1000.  "
+                "Energy GJ = kWh \u00d7 0.0036 (physical constant).  "
+                "NGA Year = publication year of the NGA factors applied."
+            )

@@ -40,6 +40,7 @@ from tab1_ghg import render_ghg_tab
 from tab2_safeguard import render_safeguard_tab
 from tab3_carbon_tax import render_carbon_tax_tab
 from tab4_nger import render_nger_tab
+from tab5_query import render_query_tab
 
 # PAGE CONFIG
 st.set_page_config(
@@ -296,11 +297,12 @@ with st.sidebar:
 
 
 # TABS
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "Total GHG Emissions",
     "Safeguard Mechanism",
     "Carbon Tax Analysis",
-    "NGER Factors"
+    "NGER Factors",
+    "Data Query"
 ])
 
 
@@ -343,6 +345,20 @@ with tab3:
 
 with tab4:
     render_nger_tab()
+
+with tab5:
+    render_query_tab(
+        df,
+        fsei_rom=fsei_rom, fsei_elec=fsei_elec,
+        start_date=start_date, end_date=end_date,
+        end_mining_date=end_mining_date,
+        end_processing_date=end_processing_date,
+        end_rehabilitation_date=end_rehabilitation_date,
+        carbon_credit_price=carbon_credit_price,
+        credit_escalation=credit_escalation,
+        credit_start_date=CREDIT_START_DATE,
+        decline_rate_phase2=decline_rate_phase2
+    )
 
 # FOOTER
 st.markdown("---")

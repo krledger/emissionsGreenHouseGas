@@ -50,16 +50,11 @@ def render_query_tab(df, fsei_rom=None, fsei_elec=None,
 
     st.markdown("---")
 
-    st.subheader("SMC Ledger")
-    if st.button("Load SMC Ledger", key="btn_smc_ledger"):
-        st.session_state['_smc_loaded'] = True
-
-    if st.session_state.get('_smc_loaded', False):
-        _render_smc_ledger(df, fsei_rom, fsei_elec, start_date, end_date,
-                           end_mining_date, end_processing_date,
-                           end_rehabilitation_date, carbon_credit_price,
-                           credit_escalation, credit_start_date,
-                           decline_rate_phase2, monthly=monthly)
+    _render_smc_ledger(df, fsei_rom, fsei_elec, start_date, end_date,
+                       end_mining_date, end_processing_date,
+                       end_rehabilitation_date, carbon_credit_price,
+                       credit_escalation, credit_start_date,
+                       decline_rate_phase2, monthly=monthly)
 
 
 # =====================================================================
