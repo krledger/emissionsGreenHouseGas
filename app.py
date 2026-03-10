@@ -1,7 +1,14 @@
 """
 app.py
 Ravenswood Gold Mine - Emissions Tracking Dashboard
-Last Updated: 2026-02-05 21:08 AEDT
+Last Updated: 2026-03-10
+
+ARCHITECTURE (v2 — precompute on load):
+    1. load_all_data()          → raw monthly DataFrame (cached)
+    2. precompute_all()         → all derived data computed ONCE (cached)
+    3. Tabs receive PrecomputedData and only filter/render
+    4. Sidebar-dependent calcs (carbon tax, SMC valuation) run lightweight
+       functions on pre-aggregated annual data — not raw data
 """
 # NOTE FOR CLAUDE: This file contains emojis. Use binary-safe editing (rb/wb) to prevent corruption.
 
@@ -33,7 +40,7 @@ from config import (
 )
 from calc_calendar import date_to_fy, date_to_cy
 from loader_data import load_all_data
-from projections import build_projection
+from calc_precompute import precompute_all
 
 # Import tab modules
 from tab1_ghg import render_ghg_tab
@@ -45,13 +52,10 @@ from tab5_query import render_query_tab
 # PAGE CONFIG
 st.set_page_config(
     page_title="Ravenswood Gold - Safeguard Mechanism Model",
-    page_icon="🏭",
+    page_icon="\U0001f3ed",
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-
-# Add print styles and button using components for better JavaScript support
 
 
 # PRINT FUNCTIONALITY
@@ -59,37 +63,37 @@ st.markdown("""
 <style>
 @media print {
     /* Hide Streamlit UI */
-    header, footer, [data-testid="stSidebar"], 
+    header, footer, [data-testid="stSidebar"],
     [data-testid="stToolbar"], [data-testid="stDecoration"],
     .stDeployButton, iframe {
         display: none !important;
     }
-    
+
     /* Page setup */
     @page {
         size: A4 landscape;
         margin: 1.5cm;
     }
-    
+
     /* Content */
     .main .block-container {
         max-width: 100% !important;
         padding: 0.5rem !important;
     }
-    
+
     /* Charts - no breaks, full width */
     .stPlotlyChart, .js-plotly-plot, .plot-container {
         page-break-inside: avoid !important;
         width: 100% !important;
         max-width: 100% !important;
     }
-    
+
     /* Tables */
     .dataframe, table {
         page-break-inside: avoid !important;
         font-size: 9pt !important;
     }
-    
+
     /* Headings */
     h1, h2, h3 {
         page-break-after: avoid !important;
@@ -137,14 +141,38 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # TITLE
-st.title("🏭 Ravenswood Gold Mine - Safeguard Mechanism Model")
+st.title("\U0001f3ed Ravenswood Gold Mine - Safeguard Mechanism Model")
 st.caption("Emissions tracking and Safeguard Mechanism compliance projections")
 
-# DATA LOADING
+# ═══════════════════════════════════════════════════════════════════════
+# DATA LOADING + PRECOMPUTATION (cached — runs once per session/hour)
+# ═══════════════════════════════════════════════════════════════════════
+
 @st.cache_data(ttl=3600, show_spinner="Loading emissions data...")
 def load_data_cached():
     """Load unified data with caching"""
     return load_all_data()
+
+@st.cache_resource(ttl=3600, show_spinner="Pre-computing projections...")
+def precompute_cached(_df):
+    """Pre-compute all derived data.
+
+    _df is underscore-prefixed to tell Streamlit not to hash it
+    (it's already cached by load_data_cached).
+    """
+    return precompute_all(
+        _df,
+        fsei_rom=FSEI_ROM,
+        fsei_elec=FSEI_ELEC,
+        start_date=DEFAULT_START_DATE,
+        end_date=DEFAULT_END_REHABILITATION_DATE,
+        end_mining_date=DEFAULT_END_MINING_DATE,
+        end_processing_date=DEFAULT_END_PROCESSING_DATE,
+        end_rehabilitation_date=DEFAULT_END_REHABILITATION_DATE,
+        credit_start_date=CREDIT_START_DATE,
+        decline_rate_phase2=DECLINE_RATE_PHASE2,
+    )
+
 
 # Check if consolidated CSV exists
 csv_path = Path('consolidated_emissions_data.csv')
@@ -155,6 +183,14 @@ if not csv_path.exists():
 
 # Load unified data
 df = load_data_cached()
+
+# Pre-compute ALL derived data (projections, annual aggregations, source tables)
+precomputed = precompute_cached(df)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# SIDEBAR
+# ═══════════════════════════════════════════════════════════════════════
 
 with st.sidebar:
     st.header("Configuration")
@@ -296,7 +332,10 @@ with st.sidebar:
 
 
 
-# TABS
+# ═══════════════════════════════════════════════════════════════════════
+# TABS — receive pre-computed data, filter and render only
+# ═══════════════════════════════════════════════════════════════════════
+
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "Total GHG Emissions",
     "Safeguard Mechanism",
@@ -309,38 +348,27 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 # RENDER TABS
 with tab1:
     render_ghg_tab(
-        df,
-        fsei_rom, fsei_elec,
-        start_date, end_date,
+        df, precomputed,
+        selected_year_type,
         end_mining_date, end_processing_date, end_rehabilitation_date,
-        decline_rate_phase2,
-        selected_year_type
     )
 
 with tab2:
     render_safeguard_tab(
-        df,
+        df, precomputed,
         fsei_rom, fsei_elec,
-        start_date, end_date,
-        end_mining_date, end_processing_date, end_rehabilitation_date,
         carbon_credit_price, credit_escalation,
-        CREDIT_START_DATE,
-        decline_rate_phase2,
+        end_mining_date, end_processing_date, end_rehabilitation_date,
         selected_year_type
     )
 
 with tab3:
     render_carbon_tax_tab(
-        df,
-        fsei_rom, fsei_elec,
-        start_date, end_date,
-        end_mining_date, end_processing_date, end_rehabilitation_date,
-        carbon_credit_price, credit_escalation,
-        tax_start_date, tax_rate, tax_escalation,
-        CREDIT_START_DATE,
-        decline_rate_phase2,
+        precomputed,
+        tax_start_fy, tax_rate, tax_escalation,
+        include_scope2,
         selected_year_type,
-        include_scope2=include_scope2
+        end_mining_date, end_processing_date, end_rehabilitation_date,
     )
 
 with tab4:
@@ -348,16 +376,9 @@ with tab4:
 
 with tab5:
     render_query_tab(
-        df,
-        fsei_rom=fsei_rom, fsei_elec=fsei_elec,
-        start_date=start_date, end_date=end_date,
-        end_mining_date=end_mining_date,
-        end_processing_date=end_processing_date,
-        end_rehabilitation_date=end_rehabilitation_date,
+        df, precomputed,
         carbon_credit_price=carbon_credit_price,
         credit_escalation=credit_escalation,
-        credit_start_date=CREDIT_START_DATE,
-        decline_rate_phase2=decline_rate_phase2
     )
 
 # FOOTER

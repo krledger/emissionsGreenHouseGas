@@ -1,99 +1,31 @@
 """
 tab2_safeguard.py
 Safeguard Mechanism tab - date-based architecture
-Last updated: 2026-02-05 16:45 AEST
+Last updated: 2026-03-10
+
+ARCHITECTURE (v2):
+    Receives PrecomputedData from app.py.
+    No build_projection, no NGA loading.
+    Sidebar-dependent SMC valuation runs on pre-aggregated annual data.
 """
 
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from projections import build_projection, smc_credit_value_analysis, apply_smc_transactions
-from loader_data import load_smc_transactions
-from loader_nga import NGAFactorsByYear
-from calc_emissions import build_year_factor_map
-from calc_calendar import date_to_fy, aggregate_by_year_type
-from config import DECLINE_RATE_PHASE1, DECLINE_PHASE1_START, DECLINE_PHASE2_END, SAFEGUARD_THRESHOLD, DEFAULT_GRID_CONNECTION_DATE
-
-
-
-def prepare_annual_for_safeguard(monthly, year_type='FY'):
-    """Aggregate monthly data to annual and prepare for Safeguard display
-
-    Args:
-        monthly: Monthly DataFrame from build_projection
-        year_type: 'FY' or 'CY' - aggregation boundary
-
-    Returns:
-        Annual DataFrame with display-ready columns
-    """
-    # Define aggregation for different column types
-    agg_dict = {
-        'Scope1_tCO2e': 'sum',
-        'Scope2_tCO2e': 'sum',
-        'Scope3_tCO2e': 'sum',
-        'ROM_t': 'sum',
-    }
-
-    # Add optional columns if present
-    if 'Site_Electricity_kWh' in monthly.columns:
-        agg_dict['Site_Electricity_kWh'] = 'sum'
-    if 'Grid_Electricity_kWh' in monthly.columns:
-        agg_dict['Grid_Electricity_kWh'] = 'sum'
-    if 'Baseline' in monthly.columns:
-        agg_dict['Baseline'] = 'sum'
-    if 'Phase' in monthly.columns:
-        agg_dict['Phase'] = 'last'  # Take phase from last month of FY
-    if 'SMC_Monthly' in monthly.columns:
-        agg_dict['SMC_Monthly'] = 'sum'  # Sum to annual
-    if 'SMC_Cumulative' in monthly.columns:
-        agg_dict['SMC_Cumulative'] = 'last'  # End-of-year value
-    if 'In_Safeguard' in monthly.columns:
-        agg_dict['In_Safeguard'] = 'last'  # End-of-year status
-    if 'Exit_FY' in monthly.columns:
-        agg_dict['Exit_FY'] = 'first'  # Same for all months in year
-    if 'SMC_Phase' in monthly.columns:
-        agg_dict['SMC_Phase'] = 'last'  # End-of-year phase status
-
-    # Aggregate monthly -> annual
-    annual = aggregate_by_year_type(monthly, year_type, agg_dict=agg_dict)
-
-    # Add FY column as string for compatibility (works for both FY and CY labels)
-    annual['FY'] = annual['Year']
-
-    # Add compatibility columns
-    annual['Scope1'] = annual['Scope1_tCO2e']
-    annual['Scope2'] = annual['Scope2_tCO2e']
-    annual['Scope3'] = annual['Scope3_tCO2e']
-    annual['Total'] = annual['Scope1'] + annual['Scope2'] + annual['Scope3']
-
-    # Convert ROM from tonnes to megatonnes
-    annual['ROM_Mt'] = annual['ROM_t'] / 1_000_000
-
-    # SMC columns should already be correct from monthly aggregation
-    if 'SMC_Monthly' in annual.columns:
-        annual['SMC_Annual'] = annual['SMC_Monthly']
-
-    # If Phase column is missing, add a default
-    if 'Phase' not in annual.columns:
-        annual['Phase'] = 'Unknown'
-
-    # Ensure electricity columns exist (with 0 if missing)
-    if 'Site_Electricity_kWh' not in annual.columns:
-        annual['Site_Electricity_kWh'] = 0
-    if 'Grid_Electricity_kWh' not in annual.columns:
-        annual['Grid_Electricity_kWh'] = 0
-
-    return annual
+from calc_precompute import build_safeguard_projection
+from calc_calendar import date_to_fy
+from config import (
+    DECLINE_RATE_PHASE1, DECLINE_PHASE1_START, DECLINE_PHASE2_END,
+    SAFEGUARD_THRESHOLD, DEFAULT_GRID_CONNECTION_DATE, CREDIT_START_DATE,
+    FSEI_ROM, FSEI_ELEC,
+)
 
 
 def _add_phase_markers(fig, years_list, grid_connected_date,
                        end_mining_date, end_processing_date, end_rehabilitation_date,
                        year_type='FY'):
-    """Add phase transition vertical lines and top-aligned labels to a chart.
-
-    Accepts dates directly and converts to bare year number at render time.
-    """
+    """Add phase transition vertical lines and top-aligned labels to a chart."""
     from calc_calendar import date_to_fy, date_to_cy
     _GRID_GREEN = '#2A9D8F'
     _PHASE_GREY = '#888888'
@@ -116,73 +48,55 @@ def _add_phase_markers(fig, years_list, grid_connected_date,
                           yshift=10, font=dict(size=9, color=colour))
 
 
-def render_safeguard_tab(df, fsei_rom, fsei_elec,
-                         start_date, end_date,
+def render_safeguard_tab(df, precomputed,
+                         fsei_rom, fsei_elec,
+                         carbon_credit_price, credit_escalation,
                          end_mining_date, end_processing_date, end_rehabilitation_date,
-                         carbon_credit_price, credit_escalation, credit_start_date,
-                         decline_rate_phase2=None, year_type='FY'):
-    """Render Safeguard Mechanism tab
+                         year_type='FY'):
+    """Render Safeguard Mechanism tab.
 
     NOTE: Safeguard Mechanism operates on Financial Year (July-June) per legislation.
-    The year_type parameter is accepted for interface compatibility but ALWAYS forced to 'FY'.
+    year_type is accepted for interface compatibility but ALWAYS forced to 'FY'.
 
     Args:
-        df: Unified DataFrame from load_all_data()
-        fsei_rom: ROM emission intensity
-        fsei_elec: Electricity generation emission intensity
-        Phase parameters (dates)
+        df: Raw DataFrame from load_all_data() (for source download tables)
+        precomputed: PrecomputedData from calc_precompute
+        fsei_rom, fsei_elec: FSEI constants
         carbon_credit_price: SMC market price (initial year)
         credit_escalation: Annual credit price escalation rate (decimal)
-        credit_start_date: First date credits can be earned
-        decline_rate_phase2: Optional Phase 2 decline rate override
-        year_type: Ignored - always uses 'FY' per Safeguard legislation
+        end_*_date: Phase boundary dates
+        year_type: Ignored \u2014 always uses 'FY' per Safeguard legislation
     """
     # Safeguard Mechanism operates on Financial Year per legislation
     year_type = 'FY'
 
     grid_connected_date = DEFAULT_GRID_CONNECTION_DATE
-    credit_start_fy = date_to_fy(credit_start_date)
+    credit_start_fy = date_to_fy(CREDIT_START_DATE)
 
     st.subheader("Safeguard Mechanism Analysis")
-    st.caption(f"FSEI: ROM {fsei_rom:.4f} tCO2-e/t | Elec {fsei_elec:.4f} tCO2-e/MWh | Baseline declining {DECLINE_RATE_PHASE1*100:.1f}% p.a. (FY{DECLINE_PHASE1_START}–FY{DECLINE_PHASE2_END})")
+    st.caption(f"FSEI: ROM {fsei_rom:.4f} tCO2-e/t | Elec {fsei_elec:.4f} tCO2-e/MWh | Baseline declining {DECLINE_RATE_PHASE1*100:.1f}% p.a. (FY{DECLINE_PHASE1_START}\u2013FY{DECLINE_PHASE2_END})")
 
     display_year = st.session_state.get('display_year', 2025)
 
-    monthly = build_projection(
-        df,
-        end_mining_date=end_mining_date,
-        end_processing_date=end_processing_date,
-        end_rehabilitation_date=end_rehabilitation_date,
-        fsei_rom=fsei_rom,
-        fsei_elec=fsei_elec,
-        credit_start_date=credit_start_date,
-        start_date=start_date,
-        end_date=end_date,
-        decline_rate_phase2=decline_rate_phase2
+    # ── Build projection from pre-computed data (lightweight \u2014 no raw data) ──
+    projection = build_safeguard_projection(
+        precomputed, year_type,
+        credit_start_fy, carbon_credit_price, credit_escalation
     )
 
-    # Build NGA factor map — used by emissions calc and source download table
-    # Only covers actual FY years present in df; projection years use closest available NGA year
-    nga_by_year = NGAFactorsByYear(".")
-    unique_fy = df["FY"].unique() if df is not None and "FY" in df.columns else []
-    year_factor_map = build_year_factor_map(nga_by_year, unique_fy, state="QLD") if len(unique_fy) > 0 else {}
+    display_safeguard_single(
+        projection, display_year, carbon_credit_price, credit_escalation,
+        credit_start_fy, fsei_rom, fsei_elec,
+        df=df, year_type=year_type,
+        grid_connected_date=grid_connected_date,
+        end_mining_date=end_mining_date,
+        end_processing_date=end_processing_date,
+        end_rehabilitation_date=end_rehabilitation_date
+    )
 
-    # Aggregate monthly -> annual
-    projection = prepare_annual_for_safeguard(monthly, year_type=year_type)
-
-    # Load and apply SMC registry transactions (sales, surrenders, corrections)
-    smc_txns = load_smc_transactions()
-    if not smc_txns.empty:
-        projection = apply_smc_transactions(projection, smc_txns)
-
-    # Apply credit value escalation
-    projection = smc_credit_value_analysis(projection, credit_start_fy, carbon_credit_price, credit_escalation)
-
-    display_safeguard_single(projection, display_year, carbon_credit_price, credit_escalation, credit_start_fy, fsei_rom, fsei_elec, df=df, year_type=year_type, grid_connected_date=grid_connected_date, end_mining_date=end_mining_date, end_processing_date=end_processing_date, end_rehabilitation_date=end_rehabilitation_date)
-
-    # Source data download — validation and NGER filing support
-    if df is not None and year_factor_map:
-        render_safeguard_source_download(df, year_factor_map)
+    # Source data download \u2014 uses pre-computed tables
+    if df is not None and precomputed.year_factor_map:
+        render_safeguard_source_download(df, precomputed)
 
     # Data Table
     with st.expander("Safeguard Data Table", expanded=False):
@@ -192,7 +106,6 @@ def render_safeguard_tab(df, fsei_rom, fsei_elec,
         cols = [c for c in cols if c in projection.columns]
         display_df = projection[cols].copy()
 
-        # Format numbers
         display_df['ROM_Mt'] = display_df['ROM_Mt'].apply(lambda x: f"{x:.2f}")
         display_df['Scope1'] = display_df['Scope1'].apply(lambda x: f"{x:,.0f}")
         display_df.rename(columns={'Baseline': 'Target'}, inplace=True)
@@ -647,7 +560,7 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
                 unsafe_allow_html=True
             )
 
-def render_safeguard_source_download(df, year_factor_map):
+def render_safeguard_source_download(df, precomputed):
     """Render Safeguard source data download table.
 
     Provides a detailed annual breakdown of all consumable energy line items
@@ -660,11 +573,13 @@ def render_safeguard_source_download(df, year_factor_map):
         year_factor_map: Dict from build_year_factor_map() — the exact NGA
                          factor values used in the emissions calculation
     """
-    from calc_emissions import build_safeguard_source_table, build_safeguard_production_table
+    # Source and production tables from precomputed data
+
+    year_factor_map = precomputed.year_factor_map
 
     with st.expander("Source Data — Validation & NGER Filing", expanded=False):
 
-        source_df = build_safeguard_source_table(df, year_factor_map)
+        source_df = precomputed.safeguard_source
 
         if source_df.empty:
             st.warning("No consumable energy data available for download.")
@@ -675,11 +590,16 @@ def render_safeguard_source_download(df, year_factor_map):
         # --- Display table ---
         # Round for display while keeping CSV download at full precision
         display_fmt = display_df.copy()
-        display_fmt['Quantity'] = display_fmt['Quantity'].round(3)
+        # Upcast float32 -> float64 before rounding (float32 round artefacts)
+        for _c in ['Quantity', 'EF_Scope1_kgCO2e_per_unit', 'Energy_GJ_per_unit',
+                    'Scope1_tCO2e', 'Energy_GJ']:
+            if _c in display_fmt.columns:
+                display_fmt[_c] = display_fmt[_c].astype('float64')
+        display_fmt['Quantity'] = display_fmt['Quantity'].round(1)
         display_fmt['EF_Scope1_kgCO2e_per_unit'] = display_fmt['EF_Scope1_kgCO2e_per_unit'].round(4)
         display_fmt['Energy_GJ_per_unit'] = display_fmt['Energy_GJ_per_unit'].round(4)
-        display_fmt['Scope1_tCO2e'] = display_fmt['Scope1_tCO2e'].round(3)
-        display_fmt['Energy_GJ'] = display_fmt['Energy_GJ'].round(2)
+        display_fmt['Scope1_tCO2e'] = display_fmt['Scope1_tCO2e'].round(1)
+        display_fmt['Energy_GJ'] = display_fmt['Energy_GJ'].round(1)
 
         # Friendly column labels for display
         display_fmt = display_fmt.rename(columns={
@@ -721,7 +641,7 @@ def render_safeguard_source_download(df, year_factor_map):
 
 
         # --- Physical quantities for FSEI target verification ---
-        prod_tables = build_safeguard_production_table(df)
+        prod_tables = {'ore': precomputed.safeguard_ore, 'electricity': precomputed.safeguard_electricity}
 
         def _render_prod_section(label, table_df, qty_label, dl_filename, dl_key):
             st.markdown("---")
@@ -733,7 +653,7 @@ def render_safeguard_source_download(df, year_factor_map):
                 'FY': 'FY', 'DataSet': 'Dataset', 'Description': 'Description',
                 'CostCentre': 'Cost Centre', 'UOM': 'UOM', 'Quantity': qty_label,
             }).copy()
-            fmt[qty_label] = fmt[qty_label].round(0)
+            fmt[qty_label] = fmt[qty_label].astype('float64').round(0)
             st.dataframe(fmt, hide_index=True, width='stretch')
             st.download_button(
                 label=f"Download {label.split('—')[0].strip().lower()} data",
@@ -752,103 +672,10 @@ def render_safeguard_source_download(df, year_factor_map):
             dl_key="dl_rom_ore",
         )
 
-        # --- Electricity table enriched with NGA factors and tCO2-e ---
-        st.markdown("---")
-        st.markdown("**Electricity — kWh by cost centre incl. Residential (FSEI electricity variable)**")
-        elec_df = prod_tables['electricity']
-        if elec_df.empty:
-            st.info("No electricity data available.")
-        else:
-            elec_enriched = elec_df.copy()
-
-            # Extract FY number for factor lookup
-            elec_enriched['_fy_num'] = elec_enriched['FY'].astype(int) if elec_enriched['FY'].dtype != object else \
-                elec_enriched['FY'].str.replace(r'^[A-Z]+', '', regex=True).astype(int)
-
-            # Add NGA Year, EF, Energy, tCO2-e per row
-            nga_years, ef_s2, ef_s3, energy_gj_unit, scope2, scope3, energy_gj = [], [], [], [], [], [], []
-            for _, row in elec_enriched.iterrows():
-                fy = row['_fy_num']
-                desc = str(row['Description'])
-                qty = row['Quantity']
-
-                if fy in year_factor_map:
-                    nga_yr = year_factor_map[fy].get('_nga_year', '')
-                    if desc == 'Grid electricity' and 'Grid electricity' in year_factor_map[fy]:
-                        fac = year_factor_map[fy]['Grid electricity']
-                        nga_years.append(nga_yr)
-                        ef_s2.append(fac['s2'])
-                        ef_s3.append(fac['s3'])
-                        energy_gj_unit.append(fac['energy'])
-                        scope2.append(qty * fac['s2'] / 1000)
-                        scope3.append(qty * fac['s3'] / 1000)
-                        energy_gj.append(qty * fac['energy'])
-                    else:
-                        # Site electricity: kWh have no direct emission factor
-                        # (emissions are in the diesel that generated them)
-                        nga_years.append(nga_yr)
-                        ef_s2.append(0)
-                        ef_s3.append(0)
-                        energy_gj_unit.append(0.0036)  # physical constant
-                        scope2.append(0)
-                        scope3.append(0)
-                        energy_gj.append(qty * 0.0036)
-                else:
-                    nga_years.append('')
-                    ef_s2.append(0)
-                    ef_s3.append(0)
-                    energy_gj_unit.append(0)
-                    scope2.append(0)
-                    scope3.append(0)
-                    energy_gj.append(0)
-
-            elec_enriched['NGA_Year'] = nga_years
-            elec_enriched['EF_S2_kgCO2e_per_kWh'] = ef_s2
-            elec_enriched['EF_S3_kgCO2e_per_kWh'] = ef_s3
-            elec_enriched['Energy_GJ_per_kWh'] = energy_gj_unit
-            elec_enriched['Scope2_tCO2e'] = scope2
-            elec_enriched['Scope3_tCO2e'] = scope3
-            elec_enriched['Energy_GJ'] = energy_gj
-
-            # Drop temp column, round, rename for display
-            elec_enriched = elec_enriched.drop(columns=['_fy_num'])
-            elec_fmt = elec_enriched.copy()
-            elec_fmt['Quantity'] = elec_fmt['Quantity'].round(0)
-            elec_fmt['EF_S2_kgCO2e_per_kWh'] = elec_fmt['EF_S2_kgCO2e_per_kWh'].round(4)
-            elec_fmt['EF_S3_kgCO2e_per_kWh'] = elec_fmt['EF_S3_kgCO2e_per_kWh'].round(4)
-            elec_fmt['Energy_GJ_per_kWh'] = elec_fmt['Energy_GJ_per_kWh'].round(4)
-            elec_fmt['Scope2_tCO2e'] = elec_fmt['Scope2_tCO2e'].round(3)
-            elec_fmt['Scope3_tCO2e'] = elec_fmt['Scope3_tCO2e'].round(3)
-            elec_fmt['Energy_GJ'] = elec_fmt['Energy_GJ'].round(2)
-
-            elec_fmt = elec_fmt.rename(columns={
-                'FY': 'FY',
-                'DataSet': 'Dataset',
-                'Description': 'Description',
-                'CostCentre': 'Cost Centre',
-                'UOM': 'UOM',
-                'Quantity': 'Quantity (kWh)',
-                'NGA_Year': 'NGA Year',
-                'EF_S2_kgCO2e_per_kWh': 'EF S2 (kg/kWh)',
-                'EF_S3_kgCO2e_per_kWh': 'EF S3 (kg/kWh)',
-                'Energy_GJ_per_kWh': 'GJ/kWh',
-                'Scope2_tCO2e': 'Scope 2 tCO2-e',
-                'Scope3_tCO2e': 'Scope 3 tCO2-e',
-                'Energy_GJ': 'Energy GJ',
-            })
-
-            st.dataframe(elec_fmt, hide_index=True, width='stretch')
-            st.download_button(
-                label="Download electricity data",
-                data=elec_fmt.to_csv(index=False),
-                file_name="safeguard_electricity_kwh.csv",
-                mime="text/csv",
-                key="dl_electricity",
-            )
-            st.caption(
-                "Grid electricity: Scope 2 EF from NGA Table 1 (state-specific).  "
-                "Site electricity: no direct EF (emissions captured in diesel fuel source).  "
-                "Scope 2 tCO2-e = kWh \u00d7 EF S2 / 1000.  "
-                "Energy GJ = kWh \u00d7 0.0036 (physical constant).  "
-                "NGA Year = publication year of the NGA factors applied."
-            )
+        _render_prod_section(
+            label="Electricity — kWh by cost centre incl. Residential (FSEI electricity variable)",
+            table_df=prod_tables['electricity'],
+            qty_label="Quantity (kWh)",
+            dl_filename="safeguard_electricity_kwh.csv",
+            dl_key="dl_electricity",
+        )

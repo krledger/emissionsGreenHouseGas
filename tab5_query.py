@@ -1,65 +1,50 @@
 """
 tab5_query.py
-Data Query tab — interactive filtering and SMC reporting
+Data Query tab \u2014 interactive filtering and SMC reporting
+Last updated: 2026-03-10
+
+ARCHITECTURE (v2):
+    Receives PrecomputedData from app.py.
+    Emissions query: filters raw df (user-driven, fast pandas ops).
+    SMC ledger: uses pre-computed projection, no build_projection call.
 """
 
 import streamlit as st
 import pandas as pd
-from calc_emissions import build_year_factor_map
-from loader_nga import NGAFactorsByYear
+from calc_precompute import build_safeguard_projection
+from projections import apply_smc_transactions, smc_credit_value_analysis
 from loader_data import load_smc_transactions
-from projections import (build_projection, apply_smc_transactions,
-                         smc_credit_value_analysis)
 from calc_calendar import date_to_fy
-from config import DEFAULT_GRID_CONNECTION_DATE
+from config import DEFAULT_GRID_CONNECTION_DATE, CREDIT_START_DATE
 import os
 
 
-def render_query_tab(df, fsei_rom=None, fsei_elec=None,
-                     start_date=None, end_date=None,
-                     end_mining_date=None, end_processing_date=None,
-                     end_rehabilitation_date=None,
-                     carbon_credit_price=0, credit_escalation=0,
-                     credit_start_date=None, decline_rate_phase2=None,
-                     monthly=None):
+def render_query_tab(df, precomputed,
+                     carbon_credit_price=0, credit_escalation=0):
     """Render the Data Query tab.
 
     Two sections:
-        1. Emissions Data Query — multi-select filters over full dataset
-        2. SMC Ledger — all years, forecast vs actual vs combined
+        1. Emissions Data Query \u2014 multi-select filters over full dataset
+        2. SMC Ledger \u2014 all years, forecast vs actual vs combined
+
+    Args:
+        df: Raw DataFrame from load_all_data()
+        precomputed: PrecomputedData from calc_precompute
+        carbon_credit_price: SMC market price
+        credit_escalation: Annual price escalation rate
     """
 
-    # NGA factor map (shared by both sections)
-    nga_folder = os.path.dirname(os.path.abspath(__file__))
-    if not os.path.exists(os.path.join(nga_folder, 'nga_factors.csv')):
-        nga_folder = '/mnt/project'
-    try:
-        nga_by_year = NGAFactorsByYear(nga_folder)
-    except FileNotFoundError:
-        nga_by_year = None
-
-    unique_fy = sorted(df['FY'].unique()) if df is not None else []
-    year_factor_map = {}
-    if nga_by_year and len(unique_fy) > 0:
-        try:
-            year_factor_map = build_year_factor_map(nga_by_year, unique_fy, state='QLD')
-        except Exception as e:
-            st.warning(f"Could not build NGA factor map: {e}")
-
-    _render_emissions_query(df, year_factor_map)
+    _render_emissions_query(df, precomputed.year_factor_map)
 
     st.markdown("---")
 
-    _render_smc_ledger(df, fsei_rom, fsei_elec, start_date, end_date,
-                       end_mining_date, end_processing_date,
-                       end_rehabilitation_date, carbon_credit_price,
-                       credit_escalation, credit_start_date,
-                       decline_rate_phase2, monthly=monthly)
+    _render_smc_ledger(precomputed, carbon_credit_price, credit_escalation)
 
 
 # =====================================================================
 # SECTION 1: EMISSIONS DATA QUERY
 # =====================================================================
+
 
 def _render_emissions_query(df, year_factor_map):
     """Emissions data with multi-select filters and NGA enrichment."""
@@ -70,6 +55,15 @@ def _render_emissions_query(df, year_factor_map):
     if df is None or df.empty:
         st.warning("No data loaded.")
         return
+
+    # --- Dataset and resolution ---
+    col_ds, col_res = st.columns(2)
+    with col_ds:
+        dataset_mode = st.radio("Dataset", ["Combined", "Actual", "Budget"],
+                                horizontal=True, key="q_dataset_mode")
+    with col_res:
+        resolution = st.radio("Resolution", ["Annual", "Monthly"],
+                              horizontal=True, key="q_resolution")
 
     # --- Date range: year + month dropdowns ---
     all_years = sorted(df['Year'].unique())
@@ -92,10 +86,22 @@ def _render_emissions_query(df, year_factor_map):
                                   format_func=lambda m: month_names[m],
                                   index=11, key="q_end_mo")
 
+    # --- Apply dataset filter ---
+    if dataset_mode == 'Combined':
+        # Actuals take precedence; budget fills gaps per (Date, Description)
+        actuals = df[df['DataSet'] == 'Actual'].copy()
+        budget = df[df['DataSet'] == 'Budget'].copy()
+        actual_keys = set(zip(actuals['Date'], actuals['Description']))
+        budget_fill = budget[
+            ~budget.apply(lambda r: (r['Date'], r['Description']) in actual_keys, axis=1)
+        ]
+        pool = pd.concat([actuals, budget_fill], ignore_index=True)
+        pool['DataSet'] = pool['DataSet'].astype(str)  # drop categorical for mixed labels
+    else:
+        pool = df[df['DataSet'] == dataset_mode].copy()
+
     # --- Cascading multi-select filters ---
-    # Each filter narrows the pool for subsequent filters.
     # Date range applied first, then filters cascade top-to-bottom.
-    pool = df.copy()
     pool = pool[
         ((pool['Year'] > start_year) |
          ((pool['Year'] == start_year) & (pool['Month'] >= start_month))) &
@@ -103,26 +109,15 @@ def _render_emissions_query(df, year_factor_map):
          ((pool['Year'] == end_year) & (pool['Month'] <= end_month)))
     ]
 
-    # Dataset defaults to actuals-containing datasets
-    all_datasets = sorted(pool['DataSet'].dropna().unique().tolist())
-    actuals = [d for d in all_datasets if 'actual' in d.lower()]
-    default_datasets = actuals if actuals else all_datasets
-
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     with col1:
-        sel_datasets = st.multiselect("Dataset", all_datasets,
-                                       default=default_datasets, key="q_dataset")
-    if sel_datasets:
-        pool = pool[pool['DataSet'].isin(sel_datasets)]
-
-    with col2:
         sel_descriptions = st.multiselect("Description",
                                            sorted(pool['Description'].dropna().unique().tolist()),
                                            key="q_desc")
     if sel_descriptions:
         pool = pool[pool['Description'].isin(sel_descriptions)]
 
-    with col3:
+    with col2:
         sel_departments = st.multiselect("Department",
                                           sorted(pool['Department'].dropna().unique().tolist()),
                                           key="q_dept")
@@ -151,10 +146,22 @@ def _render_emissions_query(df, year_factor_map):
         st.info("No data matches the selected filters.")
         return
 
-    # --- Aggregate to FY ---
-    group_cols = ['FY', 'DataSet', 'Description', 'Department', 'CostCentre',
-                  'NGAFuel', 'UOM', 'State']
-    group_cols = [c for c in group_cols if c in filtered.columns]
+    # --- Aggregate ---
+    # Monthly: group by Year, Month and all category columns
+    # Annual: group by FY and all category columns (NGER standard)
+    category_cols = ['Description', 'Department', 'CostCentre',
+                     'NGAFuel', 'UOM', 'State']
+    # Include DataSet in groupby only when showing a single dataset
+    # Combined mode merges actuals + budget fill, so splitting by DataSet
+    # would undo the merge
+    if dataset_mode != 'Combined':
+        category_cols = ['DataSet'] + category_cols
+    category_cols = [c for c in category_cols if c in filtered.columns]
+
+    if resolution == 'Monthly':
+        group_cols = ['Year', 'Month'] + category_cols
+    else:
+        group_cols = ['FY'] + category_cols
 
     agg_dict = {
         'Quantity': ('Quantity', 'sum'),
@@ -167,11 +174,20 @@ def _render_emissions_query(df, year_factor_map):
 
     agg = filtered.groupby(group_cols, observed=True, dropna=False).agg(**agg_dict).reset_index()
 
+    # For NGA factor lookup we need an FY reference regardless of resolution
+    if resolution == 'Monthly':
+        # Derive FY from Year+Month for factor lookup (July+ = next FY)
+        agg['_fy_lookup'] = agg.apply(
+            lambda r: int(r['Year']) + 1 if int(r['Month']) >= 7 else int(r['Year']), axis=1
+        )
+    else:
+        agg['_fy_lookup'] = agg['FY'].astype(int)
+
     # --- Enrich with NGA factors ---
     ef_s1, ef_s2, ef_s3, ef_energy, nga_years = [], [], [], [], []
 
     for _, row in agg.iterrows():
-        fy = int(row['FY']) if str(row['FY']).isdigit() else int(str(row['FY']).replace('FY', ''))
+        fy = int(row['_fy_lookup'])
         nga_fuel = str(row.get('NGAFuel', ''))
         desc = str(row.get('Description', ''))
         yf_all = year_factor_map.get(fy, {})
@@ -211,14 +227,25 @@ def _render_emissions_query(df, year_factor_map):
     agg['Energy_per_unit'] = ef_energy
     agg['Total_tCO2e'] = agg['Scope1_tCO2e'] + agg['Scope2_tCO2e'] + agg['Scope3_tCO2e']
 
-    col_order = [
-        'FY', 'DataSet', 'Description', 'Department', 'CostCentre',
-        'NGAFuel', 'UOM', 'State', 'NGA_Year',
-        'Quantity', 'EF_S1_kgCO2e', 'EF_S2_kgCO2e', 'EF_S3_kgCO2e', 'Energy_per_unit',
-        'Scope1_tCO2e', 'Scope2_tCO2e', 'Scope3_tCO2e', 'Total_tCO2e', 'Energy_GJ',
-    ]
-    col_order = [c for c in col_order if c in agg.columns]
-    agg = agg[col_order].sort_values(['FY', 'DataSet', 'Description']).reset_index(drop=True)
+    # Drop the temp lookup column
+    agg = agg.drop(columns=['_fy_lookup'])
+
+    # --- Column ordering ---
+    if resolution == 'Monthly':
+        lead_cols = ['Year', 'Month']
+        sort_cols = ['Year', 'Month', 'Description']
+    else:
+        lead_cols = ['FY']
+        sort_cols = ['FY', 'Description']
+
+    trail_cols = ['DataSet', 'Description', 'Department', 'CostCentre',
+                  'NGAFuel', 'UOM', 'State', 'NGA_Year',
+                  'Quantity', 'EF_S1_kgCO2e', 'EF_S2_kgCO2e', 'EF_S3_kgCO2e', 'Energy_per_unit',
+                  'Scope1_tCO2e', 'Scope2_tCO2e', 'Scope3_tCO2e', 'Total_tCO2e', 'Energy_GJ']
+    col_order = lead_cols + [c for c in trail_cols if c in agg.columns]
+    agg = agg[col_order].sort_values(
+        [c for c in sort_cols if c in agg.columns]
+    ).reset_index(drop=True)
 
     # Summary metrics
     c1, c2, c3, c4, c5 = st.columns(5)
@@ -229,7 +256,7 @@ def _render_emissions_query(df, year_factor_map):
     c5.metric("Total", f"{agg['Total_tCO2e'].sum():,.0f} t")
 
     # Format and display
-    display = _format_emissions_table(agg)
+    display = _format_emissions_table(agg, resolution)
     st.dataframe(display, hide_index=True, width='stretch', height=600)
 
     st.download_button(
@@ -241,9 +268,18 @@ def _render_emissions_query(df, year_factor_map):
     )
 
 
-def _format_emissions_table(agg):
+
+
+def _format_emissions_table(agg, resolution='Annual'):
     """Round and rename columns for display. Values stay numeric for clean Excel import."""
     display = agg.copy()
+
+    # Monthly resolution: convert month number to short name
+    if resolution == 'Monthly' and 'Month' in display.columns:
+        import calendar
+        display['Month'] = display['Month'].apply(
+            lambda m: calendar.month_abbr[int(m)] if pd.notna(m) and 1 <= int(m) <= 12 else ''
+        )
     round_map = {
         'Quantity': 1, 'EF_S1_kgCO2e': 4, 'EF_S2_kgCO2e': 4,
         'EF_S3_kgCO2e': 4, 'Energy_per_unit': 4,
@@ -252,7 +288,8 @@ def _format_emissions_table(agg):
     }
     for c, d in round_map.items():
         if c in display.columns:
-            display[c] = display[c].round(d)
+            # Upcast float32 -> float64 before rounding (float32 round artefacts)
+            display[c] = display[c].astype('float64').round(d)
 
     return display.rename(columns={
         'DataSet': 'Dataset', 'CostCentre': 'Cost Centre',
@@ -269,54 +306,42 @@ def _format_emissions_table(agg):
 # SECTION 2: SMC LEDGER
 # =====================================================================
 
-def _render_smc_ledger(df, fsei_rom, fsei_elec, start_date, end_date,
-                       end_mining_date, end_processing_date,
-                       end_rehabilitation_date, carbon_credit_price,
-                       credit_escalation, credit_start_date,
-                       decline_rate_phase2, monthly=None):
-    """SMC ledger: forecast, actual transactions, and combined view."""
+
+
+# =====================================================================
+# SECTION 2: SMC LEDGER
+# =====================================================================
+
+def _render_smc_ledger(precomputed, carbon_credit_price, credit_escalation):
+    """SMC ledger: forecast, actual transactions and combined view.
+
+    Uses pre-computed annual projection \u2014 no build_projection call.
+    """
 
     st.caption("Safeguard Mechanism Credits \u2014 forecast, actual transactions and combined position.")
 
-    if df is None or credit_start_date is None:
-        st.info("Insufficient data for SMC ledger. Check sidebar parameters.")
-        return
-
-    credit_start_fy = date_to_fy(credit_start_date)
+    credit_start_fy = date_to_fy(CREDIT_START_DATE)
 
     view = st.radio("View", ["Combined", "Forecast Only", "Transactions Only"],
                      horizontal=True, key="smc_view")
 
-    # --- Use pre-built monthly if available, otherwise build ---
-    if monthly is None:
-        monthly = build_projection(
-            df,
-            end_mining_date=end_mining_date,
-            end_processing_date=end_processing_date,
-            end_rehabilitation_date=end_rehabilitation_date,
-            fsei_rom=fsei_rom, fsei_elec=fsei_elec,
-            credit_start_date=credit_start_date,
-            start_date=start_date, end_date=end_date,
-            decline_rate_phase2=decline_rate_phase2
-        )
-
-    from tab2_safeguard import prepare_annual_for_safeguard
-    forecast = prepare_annual_for_safeguard(monthly, year_type='FY')
+    # \u2500\u2500 Pre-computed annual FY projection \u2500\u2500
+    annual = precomputed.annual_fy.copy()
 
     # Raw forecast (before transactions)
-    forecast_raw = forecast.copy()
-    if 'SMC_Monthly' in forecast_raw.columns:
+    forecast_raw = annual.copy()
+    if 'SMC_Monthly' in forecast_raw.columns and 'SMC_Annual' not in forecast_raw.columns:
         forecast_raw['SMC_Annual'] = forecast_raw['SMC_Monthly']
     forecast_raw['SMC_Cumulative'] = forecast_raw['SMC_Annual'].cumsum()
     forecast_raw = smc_credit_value_analysis(
         forecast_raw, credit_start_fy, carbon_credit_price, credit_escalation)
 
-    # --- Load transactions ---
-    smc_txns = load_smc_transactions()
+    # \u2500\u2500 Load transactions \u2500\u2500
+    smc_txns = precomputed.smc_transactions
 
-    # --- Combined (forecast + transactions) ---
-    combined = forecast.copy()
-    if 'SMC_Monthly' in combined.columns:
+    # \u2500\u2500 Combined (forecast + transactions) \u2500\u2500
+    combined = annual.copy()
+    if 'SMC_Monthly' in combined.columns and 'SMC_Annual' not in combined.columns:
         combined['SMC_Annual'] = combined['SMC_Monthly']
     if not smc_txns.empty:
         combined = apply_smc_transactions(combined, smc_txns)

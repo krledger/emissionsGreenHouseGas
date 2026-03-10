@@ -1,75 +1,49 @@
 """
 tab3_carbon_tax.py
-Carbon Tax Analysis tab — Scope 1 + Scope 2 pass-through
-Last updated: 2026-03-09
+Carbon Tax Analysis tab \u2014 Scope 1 + Scope 2 pass-through
+Last updated: 2026-03-10
+
+ARCHITECTURE (v2):
+    Receives PrecomputedData from app.py.
+    No build_projection, no NGA loading.
+    Carbon tax analysis runs on pre-aggregated annual data.
 
 Chart: Waterfall with S1/S2 stacked within each floating bar.
 Uses barmode='overlay' with explicit base offsets so bars occupy the
 same x position (not side-by-side).
 """
 
-import os
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from projections import build_projection, carbon_tax_analysis
-from calc_calendar import date_to_fy, aggregate_by_year_type
-from loader_nga import NGAFactorsByYear
+from calc_precompute import build_carbon_tax_projection
+from calc_calendar import date_to_fy
 from config import DEFAULT_GRID_CONNECTION_DATE, DEFAULT_EF2_DECLINE_RATE
 
 
-def prepare_annual_for_tax(monthly, year_type='FY'):
-    """Aggregate monthly data to annual and prepare for tax analysis display"""
-    agg_dict = {
-        'Scope1_tCO2e': 'sum',
-        'Scope2_tCO2e': 'sum',
-        'Scope3_tCO2e': 'sum',
-        'ROM_t': 'sum',
-        'Grid_Electricity_kWh': 'sum',
-        'Site_Electricity_kWh': 'sum',
-    }
-
-    if 'Phase' in monthly.columns:
-        agg_dict['Phase'] = 'last'
-    if 'Baseline' in monthly.columns:
-        agg_dict['Baseline'] = 'sum'
-    if 'SMC_Monthly' in monthly.columns:
-        agg_dict['SMC_Monthly'] = 'sum'
-    if 'SMC_Cumulative' in monthly.columns:
-        agg_dict['SMC_Cumulative'] = 'last'
-
-    annual = aggregate_by_year_type(monthly, year_type, agg_dict=agg_dict)
-    annual['FY'] = annual['Year']
-    annual['Scope1'] = annual['Scope1_tCO2e']
-    annual['Scope2'] = annual['Scope2_tCO2e']
-    annual['Scope3'] = annual['Scope3_tCO2e']
-    annual['Total'] = annual['Scope1'] + annual['Scope2'] + annual['Scope3']
-    annual['Grid_Electricity_MWh'] = annual['Grid_Electricity_kWh'] / 1000.0
-    annual['ROM_Mt'] = annual['ROM_t'] / 1_000_000
-    if 'Phase' not in annual.columns:
-        annual['Phase'] = 'Unknown'
-    return annual
-
-
-def render_carbon_tax_tab(df, fsei_rom, fsei_elec,
-                          start_date, end_date,
-                          end_mining_date, end_processing_date, end_rehabilitation_date,
-                          carbon_credit_price, credit_escalation,
-                          tax_start_date, tax_rate, tax_escalation,
-                          credit_start_date,
-                          decline_rate_phase2, year_type='FY',
-                          include_scope2=False):
-    """Render Carbon Tax Analysis tab
+def render_carbon_tax_tab(precomputed,
+                          tax_start_fy, tax_rate, tax_escalation,
+                          include_scope2,
+                          year_type='FY',
+                          end_mining_date=None, end_processing_date=None,
+                          end_rehabilitation_date=None):
+    """Render Carbon Tax Analysis tab.
 
     Args:
-        include_scope2: If True, includes Scope 2 electricity pass-through
-                        (sensitivity case).  If False, Scope 1 only (base case).
+        precomputed: PrecomputedData from calc_precompute
+        tax_start_fy: First FY tax applies
+        tax_rate: Initial rate $/tCO2-e
+        tax_escalation: Annual escalation (decimal)
+        include_scope2: Include Scope 2 electricity pass-through (sensitivity)
+        year_type: 'FY' or 'CY'
+        end_*_date: Phase boundary dates for chart markers
     """
-    tax_start_fy = date_to_fy(tax_start_date)
+    from datetime import datetime
+    tax_start_date = datetime(tax_start_fy - 1, 7, 1)
 
     st.subheader("Carbon Tax Scenario Analysis")
-    scope_label = "Scope 1 (direct) + Scope 2 (electricity pass-through)" if include_scope2 else "Scope 1 (direct emissions) only — base case"
+    scope_label = "Scope 1 (direct) + Scope 2 (electricity pass-through)" if include_scope2 else "Scope 1 (direct emissions) only \u2014 base case"
     st.caption(
         f"Tax starts FY{tax_start_fy} ({tax_start_date.strftime('%d %b %Y')}) "
         f"at ${tax_rate:.2f}/tCO\u2082-e, escalating {tax_escalation*100:.1f}% p.a.  "
@@ -78,36 +52,11 @@ def render_carbon_tax_tab(df, fsei_rom, fsei_elec,
 
     display_year = st.session_state.get('display_year', 2025)
 
-    # Load NGA factors for Scope 2 electricity emission factor lookup
-    nga_folder = os.path.dirname(os.path.abspath(__file__))
-    if not os.path.exists(os.path.join(nga_folder, 'nga_factors.csv')):
-        nga_folder = '/mnt/project'
-    try:
-        nga_by_year = NGAFactorsByYear(nga_folder)
-    except FileNotFoundError:
-        nga_by_year = None
-        st.warning("nga_factors.csv not found — Scope 2 tax will not be calculated.")
-
-    monthly = build_projection(
-        df,
-        end_mining_date=end_mining_date,
-        end_processing_date=end_processing_date,
-        end_rehabilitation_date=end_rehabilitation_date,
-        fsei_rom=fsei_rom,
-        fsei_elec=fsei_elec,
-        credit_start_date=credit_start_date,
-        start_date=start_date,
-        end_date=end_date,
-        decline_rate_phase2=decline_rate_phase2
-    )
-
-    projection = prepare_annual_for_tax(monthly, year_type)
-    # Base case: Scope 1 only (nga_by_year=None suppresses Scope 2)
-    # Sensitivity case: include Scope 2 electricity pass-through
-    carbon_tax = carbon_tax_analysis(
-        projection, tax_start_fy, tax_rate, tax_escalation,
-        nga_by_year=nga_by_year if include_scope2 else None,
-        state='QLD',
+    # \u2500\u2500 Build carbon tax analysis from pre-computed data (lightweight) \u2500\u2500
+    carbon_tax = build_carbon_tax_projection(
+        precomputed, year_type,
+        tax_start_fy, tax_rate, tax_escalation,
+        include_scope2=include_scope2,
         ef2_decline_rate=DEFAULT_EF2_DECLINE_RATE
     )
 
@@ -139,19 +88,15 @@ def render_carbon_tax_tab(df, fsei_rom, fsei_elec,
                 if col in display_df.columns:
                     display_df[col] = display_df[col].apply(fn)
 
-            rename_map = {
-                'Scope1': 'Scope 1 (tCO\u2082-e)',
-                'Grid_MWh': 'Grid Elec (MWh)',
-                'NGA_EF2': 'NGA EF\u2082 (t/MWh)',
-                'Tax_Rate': 'Rate ($/t)',
-                'S2_Cost_per_MWh': 'S2 $/MWh',
-                'Tax_S1_Annual': 'S1 Tax ($)',
-                'Tax_S2_Annual': 'S2 Tax ($)',
-                'Tax_Annual': 'Total Tax ($)',
-                'Tax_Cumulative': 'Cumulative ($)',
-            }
-            display_df = display_df.rename(columns=rename_map)
-            st.dataframe(display_df, hide_index=True, width='stretch', height=400)
+            display_df = display_df.rename(columns={
+                'FY': 'FY', 'Scope1': 'Scope 1 tCO2-e',
+                'Grid_MWh': 'Grid MWh', 'NGA_EF2': 'NGA EF2 (t/MWh)',
+                'Tax_Rate': 'Tax Rate', 'S2_Cost_per_MWh': 'S2 $/MWh',
+                'Tax_S1_Annual': 'S1 Tax $', 'Tax_S2_Annual': 'S2 Tax $',
+                'Tax_Annual': 'Annual Tax $', 'Tax_Cumulative': 'Cumulative Tax $',
+            })
+
+            st.dataframe(display_df, hide_index=True, width="stretch", height=400)
         else:
             st.info(f"Tax period starts FY{tax_start_fy}")
 
