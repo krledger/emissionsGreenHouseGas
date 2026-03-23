@@ -53,7 +53,7 @@ def render_gri_tab(df, precomputed, display_year, year_type):
         _render_coverage_summary()
 
     # === Climate Disclosures (14.1) ===
-    with st.expander(f"14.1 Climate Change Disclosures ({year_label})", expanded=True):
+    with st.expander(f"14.1 Climate Change Disclosures ({year_label})", expanded=False):
         climate = has_value[~has_value['Section'].isin(
             ['Reagents and consumables', 'Wear items']
         )]
@@ -75,7 +75,7 @@ def render_gri_tab(df, precomputed, display_year, year_type):
             st.info(f"No climate disclosure data for {year_label}.")
 
     # === GRI Consumables ===
-    with st.expander(f"Reagents and Consumables ({year_label})", expanded=True):
+    with st.expander(f"Reagents and Consumables ({year_label})", expanded=False):
         consumables = has_value[has_value['Section'].isin(
             ['Reagents and consumables', 'Wear items']
         )]
