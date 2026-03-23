@@ -1,7 +1,7 @@
 """
 app.py
 Ravenswood Gold Mine - Emissions Tracking Dashboard
-Last Updated: 2026-03-10
+Last Updated: 2026-03-23
 
 ARCHITECTURE (v2 — precompute on load):
     1. load_all_data()          → raw monthly DataFrame (cached)
@@ -48,6 +48,7 @@ from tab2_safeguard import render_safeguard_tab
 from tab3_carbon_tax import render_carbon_tax_tab
 from tab4_nger import render_nger_tab
 from tab5_query import render_query_tab
+from tab6_gri import render_gri_tab
 
 # PAGE CONFIG
 st.set_page_config(
@@ -336,9 +337,10 @@ with st.sidebar:
 # TABS — receive pre-computed data, filter and render only
 # ═══════════════════════════════════════════════════════════════════════
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Total GHG Emissions",
     "Safeguard Mechanism",
+    "GRI 14 Reporting",
     "Carbon Tax Analysis",
     "NGER Factors",
     "Data Query"
@@ -363,6 +365,9 @@ with tab2:
     )
 
 with tab3:
+    render_gri_tab(df, precomputed, display_year, selected_year_type)
+
+with tab4:
     render_carbon_tax_tab(
         precomputed,
         tax_start_fy, tax_rate, tax_escalation,
@@ -371,10 +376,10 @@ with tab3:
         end_mining_date, end_processing_date, end_rehabilitation_date,
     )
 
-with tab4:
+with tab5:
     render_nger_tab()
 
-with tab5:
+with tab6:
     render_query_tab(
         df, precomputed,
         carbon_credit_price=carbon_credit_price,

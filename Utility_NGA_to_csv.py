@@ -83,9 +83,9 @@ def _extract_scope1(xl, year):
     Columns:
         0: Fuel Type (Solid/Liquid/Gaseous)
         1: Fuel Combusted (name)
-        2: CO2 (kgCO2-e/GJ)
-        3: CH4 (kgCO2-e/GJ)
-        4: N2O (kgCO2-e/GJ)
+        2: CO2 (kgCO2-e/GJ)  → extracted as EF_CO2_kgCO2e_per_GJ
+        3: CH4 (kgCO2-e/GJ)  → extracted as EF_CH4_kgCO2e_per_GJ
+        4: N2O (kgCO2-e/GJ)  → extracted as EF_N2O_kgCO2e_per_GJ
         5: Combined kgCO2-e/GJ
         6: Energy content value
         7: Energy content unit (GJ/kL, GJ/t, GJ/m3)
@@ -131,12 +131,20 @@ def _extract_scope1(xl, year):
         if ef_per_unit is None:
             continue
 
+        # Individual gas EFs (kgCO2-e/GJ) for GRI 14 gas-by-gas reporting
+        co2_gj = _num(df.iloc[i, 2])
+        ch4_gj = _num(df.iloc[i, 3])
+        n2o_gj = _num(df.iloc[i, 4])
+
         rows.append({
             'NGA_Year': year,
             'Fuel_Type': fuel_type,
             'Fuel_Name': fuel_name,
             'Scope': 1,
             'EF_kgCO2e_per_GJ': combined_gj,
+            'EF_CO2_kgCO2e_per_GJ': co2_gj,
+            'EF_CH4_kgCO2e_per_GJ': ch4_gj,
+            'EF_N2O_kgCO2e_per_GJ': n2o_gj,
             'Energy_Content': energy_val,
             'Energy_Unit': energy_unit,
             'EF_kgCO2e_per_unit': ef_per_unit,
@@ -202,6 +210,9 @@ def _extract_scope3(xl, year):
             'Fuel_Name': fuel_name,
             'Scope': 3,
             'EF_kgCO2e_per_GJ': ef_per_gj,
+            'EF_CO2_kgCO2e_per_GJ': None,
+            'EF_CH4_kgCO2e_per_GJ': None,
+            'EF_N2O_kgCO2e_per_GJ': None,
             'Energy_Content': energy_val,
             'Energy_Unit': energy_unit,
             'EF_kgCO2e_per_unit': ef_per_unit,
@@ -302,6 +313,9 @@ def _extract_electricity(xl, year, states=None):
                 'Fuel_Name': 'Grid electricity',
                 'Scope': 2,
                 'EF_kgCO2e_per_GJ': None,
+                'EF_CO2_kgCO2e_per_GJ': None,
+                'EF_CH4_kgCO2e_per_GJ': None,
+                'EF_N2O_kgCO2e_per_GJ': None,
                 'Energy_Content': None,
                 'Energy_Unit': '',
                 'EF_kgCO2e_per_unit': s2,
@@ -317,6 +331,9 @@ def _extract_electricity(xl, year, states=None):
                 'Fuel_Name': 'Grid electricity',
                 'Scope': 3,
                 'EF_kgCO2e_per_GJ': None,
+                'EF_CO2_kgCO2e_per_GJ': None,
+                'EF_CH4_kgCO2e_per_GJ': None,
+                'EF_N2O_kgCO2e_per_GJ': None,
                 'Energy_Content': None,
                 'Energy_Unit': '',
                 'EF_kgCO2e_per_unit': s3,
@@ -423,6 +440,31 @@ def validate_output(df):
         (2025, 'Petroleum based greases', 3, '', 698.40, 1.0,
          'Greases S3 kgCO2-e/kL'),
     ]
+
+    # Gas-split validation (Scope 1 only)
+    gas_checks = [
+        (2025, 'Diesel oil', 'EF_CO2_kgCO2e_per_GJ', 69.9, 0.1, 'Diesel CO2 kgCO2-e/GJ'),
+        (2025, 'Diesel oil', 'EF_CH4_kgCO2e_per_GJ', 0.1, 0.01, 'Diesel CH4 kgCO2-e/GJ'),
+        (2025, 'Diesel oil', 'EF_N2O_kgCO2e_per_GJ', 0.2, 0.01, 'Diesel N2O kgCO2-e/GJ'),
+        (2025, 'Liquefied petroleum gas (LPG)', 'EF_CO2_kgCO2e_per_GJ', 59.6, 0.1, 'LPG CO2 kgCO2-e/GJ'),
+    ]
+
+    for year, fuel, col, expected, tol, desc in gas_checks:
+        mask = (df['NGA_Year'] == year) & (df['Fuel_Name'] == fuel) & (df['Scope'] == 1)
+        matches = df[mask]
+        if len(matches) == 0:
+            print(f"    FAIL: {desc} - not found")
+            all_ok = False
+            continue
+        actual = matches.iloc[0].get(col)
+        if actual is None or pd.isna(actual):
+            print(f"    FAIL: {desc} - column {col} is empty")
+            all_ok = False
+        elif abs(actual - expected) <= tol:
+            print(f"    OK:   {desc} = {actual:.4f} (expected {expected:.4f})")
+        else:
+            print(f"    FAIL: {desc} = {actual:.4f} (expected {expected:.4f})")
+            all_ok = False
 
     print("\n  Validation checks:")
     all_ok = True
