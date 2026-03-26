@@ -342,14 +342,14 @@ def build_safeguard_production_table(df):
 
     Two physical quantity datasets:
 
-    1. ROM Ore (CostCentre==ROM, Description contains 'Ore', UOM==t)
+    1. ROM Ore (SubActivity=='Ore ROM', UOM==t)
           All ore grades by beneficiation status (BRW/SARS, HG/MG/LG/VLG).
           Matches the ROM_t variable used in projections.aggregate_to_monthly().
           Subtotal row per FY/DataSet.
 
-    2. Electricity — kWh (UOM==kWh, Description in ['Site electricity', 'Grid electricity'])
-          Site electricity (Description=='Site electricity') feeds Site_MWh in the
-          FSEI formula.  Grid electricity (Description=='Grid electricity') covers
+    2. Electricity — kWh (UOM==kWh, CommonName in ['Site electricity', 'Grid electricity'])
+          Site electricity (CommonName=='Site electricity') feeds Site_MWh in the
+          FSEI formula.  Grid electricity (CommonName=='Grid electricity') covers
           all cost centres including Residential, which is an attributed portion
           of the grid supply and must be included.
           Both are shown in one table for cross-reference.
@@ -376,19 +376,19 @@ def build_safeguard_production_table(df):
         ).reset_index(drop=True)
 
     # --- 1. ROM Ore --- matches projections.py aggregate_to_monthly() ROM filter:
-    #   CostCentre == 'ROM' and Description contains 'Ore'
-    rom_mask = (
-        (df['CostCentre'].astype(str) == 'ROM') &
-        (df['Description'].astype(str).str.contains('Ore', case=False, na=False))
-    )
+    #   SubActivity == 'Ore ROM' (2026-03 CSV restructure)
+    #   Previously matched CostCentre == 'ROM' but actuals now use CostCentre == 'Hauling'
+    #   while budget retains CostCentre == 'ROM'.  SubActivity is the reliable key.
+    rom_mask = (df['SubActivity'].astype(str) == 'Ore ROM')
     ore_df = _aggregate(df[rom_mask].copy())
 
-    # --- 2. Electricity kWh --- matches projections.py GRID_SITE_ELEC_DESCRIPTION
-    #   and GRID_GRID_ELEC_DESCRIPTION constants ('Site electricity', 'Grid electricity')
+    # --- 2. Electricity kWh --- via CommonName (set by lookup_identifiers.py)
+    #   CommonName == 'Site electricity' captures all site generation
+    #   CommonName == 'Grid electricity' captures Grid Power + Residential + Warehouse + Water Delivery
     #   All cost centres included — Residential is an attributed portion of grid supply
     elec_mask = (
         (df['UOM'].astype(str) == 'kWh') &
-        (df['Description'].astype(str).isin(['Site electricity', 'Grid electricity']))
+        (df['CommonName'].astype(str).isin(['Site electricity', 'Grid electricity']))
     )
     elec_df = _aggregate(df[elec_mask].copy())
 

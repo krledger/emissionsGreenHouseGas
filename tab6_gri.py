@@ -52,14 +52,22 @@ def render_gri_tab(df, precomputed, display_year, year_type):
     with st.expander("Coverage Summary", expanded=True):
         _render_coverage_summary()
 
+    # Separate by GRI Topic
+    climate_sections = ['Scope 1 GHG Emissions', 'Scope 2 GHG Emissions',
+                        'Scope 3 GHG Emissions', 'GHG Emissions intensity',
+                        'Energy intensity', 'Carbon credits', 'Energy consumption',
+                        'Production metrics']
+    consumable_sections = ['Reagents and consumables', 'Wear items']
+    waste_sections = ['Waste - rock waste', 'Waste - tailings']
+
     # === Climate Disclosures (14.1) ===
     with st.expander(f"14.1 Climate Change Disclosures ({year_label})", expanded=False):
-        climate = has_value[~has_value['Section'].isin(
-            ['Reagents and consumables', 'Wear items']
-        )]
+        climate = has_value[has_value['Section'].isin(climate_sections)]
         if not climate.empty:
-            display_df = climate[['Section', 'GRI_Reference', 'Description',
-                                  'Unit', 'Value']].copy()
+            display_cols = ['Section', 'GRI_Reference', 'Description', 'Unit', 'Value']
+            if 'Coverage' in climate.columns:
+                display_cols.append('Coverage')
+            display_df = climate[display_cols].copy()
             display_df['Value'] = display_df.apply(_format_value, axis=1)
             display_df = display_df.rename(columns={'Value': year_label})
             st.dataframe(display_df, hide_index=True, width="stretch", height=600)
@@ -76,9 +84,7 @@ def render_gri_tab(df, precomputed, display_year, year_type):
 
     # === GRI Consumables ===
     with st.expander(f"Reagents and Consumables ({year_label})", expanded=False):
-        consumables = has_value[has_value['Section'].isin(
-            ['Reagents and consumables', 'Wear items']
-        )]
+        consumables = has_value[has_value['Section'].isin(consumable_sections)]
         if not consumables.empty:
             display_c = consumables[['Section', 'Description', 'Unit',
                                      'Value']].copy()
@@ -99,13 +105,41 @@ def render_gri_tab(df, precomputed, display_year, year_type):
                 "Run prep_data.py with INV03 source files to populate."
             )
 
+    # === 14.5 Waste (Limited) ===
+    with st.expander(f"14.5 Waste — Limited ({year_label})", expanded=False):
+        waste = has_value[has_value['Section'].isin(waste_sections)]
+        if not waste.empty:
+            st.caption(
+                "⚠ Limited disclosure: covers rock waste and approximate tailings "
+                "from operations data only.  Non-mineral waste streams (hazardous, "
+                "general, recycled) require a separate waste tracking register."
+            )
+            display_w = waste[['Section', 'GRI_Reference', 'Description',
+                               'Unit', 'Value']].copy()
+            display_w['Value'] = display_w.apply(_format_value, axis=1)
+            display_w = display_w.rename(columns={'Value': year_label})
+            st.dataframe(display_w, hide_index=True, width="stretch")
+            csv_waste = waste.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="Download Waste Disclosures (CSV)",
+                data=csv_waste,
+                file_name=f"gri14_waste_{year_label}.csv",
+                mime="text/csv",
+                key="gri14_waste_dl",
+            )
+        else:
+            st.info(f"No waste data available for {year_label}.")
+
     # === Full Data Table ===
     with st.expander(f"Full Disclosure Data ({year_label})", expanded=False):
-        display_full = gri_df[['Section', 'GRI_Reference', 'Description',
-                                'Unit', 'Value', 'Methodology_Note']].copy()
+        display_cols = ['GRI_Topic', 'Section', 'GRI_Reference', 'Description',
+                        'Unit', 'Value', 'Coverage', 'Methodology_Note']
+        # Only include columns that exist
+        display_cols = [c for c in display_cols if c in gri_df.columns]
+        display_full = gri_df[display_cols].copy()
         display_full['Value'] = display_full.apply(_format_value, axis=1)
         display_full = display_full.rename(columns={'Value': year_label})
-        display_full = display_full.sort_values(['Section', 'Description'])
+        display_full = display_full.sort_values(['GRI_Topic', 'Section', 'Description'])
         st.dataframe(display_full, hide_index=True, width="stretch", height=400)
         csv_full = gri_df.to_csv(index=False).encode('utf-8')
         st.download_button(
@@ -176,6 +210,7 @@ def _render_coverage_summary():
 
     st.caption(
         "Auto = populated from emissions model and inventory data.  "
+        "Limited = partial data from operations; remaining items need external sources.  "
         "Collectible = data exists in other systems (NPI, water balance, waste register).  "
         "N/A = not applicable to Ravenswood."
     )

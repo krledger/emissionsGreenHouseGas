@@ -1,7 +1,7 @@
 """
 projections.py
 Build monthly projections from consolidated emissions data
-Last updated: 2026-03-09
+Last updated: 2026-03-26
 
 ARCHITECTURE:
     - Consolidated CSV contains all adjustments pre-baked (ROM ratios, processing
@@ -12,7 +12,9 @@ ARCHITECTURE:
 
 Data flow:
     1. Separate actuals and budget from consolidated CSV
-    2. Merge: actuals take precedence per (Date, Description)
+    2. Merge: actuals take precedence per (Date, MatchKey)
+       MatchKey = SubActivity, constructed by loader_data.py
+       Budget Identifier (Budget|SubActivity|CostCentre) is keyed on same dimension
     3. Calculate emissions from quantities as-is
     4. Aggregate to monthly summary
     5. Calculate safeguard metrics (Section 11 baseline, SMC, exit/opt-in)
@@ -31,6 +33,7 @@ from config import (
     SAFEGUARD_MINIMUM_BASELINE, SAFEGUARD_THRESHOLD,
     GRID_SITE_ELEC_DESCRIPTION, GRID_GRID_ELEC_DESCRIPTION,
     DIESEL_TRANSPORT_COSTCENTRES, DIESEL_TRANSPORT_NGAFUEL,
+    ROM_SUBACTIVITY, SITE_ELEC_COMMONNAME, GRID_ELEC_COMMONNAME,
     DECLINE_RATE_PHASE1, DECLINE_RATE_PHASE2,
     DECLINE_PHASE1_START, DECLINE_PHASE1_END, DECLINE_PHASE2_START, DECLINE_PHASE2_END,
     DEFAULT_GRID_CONNECTION_DATE, DEFAULT_START_DATE,
@@ -88,11 +91,22 @@ def build_projection(df, dataset='Actual',
     print(f"Actuals: {len(actuals)} records")
     print(f"Budget: {len(budget)} records")
 
-    # ---- Step 2: Merge -- actuals take precedence per (Date, Description) ----
-    actual_keys = set(zip(actuals['Date'], actuals['Description']))
+    # ---- Step 2: Merge -- actuals take precedence per (Date, MatchKey) ----
+    # MatchKey (= SubActivity) is the merge dimension constructed by loader_data.py.
+    # It is the same field that the budget Identifier is structured around:
+    #   Budget Identifier = Budget|SubActivity|CostCentre
+    # When actuals exist for a (Date, MatchKey) pair, ALL budget rows for that
+    # pair are excluded — preventing double-counting in the overlap period.
+    merge_col = 'MatchKey' if 'MatchKey' in actuals.columns else 'SubActivity'
+    actual_keys = set(zip(actuals['Date'], actuals[merge_col]))
     budget_fill = budget[
-        ~budget.apply(lambda r: (r['Date'], r['Description']) in actual_keys, axis=1)
+        ~budget.apply(lambda r: (r['Date'], r[merge_col]) in actual_keys, axis=1)
     ].copy()
+
+    # Log Identifier coverage for traceability
+    if 'Identifier' in budget_fill.columns:
+        budget_ids = budget_fill['Identifier'].nunique()
+        print(f"Budget Identifiers in projection: {budget_ids} unique keys")
 
     last_actual_date = actuals['Date'].max()
     print(f"Last actual data: {last_actual_date.strftime('%Y-%m')}")
@@ -160,19 +174,20 @@ def aggregate_to_monthly(monthly):
 
     Extracts ROM tonnes, site/grid electricity, and sums scope emissions.
     """
-    # ROM tonnes: CostCentre == 'ROM' with ore grade descriptions
-    rom_mask = (
-        (monthly['CostCentre'] == 'ROM') &
-        (monthly['Description'].str.contains('Ore', case=False, na=False))
-    )
+    # ROM tonnes: SubActivity == 'Ore ROM' (2026-03 CSV restructure)
+    # Previously matched CostCentre == 'ROM' but actuals now use CostCentre == 'Hauling'
+    # while budget retains CostCentre == 'ROM'.  SubActivity is the reliable key.
+    rom_mask = (monthly['SubActivity'].astype(str) == ROM_SUBACTIVITY)
     rom_data = monthly[rom_mask].groupby('Date')['Quantity'].sum().reset_index()
     rom_data.columns = ['Date', 'ROM_t']
 
-    # Site and grid electricity
-    site_elec = monthly[monthly['Description'] == GRID_SITE_ELEC_DESCRIPTION].groupby('Date')['Quantity'].sum().reset_index()
+    # Site and grid electricity via CommonName (set by lookup_identifiers.py)
+    # CommonName == 'Site electricity' captures all site generation entries
+    # CommonName == 'Grid electricity' captures Grid Power + Residential + Warehouse + Water Delivery
+    site_elec = monthly[monthly['CommonName'].astype(str) == SITE_ELEC_COMMONNAME].groupby('Date')['Quantity'].sum().reset_index()
     site_elec.columns = ['Date', 'Site_Electricity_kWh']
 
-    grid_elec = monthly[monthly['Description'] == GRID_GRID_ELEC_DESCRIPTION].groupby('Date')['Quantity'].sum().reset_index()
+    grid_elec = monthly[monthly['CommonName'].astype(str) == GRID_ELEC_COMMONNAME].groupby('Date')['Quantity'].sum().reset_index()
     grid_elec.columns = ['Date', 'Grid_Electricity_kWh']
 
     # Scope emissions

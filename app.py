@@ -175,11 +175,13 @@ def precompute_cached(_df):
     )
 
 
-# Check if consolidated CSV exists
-csv_path = Path('consolidated_emissions_data.csv')
-if not csv_path.exists():
-    st.error("Missing required file: consolidated_emissions_data.csv")
-    st.info("Please ensure the data file is in the same directory as this script.")
+# Check if source data files exist
+_actual_path = Path('operations_metrics_actual.csv')
+_budget_path = Path('operations_metrics_budget.csv')
+_missing = [p.name for p in [_actual_path, _budget_path] if not p.exists()]
+if _missing:
+    st.error(f"Missing required file(s): {', '.join(_missing)}")
+    st.info("Please ensure the data files are in the same directory as this script.")
     st.stop()
 
 # Load unified data

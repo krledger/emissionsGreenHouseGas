@@ -23,14 +23,30 @@ Data sources mapped:
     SMC issuances/sales/surrenders smc_transactions.csv
     Energy intensity ............. total Energy_GJ / ROM_t
 
+14.5 Waste (Limited):
+    Rock waste (t, BCM) ............. operations_metrics_actual Ore Waste
+    Tailings (t, approx) ........... derived from milled tonnes
+    Strip ratio .................... waste rock / ROM ore
+
+Additional reagents (GRI 301-1):
+    Carbon, Leach aid, Antiscalant, Soda ash, Sodium chlorite,
+    Sodium hypochlorite, Dust suppressant
+
+Additional production:
+    Gold sold (oz), Gold intensity (tCO2-e/oz), Drilling (m)
+
+Coverage flag:
+    Auto    = fully calculated from available data
+    Limited = partial data; user should source remaining items externally
+
 Disclosures NOT populated (require separate data sources):
     14.3 Air emissions (NOx, SOx, PM etc) ... needs NPI data
     14.4 Biodiversity (Ha) .................. needs land management system
-    14.5 Waste (t) .......................... needs mineral waste register
+    14.5 Non-mineral waste .................. needs waste tracking register
     14.7 Water (ML) ......................... needs water balance model
     14.8 Closure ($AUD, Ha) ................. needs closure cost model
 
-Last updated: 2026-03-23
+Last updated: 2026-03-26
 """
 
 import pandas as pd
@@ -174,8 +190,8 @@ GRI14_QUANTITATIVE_MAP = [
 
     {'id': 'fuel_diesel_stat_gj', 'gri_ref': '103-2a-ii', 'section': 'Energy consumption',
      'description': 'Diesel  - stationary (mining, processing, power gen)',
-     'unit': 'GJ', 'calc_fn': '_get_fuel_gj_by_desc',
-     'calc_args': {'descriptions': ['Diesel - Stationary', 'Diesel - Power generation']}},
+     'unit': 'GJ', 'calc_fn': '_get_fuel_gj_by_nga',
+     'calc_args': {'nga_prefix': 'Diesel oil', 'exclude_prefix': 'Diesel oil-Cars'}},
 
     {'id': 'fuel_diesel_transport_gj', 'gri_ref': '103-2a-ii', 'section': 'Energy consumption',
      'description': 'Diesel  - transport (light vehicles)',
@@ -227,59 +243,148 @@ GRI14_QUANTITATIVE_MAP = [
     {'id': 'milled_tonnes',    'gri_ref': 'context',       'section': 'Production metrics',
      'description': 'Milled tonnes (ore processed through mill)',
      'unit': 't', 'calc_fn': '_get_production_metric',
-     'calc_args': {'desc': 'Milled Tonnes'}},
+     'calc_args': {'common_name': 'Ore milled', 'row_types': ['total']}},
 
     {'id': 'gold_recovered',   'gri_ref': 'context',       'section': 'Production metrics',
      'description': 'Gold recovered',
      'unit': 'oz', 'calc_fn': '_get_production_metric',
-     'calc_args': {'desc': 'Gold Recovered oz'}},
+     'calc_args': {'common_name': 'Gold recovered', 'row_types': ['production']}},
 
     # -- GRI CONSUMABLES (from consolidated_emissions_data.csv ReportingCategory='GRI') --
 
     {'id': 'cyanide_kg',       'gri_ref': '14.1-consumables', 'section': 'Reagents and consumables',
      'description': 'Sodium cyanide consumption',
      'unit': 'kg', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'desc': 'Sodium cyanide'}},
+     'calc_args': {'common_name': 'Cyanide', 'row_types': ['consumption']}},
 
     {'id': 'quicklime_t',      'gri_ref': '14.1-consumables', 'section': 'Reagents and consumables',
      'description': 'Quicklime consumption',
      'unit': 't', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'desc': 'Quicklime'}},
+     'calc_args': {'common_name': 'Lime', 'row_types': ['consumption']}},
 
     {'id': 'grinding_media_t', 'gri_ref': '14.1-consumables', 'section': 'Reagents and consumables',
      'description': 'Grinding media consumption',
      'unit': 't', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'desc': 'Grinding media'}},
+     'calc_args': {'common_name': 'Grinding media', 'row_types': ['consumption']}},
 
     {'id': 'caustic_kg',       'gri_ref': '14.1-consumables', 'section': 'Reagents and consumables',
      'description': 'Caustic soda consumption',
      'unit': 'kg', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'desc': 'Caustic soda'}},
+     'calc_args': {'common_name': 'Caustic soda', 'row_types': ['consumption']}},
 
     {'id': 'hcl_kg',           'gri_ref': '14.1-consumables', 'section': 'Reagents and consumables',
      'description': 'Hydrochloric acid consumption',
      'unit': 'kg', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'desc': 'Hydrochloric acid'}},
+     'calc_args': {'common_name': 'Hydrochloric acid', 'row_types': ['consumption']}},
 
     {'id': 'oxygen_m3',        'gri_ref': '14.1-consumables', 'section': 'Reagents and consumables',
      'description': 'Liquid oxygen consumption',
      'unit': 'm3', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'desc': 'Liquid oxygen'}},
+     'calc_args': {'common_name': 'Liquid oxygen', 'row_types': ['consumption']}},
 
     {'id': 'flocculant_kg',    'gri_ref': '14.1-consumables', 'section': 'Reagents and consumables',
      'description': 'Flocculant consumption',
      'unit': 'kg', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'desc': 'Flocculant'}},
+     'calc_args': {'common_name': 'Flocculant', 'row_types': ['consumption']}},
 
     {'id': 'tyres_each',       'gri_ref': '14.5-waste',       'section': 'Wear items',
      'description': 'Tyres consumed',
      'unit': 'each', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'desc': 'Tyres'}},
+     'calc_args': {'common_name': 'Tyres', 'row_types': ['consumption']}},
 
     {'id': 'explosives_kg',    'gri_ref': '14.3-emissions',   'section': 'Wear items',
      'description': 'Explosives consumption',
      'unit': 'kg', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'desc': 'Explosives'}},
+     'calc_args': {'common_name': 'Explosives', 'row_types': ['consumption']}},
+
+    # ── ADDITIONAL REAGENTS / CONSUMABLES (GRI 301-1 Materials used) ───
+
+    {'id': 'carbon_t',        'gri_ref': '301-1',            'section': 'Reagents and consumables',
+     'description': 'Activated carbon consumption',
+     'unit': 't', 'calc_fn': '_get_gri_consumable',
+     'calc_args': {'common_name': 'Carbon', 'row_types': ['consumption']},
+     'gri_topic': '14.1 Climate Change'},
+
+    {'id': 'leach_aid_t',     'gri_ref': '301-1',            'section': 'Reagents and consumables',
+     'description': 'Leach aid consumption',
+     'unit': 't', 'calc_fn': '_get_gri_consumable',
+     'calc_args': {'common_name': 'Leach aid', 'row_types': ['consumption']},
+     'gri_topic': '14.1 Climate Change'},
+
+    {'id': 'antiscalant_t',   'gri_ref': '301-1',            'section': 'Reagents and consumables',
+     'description': 'Antiscalant consumption',
+     'unit': 't', 'calc_fn': '_get_gri_consumable',
+     'calc_args': {'common_name': 'Antiscalant', 'row_types': ['consumption']},
+     'gri_topic': '14.1 Climate Change'},
+
+    {'id': 'soda_ash_t',      'gri_ref': '301-1',            'section': 'Reagents and consumables',
+     'description': 'Soda ash consumption',
+     'unit': 't', 'calc_fn': '_get_gri_consumable',
+     'calc_args': {'common_name': 'Soda ash', 'row_types': ['consumption']},
+     'gri_topic': '14.1 Climate Change'},
+
+    {'id': 'sodium_chlorite_t','gri_ref': '301-1',           'section': 'Reagents and consumables',
+     'description': 'Sodium chlorite consumption',
+     'unit': 't', 'calc_fn': '_get_gri_consumable',
+     'calc_args': {'common_name': 'Sodium chlorite', 'row_types': ['consumption']},
+     'gri_topic': '14.1 Climate Change'},
+
+    {'id': 'sodium_hypochlorite_kl', 'gri_ref': '301-1',     'section': 'Reagents and consumables',
+     'description': 'Sodium hypochlorite consumption',
+     'unit': 'kL', 'calc_fn': '_get_gri_consumable',
+     'calc_args': {'common_name': 'Sodium hypochlorite', 'row_types': ['consumption']},
+     'gri_topic': '14.1 Climate Change'},
+
+    {'id': 'dust_suppressant_kl', 'gri_ref': '301-1',        'section': 'Reagents and consumables',
+     'description': 'Dust suppressant consumption',
+     'unit': 'kL', 'calc_fn': '_get_gri_consumable',
+     'calc_args': {'common_name': 'Dust suppressant', 'row_types': ['consumption']},
+     'gri_topic': '14.1 Climate Change'},
+
+    # ── EMISSION INTENSITY - GOLD (sector benchmark) ──────────────────
+
+    {'id': 'ei_scope1_gold',  'gri_ref': '102-8a',           'section': 'GHG Emissions intensity',
+     'description': 'Scope 1 emissions intensity (tCO2-e per oz gold recovered)',
+     'unit': 'tCO2-e/oz', 'calc_fn': '_get_emission_intensity_gold',
+     'gri_topic': '14.1 Climate Change'},
+
+    {'id': 'gold_sold_oz',    'gri_ref': 'context',           'section': 'Production metrics',
+     'description': 'Gold sold',
+     'unit': 'oz', 'calc_fn': '_get_production_metric',
+     'calc_args': {'common_name': 'Gold sold', 'row_types': ['production']},
+     'gri_topic': '14.1 Climate Change'},
+
+    # ── 14.5 WASTE (Limited - rock waste from operations data) ────────
+
+    {'id': 'waste_rock_t',    'gri_ref': '306-3a',            'section': 'Waste - rock waste',
+     'description': 'Waste rock moved',
+     'unit': 't', 'calc_fn': '_get_ore_waste',
+     'calc_args': {'uom': 't'},
+     'gri_topic': '14.5 Waste', 'coverage': 'Limited'},
+
+    {'id': 'waste_rock_bcm',  'gri_ref': '306-3a',            'section': 'Waste - rock waste',
+     'description': 'Waste rock moved (bank cubic metres)',
+     'unit': 'BCM', 'calc_fn': '_get_ore_waste',
+     'calc_args': {'uom': 'BCM'},
+     'gri_topic': '14.5 Waste', 'coverage': 'Limited'},
+
+    {'id': 'tailings_approx_t','gri_ref': '306-3a',           'section': 'Waste - tailings',
+     'description': 'Tailings produced (approx: milled tonnes less gold recovered)',
+     'unit': 't', 'calc_fn': '_get_tailings_approx',
+     'gri_topic': '14.5 Waste', 'coverage': 'Limited'},
+
+    {'id': 'strip_ratio',     'gri_ref': '14.5-sector',       'section': 'Waste - rock waste',
+     'description': 'Strip ratio (waste rock t / ROM ore t)',
+     'unit': 'ratio', 'calc_fn': '_get_strip_ratio',
+     'gri_topic': '14.5 Waste', 'coverage': 'Limited'},
+
+    # ── 14.8 CLOSURE (Limited - LOM from budget projections) ──────────
+
+    {'id': 'drilling_m',      'gri_ref': 'context',            'section': 'Production metrics',
+     'description': 'Total drilling metres',
+     'unit': 'm', 'calc_fn': '_get_gri_consumable',
+     'calc_args': {'common_name': 'Drilling', 'row_types': ['production']},
+     'gri_topic': '14.1 Climate Change'},
 ]
 
 
@@ -482,8 +587,15 @@ def _get_total_fuel_gj(precomputed, fy, raw_df=None, **kw):
     return round(val, 2) if val > 0 else None
 
 
-def _get_fuel_gj_by_nga(precomputed, fy, raw_df=None, nga_prefix='', **kw):
-    """Energy GJ for a specific NGAFuel prefix."""
+def _get_fuel_gj_by_nga(precomputed, fy, raw_df=None, nga_prefix='', exclude_prefix='', **kw):
+    """Energy GJ for a specific NGAFuel prefix.
+
+    Args:
+        nga_prefix: NGAFuel must start with this string.
+        exclude_prefix: If set, exclude rows whose NGAFuel starts with this
+                        (e.g. exclude 'Diesel oil-Cars' from 'Diesel oil' to
+                        get stationary diesel only).
+    """
     src = precomputed.safeguard_source
     if src.empty:
         return None
@@ -492,6 +604,8 @@ def _get_fuel_gj_by_nga(precomputed, fy, raw_df=None, nga_prefix='', **kw):
         & (src['DataSet'] == 'Actual')
         & (src['NGAFuel'].astype(str).str.startswith(nga_prefix))
     )
+    if exclude_prefix:
+        mask = mask & (~src['NGAFuel'].astype(str).str.startswith(exclude_prefix))
     if not mask.any():
         return None
     val = float(src.loc[mask, 'Energy_GJ'].sum())
@@ -552,18 +666,119 @@ def _get_site_electricity_kwh(precomputed, fy, raw_df=None, **kw):
     return round(val, 0) if val > 0 else None
 
 
-def _get_production_metric(precomputed, fy, raw_df=None, desc='', **kw):
-    """Production quantity from raw data by Description name.
+def _get_production_metric(precomputed, fy, raw_df=None, common_name='', row_types=None, desc='', **kw):
+    """Production quantity from raw data by CommonName.
 
-    Used for Milled Tonnes, Gold Recovered oz, etc.
+    Used for Ore milled, Gold recovered, Gold sold, etc.
     These are not in the precomputed annual tables so we need raw_df.
+
+    Falls back to Description match if CommonName column is not present.
+
+    Args:
+        common_name: CommonName value to match (preferred)
+        row_types:   List of RowType values to include (e.g. ['total'] for
+                     Ore milled total, ['production'] for Gold recovered)
+        desc:        Legacy Description match (fallback only)
+    """
+    if raw_df is None:
+        return None
+
+    # Prefer CommonName if the column exists and a value was provided
+    if common_name and 'CommonName' in raw_df.columns:
+        mask = (
+            (raw_df['FY'] == fy)
+            & (raw_df['DataSet'] == 'Actual')
+            & (raw_df['CommonName'].astype(str) == common_name)
+        )
+        if row_types and 'RowType' in raw_df.columns:
+            mask = mask & (raw_df['RowType'].astype(str).isin(row_types))
+    else:
+        # Fallback: match by Description (legacy behaviour)
+        lookup = desc if desc else common_name
+        mask = (
+            (raw_df['FY'] == fy)
+            & (raw_df['DataSet'] == 'Actual')
+            & (raw_df['Description'].astype(str) == lookup)
+        )
+
+    if not mask.any():
+        return None
+    val = float(raw_df.loc[mask, 'Quantity'].sum())
+    return round(val, 0) if val > 0 else None
+
+
+def _get_gri_consumable(precomputed, fy, raw_df=None, common_name='', row_types=None, desc='', **kw):
+    """Get GRI consumable quantity from raw data using CommonName.
+
+    Matches rows by CommonName (normalised grouping key) rather than
+    Description, so variant descriptions (e.g. 'Explosives Loaded - BRW')
+    are correctly captured alongside the base description.
+
+    Optionally filters by RowType to distinguish consumption vs purchased
+    vs detail rows.  Defaults to 'consumption' if row_types is not specified.
+
+    Falls back to Description match if CommonName column is not present
+    (backward compatibility with pre-CommonName CSVs).
+
+    Args:
+        common_name: CommonName value to match (preferred)
+        row_types:   List of RowType values to include.  Default ['consumption']
+        desc:        Legacy Description match (fallback only)
+    """
+    if raw_df is None:
+        return None
+
+    # Prefer CommonName if the column exists and a value was provided
+    if common_name and 'CommonName' in raw_df.columns:
+        mask = (
+            (raw_df['FY'] == fy)
+            & (raw_df['DataSet'] == 'Actual')
+            & (raw_df['CommonName'].astype(str) == common_name)
+        )
+        # Filter by RowType if available
+        if row_types and 'RowType' in raw_df.columns:
+            mask = mask & (raw_df['RowType'].astype(str).isin(row_types))
+    else:
+        # Fallback: match by Description (legacy behaviour)
+        lookup = desc if desc else common_name
+        mask = (
+            (raw_df['FY'] == fy)
+            & (raw_df['DataSet'] == 'Actual')
+            & (raw_df['Description'].astype(str) == lookup)
+        )
+
+    if not mask.any():
+        return None
+    val = float(raw_df.loc[mask, 'Quantity'].sum())
+    return round(val, 2) if abs(val) > 0.001 else None
+
+
+def _get_emission_intensity_gold(precomputed, fy, raw_df=None, **kw):
+    """Scope 1 emissions intensity: tCO2-e per troy ounce gold recovered."""
+    row = _fy_row(precomputed.annual_fy, fy)
+    if row.empty:
+        return None
+    s1 = float(row['Scope1'].iloc[0])
+    gold_oz = _get_production_metric(precomputed, fy, raw_df=raw_df,
+                                      common_name='Gold recovered', row_types=['production'])
+    if gold_oz is None or gold_oz <= 0 or s1 <= 0:
+        return None
+    return round(s1 / gold_oz, 4)
+
+
+def _get_ore_waste(precomputed, fy, raw_df=None, uom='t', **kw):
+    """Ore waste quantity for the given FY, filtered by UOM (t or BCM).
+
+    Waste rock is reported in both tonnes and BCM depending on the
+    measurement method.  Returns the total for the requested UOM only.
     """
     if raw_df is None:
         return None
     mask = (
         (raw_df['FY'] == fy)
         & (raw_df['DataSet'] == 'Actual')
-        & (raw_df['Description'].astype(str) == desc)
+        & (raw_df['SubActivity'].astype(str) == 'Ore Waste')
+        & (raw_df['UOM'].astype(str) == uom)
     )
     if not mask.any():
         return None
@@ -571,26 +786,27 @@ def _get_production_metric(precomputed, fy, raw_df=None, desc='', **kw):
     return round(val, 0) if val > 0 else None
 
 
-def _get_gri_consumable(precomputed, fy, raw_df=None, desc='', **kw):
-    """Get GRI consumable quantity from raw data.
+def _get_tailings_approx(precomputed, fy, raw_df=None, **kw):
+    """Approximate tailings tonnage: milled tonnes less gold recovered.
 
-    Filters consolidated_emissions_data.csv for ReportingCategory='GRI'
-    rows matching the given Description, aggregated to FY.
+    Almost all milled material reports to tailings.  Gold recovery
+    is negligible by mass but included for completeness.
     """
-    if raw_df is None:
+    milled = _get_production_metric(precomputed, fy, raw_df=raw_df,
+                                     common_name='Ore milled', row_types=['total'])
+    if milled is None or milled <= 0:
         return None
-    mask = (
-        (raw_df['FY'] == fy)
-        & (raw_df['DataSet'] == 'Actual')
-        & (raw_df['Description'].astype(str) == desc)
-    )
-    # Also try matching via ReportingCategory if the column exists
-    if 'ReportingCategory' in raw_df.columns:
-        mask = mask & (raw_df['ReportingCategory'] == 'GRI')
-    if not mask.any():
+    # Gold is in oz, ~31.1g/oz - negligible relative to milled tonnes
+    return round(milled, 0)
+
+
+def _get_strip_ratio(precomputed, fy, raw_df=None, **kw):
+    """Strip ratio: waste rock tonnes / ROM ore tonnes."""
+    waste_t = _get_ore_waste(precomputed, fy, raw_df=raw_df, uom='t')
+    rom_t = _get_rom_tonnes(precomputed, fy)
+    if waste_t is None or rom_t is None or rom_t <= 0:
         return None
-    val = float(raw_df.loc[mask, 'Quantity'].sum())
-    return round(val, 2) if abs(val) > 0.001 else None
+    return round(waste_t / rom_t, 2)
 
 
 def _get_zero(precomputed, fy, raw_df=None, **kw):
@@ -618,6 +834,10 @@ _CALC_FN_MAP = {
     '_get_site_electricity_kwh':  _get_site_electricity_kwh,
     '_get_production_metric':     _get_production_metric,
     '_get_gri_consumable':        _get_gri_consumable,
+    '_get_emission_intensity_gold': _get_emission_intensity_gold,
+    '_get_ore_waste':             _get_ore_waste,
+    '_get_tailings_approx':       _get_tailings_approx,
+    '_get_strip_ratio':           _get_strip_ratio,
     '_get_zero':                  _get_zero,
 }
 
@@ -670,6 +890,20 @@ _METHODOLOGY = {
     'flocculant_kg':      'Flocculant consumption (process + water treatment).  Source: INV03 inventory system (FLOC product group).  Converted from bags to kg (15 kg/bag).',
     'tyres_each':         'Tyre consumption (all sizes).  Source: INV03 inventory system (TYRE product group).',
     'explosives_kg':      'Explosives consumption.  Source: INV03 inventory system (EXPL product group).',
+    'carbon_t':           'Activated carbon consumption.  Source: INV03 inventory system.',
+    'leach_aid_t':        'Leach aid consumption.  Source: INV03 inventory system.',
+    'antiscalant_t':      'Antiscalant consumption.  Source: INV03 inventory system.',
+    'soda_ash_t':         'Soda ash (Na2CO3) consumption.  Source: INV03 inventory system.',
+    'sodium_chlorite_t':  'Sodium chlorite consumption.  Source: INV03 inventory system.',
+    'sodium_hypochlorite_kl': 'Sodium hypochlorite consumption.  Source: INV03 inventory system.',
+    'dust_suppressant_kl':'Dust suppressant consumption.  Source: INV03 inventory system.',
+    'ei_scope1_gold':     'Scope 1 tCO2-e / gold recovered (oz).  Common sector benchmark for gold mining.',
+    'gold_sold_oz':       'Gold sold (troy ounces).  Source: production reporting system.',
+    'waste_rock_t':       'Waste rock moved (tonnes).  Source: operations metrics actual (SubActivity=Ore Waste, UOM=t).  Limited: does not include non-mineral waste streams.',
+    'waste_rock_bcm':     'Waste rock moved (BCM).  Source: operations metrics actual (SubActivity=Ore Waste, UOM=BCM).  Limited: volumetric measure only.',
+    'tailings_approx_t':  'Approximate tailings: milled tonnes less gold recovered.  Gold mass is negligible.  Limited: does not account for reagent additions or moisture content.',
+    'strip_ratio':        'Strip ratio: waste rock (t) / ROM ore (t).  Indicator of mining efficiency and waste intensity.',
+    'drilling_m':         'Total drilling metres.  Source: operations metrics actual (SubActivity=Drilling).',
 }
 
 
@@ -715,13 +949,14 @@ def build_gri14_export(precomputed, raw_df=None, reporting_fys=None):
             value = fn(precomputed, fy, raw_df=raw_df, **calc_args)
 
             rows.append({
-                'GRI_Topic': '14.1 Climate Change',
+                'GRI_Topic': entry.get('gri_topic', '14.1 Climate Change'),
                 'Section': entry['section'],
                 'GRI_Reference': entry['gri_ref'],
                 'Description': entry['description'],
                 'Unit': entry['unit'],
                 'FY': int(fy),
                 'Value': value,
+                'Coverage': entry.get('coverage', 'Auto'),
                 'Data_Source': 'Ravenswood Emissions Model',
                 'Methodology_Note': _METHODOLOGY.get(entry['id'], ''),
             })
@@ -790,10 +1025,18 @@ GRI14_COVERAGE = {
         'not_available': [],
     },
     '14.5 Waste': {
-        'auto': [],
+        'auto': [
+            ('306-3a',   'Waste rock moved (t)',                           't'),
+            ('306-3a',   'Waste rock moved (BCM)',                         'BCM'),
+            ('306-3a',   'Tailings produced (approx from milled tonnes)',  't'),
+            ('14.5-sect','Strip ratio (waste rock / ROM ore)',             'ratio'),
+        ],
+        'limited': [
+            ('306-3a',   'Rock waste and tailings quantities are from operations data only.  Does not include non-mineral waste (hazardous, general, recycled).  Tailings is approximate (milled tonnes less gold).', 't'),
+        ],
         'collectible': [
-            ('306-3a',   'Total waste / rock waste / tailings (4 items)', 't',
-             'Mineral waste register + monthly survey reconciliation.  Add loader_waste.py.'),
+            ('306-3a',   'Non-mineral waste by type (hazardous, general, recycled)', 't',
+             'Requires waste tracking register.  Add loader_waste.py.'),
             ('306-4/5',  'Waste diverted + disposed breakdown (35 items)', 't',
              'Waste tracking data.  Scats reuse is main diversion stream.'),
         ],

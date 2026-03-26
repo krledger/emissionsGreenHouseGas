@@ -67,7 +67,7 @@ BEST_PRACTICE_EI_ELEC = 0.236      # tCO2-e/MWh
 # =============================================================================
 # GRID CONNECTION PARAMETERS
 # =============================================================================
-# Grid connection transfer is baked into the consolidated CSV (1-Jul-2027).
+# Grid connection transfer is baked into the operations metrics CSVs (1-Jul-2027).
 # These constants are retained for metric extraction only.
 
 GRID_SITE_ELEC_DESCRIPTION = 'Site electricity'
@@ -83,6 +83,22 @@ DESC_ROM_KEYWORD = 'Ore'
 # stationary energy.  Only road-registered light vehicles are transport.
 DIESEL_TRANSPORT_COSTCENTRES = ['Light Vehicles']
 DIESEL_TRANSPORT_NGAFUEL = 'Diesel oil-Cars and light commercial vehicles'
+
+
+# =============================================================================
+# SUBACTIVITY-BASED MATCHING KEYS (2026-03 CSV restructure)
+# =============================================================================
+# The operations_metrics CSVs now use Activity/SubActivity instead of embedded
+# Description keys.  These constants replace the old CostCentre/Description
+# matching patterns used in projections.py and calc_emissions.py.
+
+# ROM ore identification: SubActivity == 'Ore ROM' replaces CostCentre == 'ROM'
+ROM_SUBACTIVITY = 'Ore ROM'
+
+# Electricity identification via CommonName (set by lookup_identifiers.py)
+# Replaces the old Description == 'Site electricity' / 'Grid electricity' pattern
+SITE_ELEC_COMMONNAME = 'Site electricity'
+GRID_ELEC_COMMONNAME = 'Grid electricity'
 
 
 # =============================================================================
@@ -303,6 +319,7 @@ COLORS = {
 # =============================================================================
 
 DEFAULT_PATHS = {
-    'consolidated': 'consolidated_emissions_data.csv',
+    'actual': 'operations_metrics_actual.csv',
+    'budget': 'operations_metrics_budget.csv',
     'nga': 'national-greenhouse-account-factors-2025.xlsx',
 }
