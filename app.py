@@ -209,8 +209,9 @@ def precompute_cached(_df, _passphrase):
 
 
 # Check if source data files exist (plain CSV or encrypted .enc)
-_actual_path = Path('data') / 'operations_metrics_actual.csv'
-_budget_path = Path('data') / 'operations_metrics_budget.csv'
+_data_dir = Path(__file__).resolve().parent / 'data'
+_actual_path = _data_dir / 'operations_metrics_actual.csv'
+_budget_path = _data_dir / 'operations_metrics_budget.csv'
 _missing = [
     p.name for p in [_actual_path, _budget_path]
     if not p.exists() and not Path(str(p) + '.enc').exists()
