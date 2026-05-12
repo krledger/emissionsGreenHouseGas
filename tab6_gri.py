@@ -38,7 +38,8 @@ def render_gri_tab(df, precomputed, display_year, year_type):
 
     # Build export for selected year only
     gri_df = build_gri14_export(
-        precomputed, raw_df=df, reporting_fys=[display_year]
+        precomputed, raw_df=df, reporting_fys=[display_year],
+        year_type=year_type
     )
 
     if gri_df.empty:

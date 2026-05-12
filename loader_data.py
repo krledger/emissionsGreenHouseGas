@@ -40,6 +40,7 @@ Output columns:
 """
 
 import pandas as pd
+import os
 from pathlib import Path
 from calc_calendar import date_to_fy
 from config import NGER_FY_START_MONTH, DIESEL_TRANSPORT_COSTCENTRES, DIESEL_TRANSPORT_NGAFUEL
@@ -51,8 +52,13 @@ from calc_emissions import (
 )
 
 
-def load_all_data(actual_path='operations_metrics_actual.csv',
-                  budget_path='operations_metrics_budget.csv',
+# Data files live in ./data/ alongside this module.
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+
+
+
+def load_all_data(actual_path=None,
+                  budget_path=None,
                   nga_folder=None,
                   fy_start_month=NGER_FY_START_MONTH):
     """Load and process operational metrics from separate actual/budget files.
@@ -70,6 +76,12 @@ def load_all_data(actual_path='operations_metrics_actual.csv',
     Returns:
         Single DataFrame with both datasets, aggregated monthly, emissions calculated
     """
+
+    # Default to files in DATA_DIR.  Explicit paths override.
+    if actual_path is None:
+        actual_path = os.path.join(DATA_DIR, 'operations_metrics_actual.csv')
+    if budget_path is None:
+        budget_path = os.path.join(DATA_DIR, 'operations_metrics_budget.csv')
 
     print('=' * 80)
     print('LOADING EMISSIONS DATA')
@@ -268,7 +280,7 @@ def load_energy_data(*args, **kwargs):
     raise NotImplementedError('load_energy_data() deprecated — use load_all_data()')
 
 
-def load_smc_transactions(filepath='smc_transactions.csv'):
+def load_smc_transactions(filepath=None):
     """Load SMC transaction log for reconciling model against registry actuals.
 
     Transaction types:
@@ -284,6 +296,9 @@ def load_smc_transactions(filepath='smc_transactions.csv'):
     Adjustments to the SMC bank are summed by FY and applied to the model.
     """
     from calc_calendar import date_to_fy
+
+    if filepath is None:
+        filepath = os.path.join(DATA_DIR, 'smc_transactions.csv')
 
     path = Path(filepath)
     if not path.exists():

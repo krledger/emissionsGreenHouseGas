@@ -33,7 +33,16 @@ class NGAFactorsByYear:
     scope, year and state combination.
     """
 
-    def __init__(self, folder_path='.'):
+    def __init__(self, folder_path=None):
+        """Load nga_factors.csv from ./data/ next to this module.
+
+        Args:
+            folder_path: Optional override.  Normal usage: no argument.
+        """
+        if folder_path is None:
+            folder_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), 'data'
+            )
         self.folder_path = folder_path
         self.df = None
         self.available_years = []
@@ -44,8 +53,8 @@ class NGAFactorsByYear:
         csv_path = os.path.join(self.folder_path, 'nga_factors.csv')
         if not os.path.exists(csv_path):
             raise FileNotFoundError(
-                f"nga_factors.csv not found in {self.folder_path}. "
-                f"Run nga_to_csv.py first to generate it from NGA Excel files."
+                f"nga_factors.csv not found at {csv_path}.  "
+                f"Run Utility_NGA_to_csv.py to generate it."
             )
 
         self.df = pd.read_csv(csv_path)

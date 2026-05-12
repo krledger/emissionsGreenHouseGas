@@ -22,6 +22,26 @@ from dateutil.relativedelta import relativedelta
 
 NGER_FY_START_MONTH = 7  # July = Financial year start for NGERS/Safeguard
 
+# Pandas changed the year-start frequency alias:
+#   pandas  <2.1: AS-JUL, AS-JAN
+#   pandas 2.1+: YS-JUL, YS-JAN (new) but AS-* still accepted in some builds
+#   pandas  3.0: only YS-* accepted
+# 2.1.4 specifically only accepts AS-*, so version-based selection is unreliable.
+# Runtime probe is the only dependable approach.
+def _pick_freq(candidates):
+    for freq in candidates:
+        try:
+            pd.tseries.frequencies.to_offset(freq)
+            return freq
+        except (ValueError, KeyError):
+            continue
+    raise RuntimeError(
+        f"No working annual frequency alias found in pandas {pd.__version__}.  "
+        f"Tried: {candidates}"
+    )
+
+_FY_FREQ = _pick_freq(['YS-JUL', 'AS-JUL'])
+_CY_FREQ = _pick_freq(['YS-JAN', 'AS-JAN'])
 
 # =============================================================================
 # FINANCIAL YEAR (FY) FUNCTIONS
@@ -165,17 +185,17 @@ def aggregate_by_year_type(df, year_type='FY', agg_dict=None):
     if year_type == 'FY':
         # YS-JUL = Year Start in July
         if agg_dict:
-            annual = df_indexed.groupby(pd.Grouper(freq='YS-JUL')).agg(agg_dict)
+            annual = df_indexed.groupby(pd.Grouper(freq=_FY_FREQ)).agg(agg_dict)
         else:
-            annual = df_indexed.groupby(pd.Grouper(freq='YS-JUL')).sum(numeric_only=True)
+            annual = df_indexed.groupby(pd.Grouper(freq=_FY_FREQ)).sum(numeric_only=True)
         # Label as FY
         annual['Year'] = annual.index.map(lambda d: f"FY{date_to_fy(d)}")
     else:  # CY
         # YS-JAN = Year Start in January
         if agg_dict:
-            annual = df_indexed.groupby(pd.Grouper(freq='YS-JAN')).agg(agg_dict)
+            annual = df_indexed.groupby(pd.Grouper(freq=_CY_FREQ)).agg(agg_dict)
         else:
-            annual = df_indexed.groupby(pd.Grouper(freq='YS-JAN')).sum(numeric_only=True)
+            annual = df_indexed.groupby(pd.Grouper(freq=_CY_FREQ)).sum(numeric_only=True)
         # Label as CY
         annual['Year'] = annual.index.map(lambda d: f"CY{date_to_cy(d)}")
 

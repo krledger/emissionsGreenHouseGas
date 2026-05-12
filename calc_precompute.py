@@ -103,10 +103,8 @@ def precompute_all(df, fsei_rom, fsei_elec,
     annual_cy = _aggregate_annual(monthly, 'CY')
 
     # ── 3. NGA factor map (for audit/source tables) ──────────────────
-    nga_folder = os.path.dirname(os.path.abspath(__file__))
-    if not os.path.exists(os.path.join(nga_folder, 'nga_factors.csv')):
-        nga_folder = '.'
-    nga_by_year = NGAFactorsByYear(nga_folder)
+    # NGAFactorsByYear reads nga_factors.csv from ./data/ next to its module.
+    nga_by_year = NGAFactorsByYear()
 
     unique_fy = sorted(df['FY'].unique()) if 'FY' in df.columns else []
     year_factor_map = build_year_factor_map(nga_by_year, unique_fy, state='QLD') if unique_fy else {}

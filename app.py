@@ -176,8 +176,8 @@ def precompute_cached(_df):
 
 
 # Check if source data files exist
-_actual_path = Path('operations_metrics_actual.csv')
-_budget_path = Path('operations_metrics_budget.csv')
+_actual_path = Path('data') / 'operations_metrics_actual.csv'
+_budget_path = Path('data') / 'operations_metrics_budget.csv'
 _missing = [p.name for p in [_actual_path, _budget_path] if not p.exists()]
 if _missing:
     st.error(f"Missing required file(s): {', '.join(_missing)}")
@@ -386,6 +386,7 @@ with tab6:
         df, precomputed,
         carbon_credit_price=carbon_credit_price,
         credit_escalation=credit_escalation,
+        year_type=selected_year_type,
     )
 
 # FOOTER

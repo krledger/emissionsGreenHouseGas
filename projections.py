@@ -114,10 +114,7 @@ def build_projection(df, dataset='Actual',
 
     # ---- Step 3: Calculate emissions for budget rows ----
     print(f"Calculating emissions for budget data...")
-    nga_folder = os.path.dirname(os.path.abspath(__file__))
-    if not os.path.exists(nga_folder):
-        nga_folder = '/mnt/project'
-    nga_by_year = NGAFactorsByYear(nga_folder)
+    nga_by_year = NGAFactorsByYear()
     budget_prime = recalculate_emissions(budget_fill, nga_by_year)
 
     # ---- Step 4: Combine actuals + budget ----

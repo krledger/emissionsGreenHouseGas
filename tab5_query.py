@@ -20,7 +20,8 @@ import os
 
 
 def render_query_tab(df, precomputed,
-                     carbon_credit_price=0, credit_escalation=0):
+                     carbon_credit_price=0, credit_escalation=0,
+                     year_type='FY'):
     """Render the Data Query tab.
 
     Two sections:
@@ -32,13 +33,14 @@ def render_query_tab(df, precomputed,
         precomputed: PrecomputedData from calc_precompute
         carbon_credit_price: SMC market price
         credit_escalation: Annual price escalation rate
+        year_type: 'FY' or 'CY' from sidebar
     """
 
     _render_emissions_query(df, precomputed.year_factor_map)
 
     st.markdown("---")
 
-    _render_smc_ledger(precomputed, carbon_credit_price, credit_escalation)
+    _render_smc_ledger(precomputed, carbon_credit_price, credit_escalation, year_type)
 
 
 # =====================================================================
@@ -312,7 +314,7 @@ def _format_emissions_table(agg, resolution='Annual'):
 # SECTION 2: SMC LEDGER
 # =====================================================================
 
-def _render_smc_ledger(precomputed, carbon_credit_price, credit_escalation):
+def _render_smc_ledger(precomputed, carbon_credit_price, credit_escalation, year_type='FY'):
     """SMC ledger: forecast, actual transactions and combined view.
 
     Uses pre-computed annual projection \u2014 no build_projection call.
@@ -325,8 +327,8 @@ def _render_smc_ledger(precomputed, carbon_credit_price, credit_escalation):
     view = st.radio("View", ["Combined", "Forecast Only", "Transactions Only"],
                      horizontal=True, key="smc_view")
 
-    # \u2500\u2500 Pre-computed annual FY projection \u2500\u2500
-    annual = precomputed.annual_fy.copy()
+    # \u2500\u2500 Pre-computed annual projection (respects FY/CY selection) \u2500\u2500
+    annual = precomputed.annual_cy.copy() if year_type == 'CY' else precomputed.annual_fy.copy()
 
     # Raw forecast (before transactions)
     forecast_raw = annual.copy()

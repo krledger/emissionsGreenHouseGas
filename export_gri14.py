@@ -69,8 +69,11 @@ def _fy_row(annual_df, fy_int):
     result = annual_df[annual_df['FY'] == fy_int]
     if not result.empty:
         return result
-    # Try string format 'FY2024'
+    # Try string format 'FY2024' or 'CY2024'
     result = annual_df[annual_df['FY'] == f'FY{fy_int}']
+    if not result.empty:
+        return result
+    result = annual_df[annual_df['FY'] == f'CY{fy_int}']
     if not result.empty:
         return result
     # Try Year column as fallback
@@ -470,7 +473,7 @@ def _get_gas_ef(nga_fuel, gas, nga_year=None):
 
 def _get_scope1_total(precomputed, fy, raw_df=None, **kw):
     """Gross Scope 1 tCO2-e for the given FY."""
-    row = _fy_row(precomputed.annual_fy, fy)
+    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
     if row.empty:
         return None
     val = float(row['Scope1'].iloc[0])
@@ -479,7 +482,7 @@ def _get_scope1_total(precomputed, fy, raw_df=None, **kw):
 
 def _get_scope2_total(precomputed, fy, raw_df=None, **kw):
     """Gross location-based Scope 2 tCO2-e."""
-    row = _fy_row(precomputed.annual_fy, fy)
+    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
     if row.empty:
         return None
     val = float(row['Scope2'].iloc[0])
@@ -488,7 +491,7 @@ def _get_scope2_total(precomputed, fy, raw_df=None, **kw):
 
 def _get_scope3_total(precomputed, fy, raw_df=None, **kw):
     """Gross Scope 3 tCO2-e (fuel combustion + grid T&D)."""
-    row = _fy_row(precomputed.annual_fy, fy)
+    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
     if row.empty:
         return None
     val = float(row['Scope3'].iloc[0])
@@ -530,7 +533,7 @@ def _get_scope1_gas(precomputed, fy, raw_df=None, gas='CO2', **kw):
 
 def _get_emission_intensity(precomputed, fy, raw_df=None, **kw):
     """Scope 1 emissions intensity: tCO2-e per tonne ROM ore."""
-    row = _fy_row(precomputed.annual_fy, fy)
+    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
     if row.empty:
         return None
     rom_t = float(row['ROM_t'].iloc[0])
@@ -551,7 +554,7 @@ def _get_energy_intensity(precomputed, fy, raw_df=None, **kw):
 
 def _get_rom_tonnes(precomputed, fy, raw_df=None, **kw):
     """Total ROM ore tonnes."""
-    row = _fy_row(precomputed.annual_fy, fy)
+    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
     if row.empty:
         return None
     val = float(row['ROM_t'].iloc[0])
@@ -632,7 +635,7 @@ def _get_fuel_gj_by_desc(precomputed, fy, raw_df=None, descriptions=None, **kw):
 
 def _get_grid_electricity_gj(precomputed, fy, raw_df=None, **kw):
     """Purchased grid electricity in GJ.  1 kWh = 0.0036 GJ."""
-    row = _fy_row(precomputed.annual_fy, fy)
+    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
     if row.empty:
         return None
     kwh = float(row['Grid_Electricity_kWh'].iloc[0])
@@ -641,7 +644,7 @@ def _get_grid_electricity_gj(precomputed, fy, raw_df=None, **kw):
 
 def _get_grid_electricity_kwh(precomputed, fy, raw_df=None, **kw):
     """Purchased grid electricity in kWh."""
-    row = _fy_row(precomputed.annual_fy, fy)
+    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
     if row.empty:
         return None
     val = float(row['Grid_Electricity_kWh'].iloc[0])
@@ -650,7 +653,7 @@ def _get_grid_electricity_kwh(precomputed, fy, raw_df=None, **kw):
 
 def _get_site_electricity_gj(precomputed, fy, raw_df=None, **kw):
     """Self-generated electricity in GJ."""
-    row = _fy_row(precomputed.annual_fy, fy)
+    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
     if row.empty:
         return None
     kwh = float(row['Site_Electricity_kWh'].iloc[0])
@@ -659,7 +662,7 @@ def _get_site_electricity_gj(precomputed, fy, raw_df=None, **kw):
 
 def _get_site_electricity_kwh(precomputed, fy, raw_df=None, **kw):
     """Self-generated electricity in kWh."""
-    row = _fy_row(precomputed.annual_fy, fy)
+    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
     if row.empty:
         return None
     val = float(row['Site_Electricity_kWh'].iloc[0])
@@ -755,7 +758,7 @@ def _get_gri_consumable(precomputed, fy, raw_df=None, common_name='', row_types=
 
 def _get_emission_intensity_gold(precomputed, fy, raw_df=None, **kw):
     """Scope 1 emissions intensity: tCO2-e per troy ounce gold recovered."""
-    row = _fy_row(precomputed.annual_fy, fy)
+    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
     if row.empty:
         return None
     s1 = float(row['Scope1'].iloc[0])
@@ -911,7 +914,7 @@ _METHODOLOGY = {
 # MAIN EXPORT FUNCTION
 # ─────────────────────────────────────────────────────────────────────
 
-def build_gri14_export(precomputed, raw_df=None, reporting_fys=None):
+def build_gri14_export(precomputed, raw_df=None, reporting_fys=None, year_type='FY'):
     """Build the GRI 14 flat-file export from precomputed data.
 
     Args:
@@ -921,6 +924,7 @@ def build_gri14_export(precomputed, raw_df=None, reporting_fys=None):
                 Pass None to skip those rows.
         reporting_fys: List of FY integers to report.
                        Default: all FYs with actual Scope 1 data.
+        year_type: 'FY' or 'CY' — selects which annual table to use.
 
     Returns:
         DataFrame with columns:
@@ -928,12 +932,13 @@ def build_gri14_export(precomputed, raw_df=None, reporting_fys=None):
             FY, Value, Data_Source, Methodology_Note
     """
     if reporting_fys is None:
-        # Extract numeric FY from annual_fy (handles 'FY2024' string format)
-        annual = precomputed.annual_fy
+        # Select annual table based on year_type
+        annual = precomputed.annual_cy if year_type == 'CY' else precomputed.annual_fy
         mask = annual['Scope1'] > 0
         raw_fys = annual.loc[mask, 'FY'].unique()
+        prefix = 'CY' if year_type == 'CY' else 'FY'
         reporting_fys = sorted([
-            int(str(f).replace('FY', '')) for f in raw_fys
+            int(str(f).replace('FY', '').replace('CY', '')) for f in raw_fys
         ])
 
     rows = []
@@ -946,7 +951,9 @@ def build_gri14_export(precomputed, raw_df=None, reporting_fys=None):
         calc_args = entry.get('calc_args', {})
 
         for fy in reporting_fys:
-            value = fn(precomputed, fy, raw_df=raw_df, **calc_args)
+            # Pass selected annual table so extraction functions use correct year_type
+            annual_df = precomputed.annual_cy if year_type == 'CY' else precomputed.annual_fy
+            value = fn(precomputed, fy, raw_df=raw_df, annual_df=annual_df, **calc_args)
 
             rows.append({
                 'GRI_Topic': entry.get('gri_topic', '14.1 Climate Change'),
