@@ -73,7 +73,8 @@ class PrecomputedData:
 def precompute_all(df, fsei_rom, fsei_elec,
                    start_date, end_date,
                    end_mining_date, end_processing_date, end_rehabilitation_date,
-                   credit_start_date, decline_rate_phase2) -> PrecomputedData:
+                   credit_start_date, decline_rate_phase2,
+                   passphrase=None) -> PrecomputedData:
     """Run all heavy computation once.
 
     Args:
@@ -116,7 +117,7 @@ def precompute_all(df, fsei_rom, fsei_elec,
     safeguard_electricity = prod_tables['electricity']
 
     # ── 5. SMC transactions ──────────────────────────────────────────
-    smc_transactions = load_smc_transactions()
+    smc_transactions = load_smc_transactions(passphrase=passphrase)
 
     return PrecomputedData(
         monthly=monthly,

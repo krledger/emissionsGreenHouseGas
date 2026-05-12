@@ -46,43 +46,51 @@ Disclosures NOT populated (require separate data sources):
     14.7 Water (ML) ......................... needs water balance model
     14.8 Closure ($AUD, Ha) ................. needs closure cost model
 
-Last updated: 2026-03-26
+Last updated: 2026-05-12
 """
 
 import pandas as pd
 import numpy as np
 from typing import Optional, Dict, Any, List
 
-# ─────────────────────────────────────────────────────────────────────
-# FY LOOKUP HELPER
-# ─────────────────────────────────────────────────────────────────────
-# annual_fy uses 'FY2024' string format; safeguard_source uses int 2024.
-# This helper normalises lookups so extraction functions accept int FY.
+from calc_calendar import period_filter, year_to_date_range, date_to_fy
 
-def _fy_row(annual_df, fy_int):
-    """Return annual_fy row(s) matching an integer FY.
+# ─────────────────────────────────────────────────────────────────────
+# DATE-RANGE LOOKUP HELPERS
+# ─────────────────────────────────────────────────────────────────────
+# annual tables have a 'Date' column from the Grouper index.
+# _period_row filters by date range instead of FY label.
 
-    Handles both 'FY2024' string and 2024 integer column formats.
+def _period_row(annual_df, start_date, end_date):
+    """Return annual_df row(s) whose Date falls within [start_date, end_date).
+
+    The annual tables produced by aggregate_by_year_type() have a 'Date'
+    column that holds the period-start timestamp from the Grouper.
     Returns filtered DataFrame (may be empty).
     """
-    # Try integer match first (safeguard tables use int FY)
+    if 'Date' in annual_df.columns:
+        return period_filter(annual_df, start_date, end_date, date_col='Date')
+    # Fallback: derive FY from the date range and match on label
+    fy_int = date_to_fy(start_date + (end_date - start_date) / 2)
     result = annual_df[annual_df['FY'] == fy_int]
     if not result.empty:
         return result
-    # Try string format 'FY2024' or 'CY2024'
     result = annual_df[annual_df['FY'] == f'FY{fy_int}']
     if not result.empty:
         return result
     result = annual_df[annual_df['FY'] == f'CY{fy_int}']
-    if not result.empty:
-        return result
-    # Try Year column as fallback
-    if 'Year' in annual_df.columns:
-        result = annual_df[annual_df['Year'] == f'FY{fy_int}']
-        if not result.empty:
-            return result
-        result = annual_df[annual_df['Year'] == fy_int]
     return result
+
+
+def _date_range_to_fy(start_date, end_date):
+    """Derive the integer FY from a date range (for FY-based lookups).
+
+    Uses the start date of the range to determine the FY.  This gives
+    the correct result for both FY and CY ranges:
+        FY2024 (2023-07-01, 2024-07-01) -> date_to_fy(2023-07-01) = 2024
+        CY2024 (2024-01-01, 2025-01-01) -> date_to_fy(2024-01-01) = 2024
+    """
+    return date_to_fy(start_date)
 
 
 
@@ -91,7 +99,7 @@ def _fy_row(annual_df, fy_int):
 # GRI 14 QUANTITATIVE DISCLOSURE MAP
 # ─────────────────────────────────────────────────────────────────────
 # Each entry is one row in the output.  'calc_fn' names a function
-# in _CALC_FN_MAP that returns a value given (precomputed, fy, raw_df).
+# in _CALC_FN_MAP that returns a value given (precomputed, start_date, end_date, raw_df).
 
 GRI14_QUANTITATIVE_MAP = [
 
@@ -471,46 +479,50 @@ def _get_gas_ef(nga_fuel, gas, nga_year=None):
 # VALUE EXTRACTION FUNCTIONS
 # ─────────────────────────────────────────────────────────────────────
 
-def _get_scope1_total(precomputed, fy, raw_df=None, **kw):
-    """Gross Scope 1 tCO2-e for the given FY."""
-    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
+def _get_scope1_total(precomputed, start_date, end_date, raw_df=None, **kw):
+    """Gross Scope 1 tCO2-e for the given period."""
+    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
     if row.empty:
         return None
     val = float(row['Scope1'].iloc[0])
     return round(val, 2) if val > 0 else None
 
 
-def _get_scope2_total(precomputed, fy, raw_df=None, **kw):
+def _get_scope2_total(precomputed, start_date, end_date, raw_df=None, **kw):
     """Gross location-based Scope 2 tCO2-e."""
-    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
+    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
     if row.empty:
         return None
     val = float(row['Scope2'].iloc[0])
     return round(val, 2) if val > 0 else None
 
 
-def _get_scope3_total(precomputed, fy, raw_df=None, **kw):
+def _get_scope3_total(precomputed, start_date, end_date, raw_df=None, **kw):
     """Gross Scope 3 tCO2-e (fuel combustion + grid T&D)."""
-    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
+    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
     if row.empty:
         return None
     val = float(row['Scope3'].iloc[0])
     return round(val, 2) if val > 0 else None
 
 
-def _get_scope1_gas(precomputed, fy, raw_df=None, gas='CO2', **kw):
+def _get_scope1_gas(precomputed, start_date, end_date, raw_df=None, gas='CO2', **kw):
     """Scope 1 split by individual greenhouse gas (CO2, CH4, N2O).
 
-    Method: For each fuel type, take the Energy_GJ total for the FY,
+    Method: For each fuel type, take the Energy_GJ total for the period,
     multiply by the gas-specific EF (kgCO2-e/GJ), convert to tCO2-e.
     This reproduces the NGA Method 1 calculation at gas level.
 
     tCO2-e(gas) = sum over fuels [ Energy_GJ * EF_gas(kgCO2-e/GJ) / 1000 ]
+
+    Note: safeguard_source is FY-based (no Date column) so we derive the
+    FY from the date range for lookup.
     """
     src = precomputed.safeguard_source
     if src.empty:
         return None
 
+    fy = _date_range_to_fy(start_date, end_date)
     mask = (src['FY'] == fy) & (src['DataSet'] == 'Actual')
     if not mask.any():
         return None
@@ -531,9 +543,9 @@ def _get_scope1_gas(precomputed, fy, raw_df=None, gas='CO2', **kw):
     return round(total, 2) if total > 0 else 0.0
 
 
-def _get_emission_intensity(precomputed, fy, raw_df=None, **kw):
+def _get_emission_intensity(precomputed, start_date, end_date, raw_df=None, **kw):
     """Scope 1 emissions intensity: tCO2-e per tonne ROM ore."""
-    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
+    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
     if row.empty:
         return None
     rom_t = float(row['ROM_t'].iloc[0])
@@ -543,34 +555,38 @@ def _get_emission_intensity(precomputed, fy, raw_df=None, **kw):
     return round(s1 / rom_t, 6)
 
 
-def _get_energy_intensity(precomputed, fy, raw_df=None, **kw):
+def _get_energy_intensity(precomputed, start_date, end_date, raw_df=None, **kw):
     """Energy intensity: total fuel GJ per tonne ROM ore."""
-    rom_t = _get_rom_tonnes(precomputed, fy)
-    fuel_gj = _get_total_fuel_gj(precomputed, fy)
+    rom_t = _get_rom_tonnes(precomputed, start_date, end_date)
+    fuel_gj = _get_total_fuel_gj(precomputed, start_date, end_date)
     if rom_t is None or fuel_gj is None or rom_t <= 0:
         return None
     return round(fuel_gj / rom_t, 6)
 
 
-def _get_rom_tonnes(precomputed, fy, raw_df=None, **kw):
+def _get_rom_tonnes(precomputed, start_date, end_date, raw_df=None, **kw):
     """Total ROM ore tonnes."""
-    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
+    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
     if row.empty:
         return None
     val = float(row['ROM_t'].iloc[0])
     return round(val, 0) if val > 0 else None
 
 
-def _get_smc_by_type(precomputed, fy, raw_df=None, txn_type='Issuance', **kw):
-    """SMC transaction quantity by type for the given FY.
+def _get_smc_by_type(precomputed, start_date, end_date, raw_df=None, txn_type='Issuance', **kw):
+    """SMC transaction quantity by type for the given period.
 
     Types: 'Issuance', 'Sale', 'Surrender'
     Sales are stored as negative quantities in the CSV.
     Returns absolute value for reporting purposes.
+
+    SMC transactions use Applies_To_FY (always FY-based per legislation)
+    so we derive the FY from the date range for lookup.
     """
     smc = precomputed.smc_transactions
     if smc.empty:
         return None
+    fy = _date_range_to_fy(start_date, end_date)
     mask = (smc['Type'] == txn_type) & (smc['Applies_To_FY'] == fy)
     if not mask.any():
         return None
@@ -578,11 +594,15 @@ def _get_smc_by_type(precomputed, fy, raw_df=None, txn_type='Issuance', **kw):
     return round(abs(val), 0) if val != 0 else None
 
 
-def _get_total_fuel_gj(precomputed, fy, raw_df=None, **kw):
-    """Total fuel energy consumption in GJ (excludes electricity)."""
+def _get_total_fuel_gj(precomputed, start_date, end_date, raw_df=None, **kw):
+    """Total fuel energy consumption in GJ (excludes electricity).
+
+    safeguard_source is FY-based so we derive FY from the date range.
+    """
     src = precomputed.safeguard_source
     if src.empty:
         return None
+    fy = _date_range_to_fy(start_date, end_date)
     mask = (src['FY'] == fy) & (src['DataSet'] == 'Actual')
     if not mask.any():
         return None
@@ -590,8 +610,10 @@ def _get_total_fuel_gj(precomputed, fy, raw_df=None, **kw):
     return round(val, 2) if val > 0 else None
 
 
-def _get_fuel_gj_by_nga(precomputed, fy, raw_df=None, nga_prefix='', exclude_prefix='', **kw):
+def _get_fuel_gj_by_nga(precomputed, start_date, end_date, raw_df=None, nga_prefix='', exclude_prefix='', **kw):
     """Energy GJ for a specific NGAFuel prefix.
+
+    safeguard_source is FY-based so we derive FY from the date range.
 
     Args:
         nga_prefix: NGAFuel must start with this string.
@@ -602,6 +624,7 @@ def _get_fuel_gj_by_nga(precomputed, fy, raw_df=None, nga_prefix='', exclude_pre
     src = precomputed.safeguard_source
     if src.empty:
         return None
+    fy = _date_range_to_fy(start_date, end_date)
     mask = (
         (src['FY'] == fy)
         & (src['DataSet'] == 'Actual')
@@ -615,13 +638,17 @@ def _get_fuel_gj_by_nga(precomputed, fy, raw_df=None, nga_prefix='', exclude_pre
     return round(val, 2) if val > 0 else None
 
 
-def _get_fuel_gj_by_desc(precomputed, fy, raw_df=None, descriptions=None, **kw):
-    """Energy GJ for specific Description values from safeguard source."""
+def _get_fuel_gj_by_desc(precomputed, start_date, end_date, raw_df=None, descriptions=None, **kw):
+    """Energy GJ for specific Description values from safeguard source.
+
+    safeguard_source is FY-based so we derive FY from the date range.
+    """
     if descriptions is None:
         return None
     src = precomputed.safeguard_source
     if src.empty:
         return None
+    fy = _date_range_to_fy(start_date, end_date)
     mask = (
         (src['FY'] == fy)
         & (src['DataSet'] == 'Actual')
@@ -633,49 +660,50 @@ def _get_fuel_gj_by_desc(precomputed, fy, raw_df=None, descriptions=None, **kw):
     return round(val, 2) if val > 0 else None
 
 
-def _get_grid_electricity_gj(precomputed, fy, raw_df=None, **kw):
+def _get_grid_electricity_gj(precomputed, start_date, end_date, raw_df=None, **kw):
     """Purchased grid electricity in GJ.  1 kWh = 0.0036 GJ."""
-    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
+    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
     if row.empty:
         return None
     kwh = float(row['Grid_Electricity_kWh'].iloc[0])
     return round(kwh * 0.0036, 2) if kwh > 0 else None
 
 
-def _get_grid_electricity_kwh(precomputed, fy, raw_df=None, **kw):
+def _get_grid_electricity_kwh(precomputed, start_date, end_date, raw_df=None, **kw):
     """Purchased grid electricity in kWh."""
-    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
+    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
     if row.empty:
         return None
     val = float(row['Grid_Electricity_kWh'].iloc[0])
     return round(val, 0) if val > 0 else None
 
 
-def _get_site_electricity_gj(precomputed, fy, raw_df=None, **kw):
+def _get_site_electricity_gj(precomputed, start_date, end_date, raw_df=None, **kw):
     """Self-generated electricity in GJ."""
-    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
+    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
     if row.empty:
         return None
     kwh = float(row['Site_Electricity_kWh'].iloc[0])
     return round(kwh * 0.0036, 2) if kwh > 0 else None
 
 
-def _get_site_electricity_kwh(precomputed, fy, raw_df=None, **kw):
+def _get_site_electricity_kwh(precomputed, start_date, end_date, raw_df=None, **kw):
     """Self-generated electricity in kWh."""
-    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
+    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
     if row.empty:
         return None
     val = float(row['Site_Electricity_kWh'].iloc[0])
     return round(val, 0) if val > 0 else None
 
 
-def _get_production_metric(precomputed, fy, raw_df=None, common_name='', row_types=None, desc='', **kw):
+def _get_production_metric(precomputed, start_date, end_date, raw_df=None, common_name='', row_types=None, desc='', **kw):
     """Production quantity from raw data by CommonName.
 
     Used for Ore milled, Gold recovered, Gold sold, etc.
     These are not in the precomputed annual tables so we need raw_df.
 
     Falls back to Description match if CommonName column is not present.
+    Uses date-range filtering on raw_df (which has a Date column).
 
     Args:
         common_name: CommonName value to match (preferred)
@@ -686,31 +714,32 @@ def _get_production_metric(precomputed, fy, raw_df=None, common_name='', row_typ
     if raw_df is None:
         return None
 
+    # Date-range filter first
+    filtered = period_filter(raw_df, start_date, end_date)
+
     # Prefer CommonName if the column exists and a value was provided
-    if common_name and 'CommonName' in raw_df.columns:
+    if common_name and 'CommonName' in filtered.columns:
         mask = (
-            (raw_df['FY'] == fy)
-            & (raw_df['DataSet'] == 'Actual')
-            & (raw_df['CommonName'].astype(str) == common_name)
+            (filtered['DataSet'] == 'Actual')
+            & (filtered['CommonName'].astype(str) == common_name)
         )
-        if row_types and 'RowType' in raw_df.columns:
-            mask = mask & (raw_df['RowType'].astype(str).isin(row_types))
+        if row_types and 'RowType' in filtered.columns:
+            mask = mask & (filtered['RowType'].astype(str).isin(row_types))
     else:
         # Fallback: match by Description (legacy behaviour)
         lookup = desc if desc else common_name
         mask = (
-            (raw_df['FY'] == fy)
-            & (raw_df['DataSet'] == 'Actual')
-            & (raw_df['Description'].astype(str) == lookup)
+            (filtered['DataSet'] == 'Actual')
+            & (filtered['Description'].astype(str) == lookup)
         )
 
     if not mask.any():
         return None
-    val = float(raw_df.loc[mask, 'Quantity'].sum())
+    val = float(filtered.loc[mask, 'Quantity'].sum())
     return round(val, 0) if val > 0 else None
 
 
-def _get_gri_consumable(precomputed, fy, raw_df=None, common_name='', row_types=None, desc='', **kw):
+def _get_gri_consumable(precomputed, start_date, end_date, raw_df=None, common_name='', row_types=None, desc='', **kw):
     """Get GRI consumable quantity from raw data using CommonName.
 
     Matches rows by CommonName (normalised grouping key) rather than
@@ -723,6 +752,8 @@ def _get_gri_consumable(precomputed, fy, raw_df=None, common_name='', row_types=
     Falls back to Description match if CommonName column is not present
     (backward compatibility with pre-CommonName CSVs).
 
+    Uses date-range filtering on raw_df (which has a Date column).
+
     Args:
         common_name: CommonName value to match (preferred)
         row_types:   List of RowType values to include.  Default ['consumption']
@@ -731,71 +762,73 @@ def _get_gri_consumable(precomputed, fy, raw_df=None, common_name='', row_types=
     if raw_df is None:
         return None
 
+    # Date-range filter first
+    filtered = period_filter(raw_df, start_date, end_date)
+
     # Prefer CommonName if the column exists and a value was provided
-    if common_name and 'CommonName' in raw_df.columns:
+    if common_name and 'CommonName' in filtered.columns:
         mask = (
-            (raw_df['FY'] == fy)
-            & (raw_df['DataSet'] == 'Actual')
-            & (raw_df['CommonName'].astype(str) == common_name)
+            (filtered['DataSet'] == 'Actual')
+            & (filtered['CommonName'].astype(str) == common_name)
         )
         # Filter by RowType if available
-        if row_types and 'RowType' in raw_df.columns:
-            mask = mask & (raw_df['RowType'].astype(str).isin(row_types))
+        if row_types and 'RowType' in filtered.columns:
+            mask = mask & (filtered['RowType'].astype(str).isin(row_types))
     else:
         # Fallback: match by Description (legacy behaviour)
         lookup = desc if desc else common_name
         mask = (
-            (raw_df['FY'] == fy)
-            & (raw_df['DataSet'] == 'Actual')
-            & (raw_df['Description'].astype(str) == lookup)
+            (filtered['DataSet'] == 'Actual')
+            & (filtered['Description'].astype(str) == lookup)
         )
 
     if not mask.any():
         return None
-    val = float(raw_df.loc[mask, 'Quantity'].sum())
+    val = float(filtered.loc[mask, 'Quantity'].sum())
     return round(val, 2) if abs(val) > 0.001 else None
 
 
-def _get_emission_intensity_gold(precomputed, fy, raw_df=None, **kw):
+def _get_emission_intensity_gold(precomputed, start_date, end_date, raw_df=None, **kw):
     """Scope 1 emissions intensity: tCO2-e per troy ounce gold recovered."""
-    row = _fy_row(kw.get('annual_df', precomputed.annual_fy), fy)
+    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
     if row.empty:
         return None
     s1 = float(row['Scope1'].iloc[0])
-    gold_oz = _get_production_metric(precomputed, fy, raw_df=raw_df,
+    gold_oz = _get_production_metric(precomputed, start_date, end_date, raw_df=raw_df,
                                       common_name='Gold recovered', row_types=['production'])
     if gold_oz is None or gold_oz <= 0 or s1 <= 0:
         return None
     return round(s1 / gold_oz, 4)
 
 
-def _get_ore_waste(precomputed, fy, raw_df=None, uom='t', **kw):
-    """Ore waste quantity for the given FY, filtered by UOM (t or BCM).
+def _get_ore_waste(precomputed, start_date, end_date, raw_df=None, uom='t', **kw):
+    """Ore waste quantity for the given period, filtered by UOM (t or BCM).
 
     Waste rock is reported in both tonnes and BCM depending on the
     measurement method.  Returns the total for the requested UOM only.
+    Uses date-range filtering on raw_df.
     """
     if raw_df is None:
         return None
+    filtered = period_filter(raw_df, start_date, end_date)
     mask = (
-        (raw_df['FY'] == fy)
-        & (raw_df['DataSet'] == 'Actual')
-        & (raw_df['SubActivity'].astype(str) == 'Ore Waste')
-        & (raw_df['UOM'].astype(str) == uom)
+        (filtered['DataSet'] == 'Actual')
+        & (filtered['SubActivity'].astype(str) == 'Ore Waste')
+        & (filtered['UOM'].astype(str) == uom)
     )
     if not mask.any():
         return None
-    val = float(raw_df.loc[mask, 'Quantity'].sum())
+    val = float(filtered.loc[mask, 'Quantity'].sum())
     return round(val, 0) if val > 0 else None
 
 
-def _get_tailings_approx(precomputed, fy, raw_df=None, **kw):
+def _get_tailings_approx(precomputed, start_date, end_date, raw_df=None, **kw):
     """Approximate tailings tonnage: milled tonnes less gold recovered.
 
     Almost all milled material reports to tailings.  Gold recovery
     is negligible by mass but included for completeness.
     """
-    milled = _get_production_metric(precomputed, fy, raw_df=raw_df,
+    milled = _get_production_metric(precomputed, start_date, end_date, raw_df=raw_df,
                                      common_name='Ore milled', row_types=['total'])
     if milled is None or milled <= 0:
         return None
@@ -803,16 +836,16 @@ def _get_tailings_approx(precomputed, fy, raw_df=None, **kw):
     return round(milled, 0)
 
 
-def _get_strip_ratio(precomputed, fy, raw_df=None, **kw):
+def _get_strip_ratio(precomputed, start_date, end_date, raw_df=None, **kw):
     """Strip ratio: waste rock tonnes / ROM ore tonnes."""
-    waste_t = _get_ore_waste(precomputed, fy, raw_df=raw_df, uom='t')
-    rom_t = _get_rom_tonnes(precomputed, fy)
+    waste_t = _get_ore_waste(precomputed, start_date, end_date, raw_df=raw_df, uom='t')
+    rom_t = _get_rom_tonnes(precomputed, start_date, end_date)
     if waste_t is None or rom_t is None or rom_t <= 0:
         return None
     return round(waste_t / rom_t, 2)
 
 
-def _get_zero(precomputed, fy, raw_df=None, **kw):
+def _get_zero(precomputed, start_date, end_date, raw_df=None, **kw):
     """Return 0.0 for disclosures that are definitively zero."""
     return 0.0
 
@@ -914,32 +947,47 @@ _METHODOLOGY = {
 # MAIN EXPORT FUNCTION
 # ─────────────────────────────────────────────────────────────────────
 
-def build_gri14_export(precomputed, raw_df=None, reporting_fys=None, year_type='FY'):
+def build_gri14_export(precomputed, raw_df=None, reporting_fys=None,
+                       reporting_periods=None, year_type='FY'):
     """Build the GRI 14 flat-file export from precomputed data.
 
     Args:
         precomputed: PrecomputedData instance from calc_precompute
-        raw_df: Raw DataFrame from load_all_data()  - needed for production
+        raw_df: Raw DataFrame from load_all_data() -- needed for production
                 metrics (milled tonnes, gold oz) not in precomputed tables.
                 Pass None to skip those rows.
-        reporting_fys: List of FY integers to report.
-                       Default: all FYs with actual Scope 1 data.
-        year_type: 'FY' or 'CY' — selects which annual table to use.
+        reporting_fys: (Deprecated) List of FY integers to report.
+                       Converted to reporting_periods internally.
+        reporting_periods: List of (start_date, end_date, label) tuples.
+                           Preferred interface for date-range filtering.
+        year_type: 'FY' or 'CY' -- selects which annual table to use.
 
     Returns:
         DataFrame with columns:
             GRI_Topic, Section, GRI_Reference, Description, Unit,
             FY, Value, Data_Source, Methodology_Note
     """
-    if reporting_fys is None:
-        # Select annual table based on year_type
-        annual = precomputed.annual_cy if year_type == 'CY' else precomputed.annual_fy
-        mask = annual['Scope1'] > 0
-        raw_fys = annual.loc[mask, 'FY'].unique()
-        prefix = 'CY' if year_type == 'CY' else 'FY'
-        reporting_fys = sorted([
-            int(str(f).replace('FY', '').replace('CY', '')) for f in raw_fys
-        ])
+    # Convert deprecated reporting_fys to reporting_periods
+    if reporting_periods is None:
+        if reporting_fys is not None:
+            reporting_periods = []
+            for fy in reporting_fys:
+                start, end = year_to_date_range(fy, year_type)
+                prefix = 'CY' if year_type == 'CY' else 'FY'
+                reporting_periods.append((start, end, f"{prefix}{fy}"))
+        else:
+            # Auto-detect from annual table
+            annual = precomputed.annual_cy if year_type == 'CY' else precomputed.annual_fy
+            mask = annual['Scope1'] > 0
+            raw_fys = annual.loc[mask, 'FY'].unique()
+            prefix = 'CY' if year_type == 'CY' else 'FY'
+            year_ints = sorted([
+                int(str(f).replace('FY', '').replace('CY', '')) for f in raw_fys
+            ])
+            reporting_periods = []
+            for yi in year_ints:
+                start, end = year_to_date_range(yi, year_type)
+                reporting_periods.append((start, end, f"{prefix}{yi}"))
 
     rows = []
 
@@ -950,10 +998,14 @@ def build_gri14_export(precomputed, raw_df=None, reporting_fys=None, year_type='
 
         calc_args = entry.get('calc_args', {})
 
-        for fy in reporting_fys:
+        for start_date, end_date, label in reporting_periods:
             # Pass selected annual table so extraction functions use correct year_type
             annual_df = precomputed.annual_cy if year_type == 'CY' else precomputed.annual_fy
-            value = fn(precomputed, fy, raw_df=raw_df, annual_df=annual_df, **calc_args)
+            value = fn(precomputed, start_date, end_date, raw_df=raw_df,
+                       annual_df=annual_df, **calc_args)
+
+            # Extract numeric year from label for the FY column
+            fy_numeric = int(label.replace('FY', '').replace('CY', ''))
 
             rows.append({
                 'GRI_Topic': entry.get('gri_topic', '14.1 Climate Change'),
@@ -961,7 +1013,7 @@ def build_gri14_export(precomputed, raw_df=None, reporting_fys=None, year_type='
                 'GRI_Reference': entry['gri_ref'],
                 'Description': entry['description'],
                 'Unit': entry['unit'],
-                'FY': int(fy),
+                'FY': fy_numeric,
                 'Value': value,
                 'Coverage': entry.get('coverage', 'Auto'),
                 'Data_Source': 'Ravenswood Emissions Model',

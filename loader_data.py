@@ -39,6 +39,7 @@ Output columns:
     Scope3_tCO2e, Energy_GJ, Source
 """
 
+import io
 import pandas as pd
 import os
 from pathlib import Path
@@ -56,11 +57,32 @@ from calc_emissions import (
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
 
+def _read_csv_or_enc(csv_path, passphrase=None, **read_csv_kwargs):
+    """Read a CSV file, decrypting from .enc if available.
+
+    Priority:
+        1. If <csv_path>.enc exists AND a passphrase is provided, decrypt and load.
+        2. Otherwise fall back to plain <csv_path>.
+
+    This lets the app work in both distributed (encrypted) and local-dev
+    (plain CSV) scenarios without code changes.
+    """
+    enc_path = csv_path + '.enc'
+    if os.path.exists(enc_path) and passphrase:
+        from crypto_utils import decrypt_file
+        plaintext = decrypt_file(enc_path, passphrase)
+        print(f'Decrypted: {enc_path}')
+        return pd.read_csv(io.BytesIO(plaintext), **read_csv_kwargs)
+
+    return pd.read_csv(csv_path, **read_csv_kwargs)
+
+
 
 def load_all_data(actual_path=None,
                   budget_path=None,
                   nga_folder=None,
-                  fy_start_month=NGER_FY_START_MONTH):
+                  fy_start_month=NGER_FY_START_MONTH,
+                  passphrase=None):
     """Load and process operational metrics from separate actual/budget files.
 
     Reads two CSVs with Activity/SubActivity/Description/Identifier schema,
@@ -89,10 +111,11 @@ def load_all_data(actual_path=None,
 
     # 1. LOAD CSVs AND TAG WITH DATASET
     # Source files have no DataSet column — we synthesise it from the file origin.
+    # Uses _read_csv_or_enc to transparently decrypt .enc files when distributed.
     frames = []
     for path, label in [(actual_path, 'Actual'), (budget_path, 'Budget')]:
         try:
-            part = pd.read_csv(path)
+            part = _read_csv_or_enc(path, passphrase=passphrase)
             part['DataSet'] = label
             frames.append(part)
             print(f'Loaded {label}: {len(part):,} records from {path}')
@@ -111,9 +134,9 @@ def load_all_data(actual_path=None,
     failed_dates = df['Date'].isna().sum()
     if failed_dates > 0:
         # Re-read raw to show bad rows
-        raw_a = pd.read_csv(actual_path)
+        raw_a = _read_csv_or_enc(actual_path, passphrase=passphrase)
         raw_a['DataSet'] = 'Actual'
-        raw_b = pd.read_csv(budget_path)
+        raw_b = _read_csv_or_enc(budget_path, passphrase=passphrase)
         raw_b['DataSet'] = 'Budget'
         raw_df = pd.concat([raw_a, raw_b], ignore_index=True)
         bad_mask = pd.to_datetime(raw_df['Date'], dayfirst=True, errors='coerce').isna()
@@ -280,7 +303,7 @@ def load_energy_data(*args, **kwargs):
     raise NotImplementedError('load_energy_data() deprecated — use load_all_data()')
 
 
-def load_smc_transactions(filepath=None):
+def load_smc_transactions(filepath=None, passphrase=None):
     """Load SMC transaction log for reconciling model against registry actuals.
 
     Transaction types:
@@ -301,12 +324,13 @@ def load_smc_transactions(filepath=None):
         filepath = os.path.join(DATA_DIR, 'smc_transactions.csv')
 
     path = Path(filepath)
-    if not path.exists():
+    enc_path = Path(filepath + '.enc')
+    if not path.exists() and not enc_path.exists():
         return pd.DataFrame(columns=['Date', 'FY', 'Type', 'Quantity',
                                       'Unit_Price', 'Total_Value',
                                       'Reference', 'Notes'])
 
-    df = pd.read_csv(path, parse_dates=['Date'])
+    df = _read_csv_or_enc(filepath, passphrase=passphrase, parse_dates=['Date'])
 
     # Applies_To_FY is the reporting year the transaction relates to
     # (issuances lag — CER issues FY2024 credits in Feb 2025)

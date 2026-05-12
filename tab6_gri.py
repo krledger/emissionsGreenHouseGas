@@ -19,6 +19,7 @@ from export_gri14 import (
     coverage_summary_counts,
     GRI14_QUANTITATIVE_MAP,
 )
+from calc_calendar import year_to_date_range
 
 
 def render_gri_tab(df, precomputed, display_year, year_type):
@@ -36,9 +37,11 @@ def render_gri_tab(df, precomputed, display_year, year_type):
     st.subheader("GRI 14 Mining Sector Disclosure")
     st.caption(f"Reporting year: {year_label}")
 
-    # Build export for selected year only
+    # Build export for selected year only -- convert to date range
+    start_date, end_date = year_to_date_range(display_year, year_type)
+    reporting_periods = [(start_date, end_date, f"{year_prefix}{display_year}")]
     gri_df = build_gri14_export(
-        precomputed, raw_df=df, reporting_fys=[display_year],
+        precomputed, raw_df=df, reporting_periods=reporting_periods,
         year_type=year_type
     )
 

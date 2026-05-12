@@ -1,7 +1,7 @@
 """
 calc_calendar.py
 Calendar and date calculation functions for NGERS financial year and calendar year handling
-Last updated: 2026-02-05 15:00 AEST
+Last updated: 2026-05-12 AEST
 
 Handles conversions between:
 - Dates (datetime objects)
@@ -306,3 +306,64 @@ def filter_by_date_range(df, start_date, end_date):
         DataFrame: Filtered to the date range
     """
     return df[(df['Date'] >= start_date) & (df['Date'] <= end_date)]
+
+
+# =============================================================================
+# DATE-RANGE FILTERING FUNCTIONS
+# =============================================================================
+
+def period_filter(df, start_date, end_date, date_col='Date'):
+    """Filter DataFrame to rows where date_col is in [start_date, end_date).
+
+    Uses a half-open interval so that adjacent periods do not overlap.
+
+    Args:
+        df: DataFrame containing the date column
+        start_date: Inclusive start (datetime or string)
+        end_date: Exclusive end (datetime or string)
+        date_col: Column name holding dates
+
+    Returns:
+        DataFrame: Filtered rows
+    """
+    dates = pd.to_datetime(df[date_col])
+    return df[(dates >= pd.Timestamp(start_date)) & (dates < pd.Timestamp(end_date))]
+
+
+def year_to_date_range(year, year_type='FY'):
+    """Convert a year integer + type to a half-open (start, end) date range.
+
+    FY2024 -> (2023-07-01, 2024-07-01)
+    CY2024 -> (2024-01-01, 2025-01-01)
+
+    Args:
+        year: Integer year number
+        year_type: 'FY' or 'CY'
+
+    Returns:
+        tuple: (start_date, end_date) as datetime objects.  End is exclusive.
+    """
+    if year_type == 'FY':
+        return (datetime(year - 1, 7, 1), datetime(year, 7, 1))
+    else:
+        return (datetime(year, 1, 1), datetime(year + 1, 1, 1))
+
+
+def aggregate_period(df, start_date, end_date, agg_dict=None, date_col='Date'):
+    """Filter to a date range and aggregate to a single summary Series.
+
+    Args:
+        df: DataFrame with a date column
+        start_date: Inclusive start
+        end_date: Exclusive end
+        agg_dict: Optional dict of {column: aggregation_function}.
+                  If None, sums all numeric columns.
+        date_col: Column name holding dates
+
+    Returns:
+        Series: Aggregated values
+    """
+    filtered = period_filter(df, start_date, end_date, date_col)
+    if agg_dict:
+        return filtered.agg(agg_dict)
+    return filtered.sum(numeric_only=True)

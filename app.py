@@ -38,7 +38,7 @@ from config import (
     DECLINE_RATE_PHASE1,
     SAFEGUARD_THRESHOLD
 )
-from calc_calendar import date_to_fy, date_to_cy
+from calc_calendar import date_to_fy, date_to_cy, year_to_date_range
 from loader_data import load_all_data
 from calc_precompute import precompute_all
 
@@ -141,6 +141,35 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ═══════════════════════════════════════════════════════════════════════
+# ACCESS CONTROL
+# ═══════════════════════════════════════════════════════════════════════
+
+import hashlib
+
+_ACCESS_HASH = "9cd8d1031365f2760dd807b98092fcb46ec79df78abe2d9f1358ec2a9bc07cca"
+
+def _check_passphrase(phrase):
+    return hashlib.sha256(phrase.strip().encode()).hexdigest() == _ACCESS_HASH
+
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+if not st.session_state.authenticated:
+    st.title("\U0001f512 Ravenswood Gold Mine")
+    st.caption("Enter the passphrase to access the dashboard")
+    passphrase = st.text_input("Passphrase", type="password",
+                               placeholder="Enter passphrase...")
+    if passphrase:
+        if _check_passphrase(passphrase):
+            st.session_state.authenticated = True
+            st.session_state.data_passphrase = passphrase.strip()
+            st.rerun()
+        else:
+            st.error("Incorrect passphrase.")
+    st.stop()
+
+
 # TITLE
 st.title("\U0001f3ed Ravenswood Gold Mine - Safeguard Mechanism Model")
 st.caption("Emissions tracking and Safeguard Mechanism compliance projections")
@@ -150,16 +179,19 @@ st.caption("Emissions tracking and Safeguard Mechanism compliance projections")
 # ═══════════════════════════════════════════════════════════════════════
 
 @st.cache_data(ttl=3600, show_spinner="Loading emissions data...")
-def load_data_cached():
-    """Load unified data with caching"""
-    return load_all_data()
+def load_data_cached(_passphrase):
+    """Load unified data with caching.
+
+    _passphrase is underscore-prefixed so Streamlit does not hash it.
+    """
+    return load_all_data(passphrase=_passphrase)
 
 @st.cache_resource(ttl=3600, show_spinner="Pre-computing projections...")
-def precompute_cached(_df):
+def precompute_cached(_df, _passphrase):
     """Pre-compute all derived data.
 
-    _df is underscore-prefixed to tell Streamlit not to hash it
-    (it's already cached by load_data_cached).
+    _df and _passphrase are underscore-prefixed to tell Streamlit
+    not to hash them.
     """
     return precompute_all(
         _df,
@@ -172,23 +204,27 @@ def precompute_cached(_df):
         end_rehabilitation_date=DEFAULT_END_REHABILITATION_DATE,
         credit_start_date=CREDIT_START_DATE,
         decline_rate_phase2=DECLINE_RATE_PHASE2,
+        passphrase=_passphrase,
     )
 
 
-# Check if source data files exist
+# Check if source data files exist (plain CSV or encrypted .enc)
 _actual_path = Path('data') / 'operations_metrics_actual.csv'
 _budget_path = Path('data') / 'operations_metrics_budget.csv'
-_missing = [p.name for p in [_actual_path, _budget_path] if not p.exists()]
+_missing = [
+    p.name for p in [_actual_path, _budget_path]
+    if not p.exists() and not Path(str(p) + '.enc').exists()
+]
 if _missing:
     st.error(f"Missing required file(s): {', '.join(_missing)}")
     st.info("Please ensure the data files are in the same directory as this script.")
     st.stop()
 
 # Load unified data
-df = load_data_cached()
+df = load_data_cached(st.session_state.get('data_passphrase'))
 
 # Pre-compute ALL derived data (projections, annual aggregations, source tables)
-precomputed = precompute_cached(df)
+precomputed = precompute_cached(df, st.session_state.get('data_passphrase'))
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -264,6 +300,11 @@ with st.sidebar:
         )
 
         st.caption("SMC compliance calculations always use FY per legislation")
+
+    # Compute date range for the selected display year and year type
+    _start_date, _end_date = year_to_date_range(display_year, selected_year_type)
+    st.session_state.start_date = _start_date
+    st.session_state.end_date = _end_date
 
     # Constants locked to config (no user override)
     fsei_rom = FSEI_ROM

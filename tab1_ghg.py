@@ -13,7 +13,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from calc_calendar import date_to_fy, date_to_cy
+from calc_calendar import date_to_fy, date_to_cy, period_filter, year_to_date_range
 from calc_precompute import get_annual
 from config import DEFAULT_GRID_CONNECTION_DATE, CREDIT_START_DATE
 
@@ -55,10 +55,8 @@ def _add_phase_markers(fig, years_list, grid_connected_date,
 def _build_raw_data_summary(df, display_year, year_type='FY'):
     """Build raw data summary table showing consumption and emissions by fuel type."""
 
-    if year_type == 'FY':
-        year_data = df[(df['FY'] == display_year) & (df['DataSet'] == 'Actual')].copy()
-    else:
-        year_data = df[(df['Year'] == display_year) & (df['DataSet'] == 'Actual')].copy()
+    start_date, end_date = year_to_date_range(display_year, year_type)
+    year_data = period_filter(df[df['DataSet'] == 'Actual'], start_date, end_date).copy()
 
     if len(year_data) == 0:
         return None
@@ -120,10 +118,8 @@ def _build_raw_data_summary(df, display_year, year_type='FY'):
 
 def _build_monthly_detail(df, display_year, year_type='FY'):
     """Build monthly detail table for the selected year with NGA factors shown."""
-    if year_type == 'FY':
-        year_data = df[df['FY'] == display_year].copy()
-    else:
-        year_data = df[df['Year'] == display_year].copy()
+    start_date, end_date = year_to_date_range(display_year, year_type)
+    year_data = period_filter(df, start_date, end_date).copy()
 
     if len(year_data) == 0:
         return None
@@ -305,10 +301,11 @@ def display_single_source(projection, display_year, df, show_summary=True, year_
     with st.expander("Emissions Breakdown", expanded=False):
         st.caption(f"Breakdown for {year_label}")
 
-        fy_data = df[(df['FY'] == display_year) & (df['DataSet'] == 'Actual')].copy()
+        _sd, _ed = year_to_date_range(display_year, year_type)
+        fy_data = period_filter(df[df['DataSet'] == 'Actual'], _sd, _ed).copy()
 
         if len(fy_data) == 0:
-            st.warning(f"No data available for FY{display_year}")
+            st.warning(f"No data available for {year_label}")
         else:
             col1, col2 = st.columns(2)
 

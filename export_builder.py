@@ -10,6 +10,7 @@ from plotly.subplots import make_subplots
 from datetime import datetime
 
 from config import COLORS, SAFEGUARD_THRESHOLD, SITE_GENERATION_RATIO
+from calc_calendar import period_filter, year_to_date_range
 
 
 # Gold color palette from tabs
@@ -97,7 +98,8 @@ def build_ghg_charts(df, selected_source, projection, grid_connected_fy, display
 
     # Chart 2: Cost Centre Pie
     source_name = selected_source if selected_source != 'All' else 'Base'
-    fy_data = df[(df['FY'] == display_year) & (df['DataSet'] == source_name)].copy()
+    _sd, _ed = year_to_date_range(display_year, 'FY')
+    fy_data = period_filter(df[df['DataSet'] == source_name], _sd, _ed).copy()
 
     if not fy_data.empty and 'CostCentre' in fy_data.columns:
         cc_totals = fy_data.groupby('CostCentre')['Quantity'].sum().reset_index()
@@ -176,7 +178,8 @@ def build_ghg_tables(projection, df, selected_source, display_year=2025):
 
     # Table 3: Cost Centre Breakdown (current year)
     source_name = selected_source if selected_source != 'All' else 'Base'
-    fy_data = df[(df['FY'] == display_year) & (df['DataSet'] == source_name)].copy()
+    _sd, _ed = year_to_date_range(display_year, 'FY')
+    fy_data = period_filter(df[df['DataSet'] == source_name], _sd, _ed).copy()
 
     if not fy_data.empty and 'CostCentre' in fy_data.columns:
         cc_breakdown = fy_data.groupby('CostCentre')['Quantity'].sum().reset_index()
