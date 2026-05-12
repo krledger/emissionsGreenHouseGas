@@ -209,7 +209,7 @@ def precompute_cached(_df, _passphrase):
 
 
 # Check if source data files exist (plain CSV or encrypted .enc)
-_data_dir = Path(__file__).resolve().parent / 'data'
+_data_dir = Path(__file__).resolve().parent / 'Data'
 _actual_path = _data_dir / 'operations_metrics_actual.csv'
 _budget_path = _data_dir / 'operations_metrics_budget.csv'
 _missing = [

@@ -41,7 +41,7 @@ class NGAFactorsByYear:
         """
         if folder_path is None:
             folder_path = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), 'data'
+                os.path.dirname(os.path.abspath(__file__)), 'Data'
             )
         self.folder_path = folder_path
         self.df = None

@@ -54,7 +54,7 @@ from calc_emissions import (
 
 
 # Data files live in ./data/ alongside this module.
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Data')
 
 
 def _read_csv_or_enc(csv_path, passphrase=None, **read_csv_kwargs):
