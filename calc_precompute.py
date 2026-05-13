@@ -37,7 +37,7 @@ from calc_emissions import (
     build_year_factor_map, build_safeguard_source_table,
     build_safeguard_production_table
 )
-from calc_calendar import date_to_fy, aggregate_by_year_type
+from calc_calendar import date_to_fy, aggregate_by_year_type, detect_year_type
 
 
 @dataclass
@@ -189,12 +189,18 @@ def _aggregate_annual(monthly, year_type='FY'):
     else:
         annual['Grid_Electricity_MWh'] = 0.0
 
-    # Recalculate emission intensity from annual totals
-    annual['Emission_Intensity'] = 0.0
+    # Emission intensity columns - explicit by scope
+    annual['Scope1_Intensity'] = 0.0
+    annual['Total_Intensity'] = 0.0
     mask = annual['ROM_Mt'] > 0
-    annual.loc[mask, 'Emission_Intensity'] = (
+    annual.loc[mask, 'Scope1_Intensity'] = (
         annual.loc[mask, 'Scope1'] / (annual.loc[mask, 'ROM_Mt'] * 1_000_000)
     )
+    annual.loc[mask, 'Total_Intensity'] = (
+        annual.loc[mask, 'Total'] / (annual.loc[mask, 'ROM_Mt'] * 1_000_000)
+    )
+    # Legacy alias (consumers should migrate to explicit names)
+    annual['Emission_Intensity'] = annual['Scope1_Intensity']
 
     # SMC annual from monthly sum
     if 'SMC_Monthly' in annual.columns:
@@ -249,18 +255,18 @@ def build_safeguard_projection(precomputed, year_type,
     return annual
 
 
-def build_carbon_tax_projection(precomputed, year_type,
-                                tax_start_fy, tax_rate, tax_escalation,
+def build_carbon_tax_projection(annual, precomputed,
+                                tax_start_fy=None, tax_rate=None, tax_escalation=None,
                                 include_scope2=False, state='QLD',
                                 ef2_decline_rate=0.05):
-    """Build carbon tax analysis from pre-computed annual data.
+    """Build carbon tax analysis from annual data frame.
 
     Fast — no raw data processing.  Scope 2 EF lookup uses the
     pre-loaded NGAFactorsByYear instance.
 
     Args:
-        precomputed: PrecomputedData
-        year_type: 'FY' or 'CY'
+        annual: Annual projection DataFrame (selected by caller)
+        precomputed: PrecomputedData (for NGA factor lookup)
         tax_start_fy: First FY tax applies
         tax_rate: Initial rate $/tCO2-e
         tax_escalation: Annual escalation (decimal)
@@ -273,7 +279,7 @@ def build_carbon_tax_projection(precomputed, year_type,
     """
     from projections import carbon_tax_analysis
 
-    annual = precomputed.annual_fy.copy() if year_type == 'FY' else precomputed.annual_cy.copy()
+    annual = annual.copy()
 
     return carbon_tax_analysis(
         annual, tax_start_fy, tax_rate, tax_escalation,
@@ -283,11 +289,17 @@ def build_carbon_tax_projection(precomputed, year_type,
     )
 
 
-def get_annual(precomputed, year_type):
-    """Return the correct annual DataFrame for the given year_type.
+def get_annual(precomputed, year_type=None, start_date=None):
+    """Return the correct annual DataFrame.
+
+    Accepts either year_type ('FY'/'CY') for backward compatibility
+    or start_date (datetime) which auto-detects from July=FY, Jan=CY.
 
     Returns a COPY so tabs can modify without affecting cached data.
     """
+    if start_date is not None:
+        detected = detect_year_type(start_date)
+        year_type = detected if detected != 'custom' else 'CY'
     if year_type == 'FY':
         return precomputed.annual_fy.copy()
     else:

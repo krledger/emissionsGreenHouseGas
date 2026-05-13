@@ -103,42 +103,109 @@ def build_ghg_charts(df, selected_source, projection, grid_connected_fy, display
 
     if not fy_data.empty and 'CostCentre' in fy_data.columns:
         cc_totals = fy_data.groupby('CostCentre')['Quantity'].sum().reset_index()
-        cc_totals = cc_totals.sort_values('Quantity', ascending=False)
+        cc_totals = cc_totals[cc_totals['Quantity'] > 0]
+        cc_totals = cc_totals.sort_values('Quantity', ascending=False).reset_index(drop=True)
+        cc_totals['Cumulative_Pct'] = cc_totals['Quantity'].cumsum() / cc_totals['Quantity'].sum() * 100
 
-        fig_cc = go.Figure(data=[go.Pie(
-            labels=cc_totals['CostCentre'],
-            values=cc_totals['Quantity'],
-            hole=0.3,
-            marker=dict(colors=[GOLD_METALLIC, BRIGHT_GOLD, DARK_GOLDENROD, SEPIA, CAFE_NOIR])
-        )])
+        fig_cc = make_subplots(specs=[[{"secondary_y": True}]])
+        fig_cc.add_trace(go.Bar(
+            x=cc_totals['CostCentre'], y=cc_totals['Quantity'],
+            name='Emissions (tCO2-e)',
+            marker_color=GOLD_METALLIC
+        ), secondary_y=False)
+        fig_cc.add_trace(go.Scatter(
+            x=cc_totals['CostCentre'], y=cc_totals['Cumulative_Pct'],
+            name='Cumulative %', mode='lines+markers',
+            line=dict(color=CAFE_NOIR, width=2),
+            marker=dict(size=5, color=CAFE_NOIR)
+        ), secondary_y=True)
 
         fig_cc.update_layout(
             title=f"Emissions by Cost Centre - FY{display_year}",
-            height=500,
-            template='plotly_white'
+            height=500, template='plotly_white'
         )
+        fig_cc.update_yaxes(title_text="Emissions (tCO2-e)", secondary_y=False)
+        fig_cc.update_yaxes(title_text="Cumulative %", range=[0, 105], secondary_y=True)
+        fig_cc.update_xaxes(tickangle=-45)
 
         charts['tab1_emissions_by_cost_centre.png'] = fig_cc
 
     # Chart 3: Department Pie
     if not fy_data.empty and 'Department' in fy_data.columns:
         dept_totals = fy_data.groupby('Department')['Quantity'].sum().reset_index()
-        dept_totals = dept_totals.sort_values('Quantity', ascending=False)
+        dept_totals = dept_totals[dept_totals['Quantity'] > 0]
+        dept_totals = dept_totals.sort_values('Quantity', ascending=False).reset_index(drop=True)
+        dept_totals['Cumulative_Pct'] = dept_totals['Quantity'].cumsum() / dept_totals['Quantity'].sum() * 100
 
-        fig_dept = go.Figure(data=[go.Pie(
-            labels=dept_totals['Department'],
-            values=dept_totals['Quantity'],
-            hole=0.3,
-            marker=dict(colors=[GOLD_METALLIC, BRIGHT_GOLD, DARK_GOLDENROD, SEPIA, CAFE_NOIR])
-        )])
+        fig_dept = make_subplots(specs=[[{"secondary_y": True}]])
+        fig_dept.add_trace(go.Bar(
+            x=dept_totals['Department'], y=dept_totals['Quantity'],
+            name='Emissions (tCO2-e)',
+            marker_color=GOLD_METALLIC
+        ), secondary_y=False)
+        fig_dept.add_trace(go.Scatter(
+            x=dept_totals['Department'], y=dept_totals['Cumulative_Pct'],
+            name='Cumulative %', mode='lines+markers',
+            line=dict(color=CAFE_NOIR, width=2),
+            marker=dict(size=5, color=CAFE_NOIR)
+        ), secondary_y=True)
 
         fig_dept.update_layout(
             title=f"Emissions by Department - FY{display_year}",
-            height=500,
-            template='plotly_white'
+            height=500, template='plotly_white'
         )
+        fig_dept.update_yaxes(title_text="Emissions (tCO2-e)", secondary_y=False)
+        fig_dept.update_yaxes(title_text="Cumulative %", range=[0, 105], secondary_y=True)
+        fig_dept.update_xaxes(tickangle=-45)
 
         charts['tab1_emissions_by_department.png'] = fig_dept
+
+    # Chart 4: Sunburst - Department (inner) / Cost Centre (outer)
+    if not fy_data.empty and 'Department' in fy_data.columns and 'CostCentre' in fy_data.columns:
+        sun_grouped = fy_data.groupby(['Department', 'CostCentre'])['Quantity'].sum().reset_index()
+        sun_grouped = sun_grouped[sun_grouped['Quantity'] > 0].sort_values('Quantity', ascending=False)
+
+        if len(sun_grouped) > 0:
+            grand_total = sun_grouped['Quantity'].sum()
+            dept_colors_list = [GOLD_METALLIC, BRIGHT_GOLD, DARK_GOLDENROD, SEPIA, CAFE_NOIR]
+            dept_order = sun_grouped.groupby('Department')['Quantity'].sum().sort_values(ascending=False).index.tolist()
+            dept_color_map = {d: dept_colors_list[i % len(dept_colors_list)] for i, d in enumerate(dept_order)}
+
+            sun_ids, sun_labels, sun_parents, sun_values, sun_colors = [], [], [], [], []
+
+            for d in dept_order:
+                d_total = sun_grouped[sun_grouped['Department'] == d]['Quantity'].sum()
+                pct = d_total / grand_total * 100
+                sun_ids.append(d)
+                sun_labels.append(f"{d} {pct:.0f}%")
+                sun_parents.append('')
+                sun_values.append(d_total)
+                sun_colors.append(dept_color_map[d])
+
+            for _, row in sun_grouped.iterrows():
+                cc_id = f"{row['Department']}/{row['CostCentre']}"
+                pct = row['Quantity'] / grand_total * 100
+                label = f"{row['CostCentre']} {row['Quantity']:,.0f}" if pct >= 3 else (row['CostCentre'] if pct >= 1 else '')
+                sun_ids.append(cc_id)
+                sun_labels.append(label)
+                sun_parents.append(row['Department'])
+                sun_values.append(row['Quantity'])
+                base = dept_color_map[row['Department']]
+                r, g, b = int(base[1:3], 16), int(base[3:5], 16), int(base[5:7], 16)
+                sun_colors.append(f'rgba({min(r+40,255)},{min(g+40,255)},{min(b+40,255)},0.85)')
+
+            fig_sun = go.Figure(go.Sunburst(
+                ids=sun_ids, labels=sun_labels, parents=sun_parents, values=sun_values,
+                marker=dict(colors=sun_colors, line=dict(width=1.5, color='white')),
+                branchvalues='total', textinfo='label',
+                insidetextorientation='radial'
+            ))
+            fig_sun.update_layout(
+                title=f"Emissions by Department & Cost Centre - FY{display_year}",
+                height=600, template='plotly_white',
+                margin=dict(t=60, b=20, l=20, r=20)
+            )
+            charts['tab1_emissions_dept_cc_sunburst.png'] = fig_sun
 
     return charts
 
@@ -166,7 +233,7 @@ def build_ghg_tables(projection, df, selected_source, display_year=2025):
             'Scope2_tCO2e': f"{row['Scope2']:,.0f}",
             'Scope3_tCO2e': f"{row['Scope3']:,.0f}",
             'Total_tCO2e': f"{row['Total']:,.0f}",
-            'Intensity_tCO2e_per_t': f"{row['Emission_Intensity']:.4f}" if row['ROM_Mt'] > 0 else "N/A"
+            'Intensity_tCO2e_per_t': f"{row['Total_Intensity']:.4f}" if row['ROM_Mt'] > 0 else "N/A"
         }])
 
         tables[f'tab1_emissions_summary_FY{display_year}_{timestamp}.csv'] = summary
@@ -222,7 +289,7 @@ def build_safeguard_charts(projection_df, fsei_rom, fsei_elec, grid_connected_fy
     # Line - Actual Intensity (solid)
     fig.add_trace(go.Scatter(
         x=projection_df['FY'],
-        y=projection_df['Emission_Intensity'],
+        y=projection_df['Total_Intensity'],
         name='Actual Intensity',
         line=dict(color=CAFE_NOIR, width=3),
         mode='lines+markers',
@@ -391,7 +458,7 @@ def build_safeguard_tables(projection_df, fsei_rom, fsei_elec, display_year=2025
         baseline_total = row['Baseline_Intensity']
 
         if row['ROM_Mt'] > 0:
-            actual_total = row['Emission_Intensity']
+            actual_total = row['Scope1_Intensity']
             site_mwh = row['Site_Electricity_kWh'] / 1000
             actual_site_gen_ratio = site_mwh / (row['ROM_Mt'] * 1_000_000)
             actual_elec_component = actual_site_gen_ratio * fsei_elec
@@ -417,7 +484,7 @@ def build_safeguard_tables(projection_df, fsei_rom, fsei_elec, display_year=2025
         tables[f'tab2_safeguard_summary_FY{display_year}_{timestamp}.csv'] = summary
 
     # Table 2: Safeguard Data Table (all years)
-    data_cols = ['FY', 'ROM_Mt', 'Scope1', 'Baseline', 'Emission_Intensity',
+    data_cols = ['FY', 'ROM_Mt', 'Scope1', 'Baseline', 'Scope1_Intensity',
                  'Baseline_Intensity', 'SMC_Annual', 'SMC_Cumulative']
     available_cols = [col for col in data_cols if col in projection_df.columns]
     if available_cols:
@@ -425,7 +492,7 @@ def build_safeguard_tables(projection_df, fsei_rom, fsei_elec, display_year=2025
         tables[f'tab2_safeguard_data_table_{timestamp}.csv'] = data_table
 
     # Table 3: Intensity Breakdown (all years)
-    intensity_cols = ['FY', 'ROM_Intensity', 'Elec_Intensity', 'Emission_Intensity', 'Baseline_Intensity']
+    intensity_cols = ['FY', 'ROM_Intensity', 'Elec_Intensity', 'Scope1_Intensity', 'Baseline_Intensity']
     available_intensity = [col for col in intensity_cols if col in projection_df.columns]
     if available_intensity:
         intensity_table = projection_df[available_intensity].copy()

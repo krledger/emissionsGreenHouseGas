@@ -22,10 +22,10 @@ from calc_calendar import date_to_fy
 from config import DEFAULT_GRID_CONNECTION_DATE, DEFAULT_EF2_DECLINE_RATE
 
 
-def render_carbon_tax_tab(precomputed,
+def render_carbon_tax_tab(precomputed, data_frame,
                           tax_start_fy, tax_rate, tax_escalation,
                           include_scope2,
-                          year_type='FY',
+                          period_label='',
                           end_mining_date=None, end_processing_date=None,
                           end_rehabilitation_date=None):
     """Render Carbon Tax Analysis tab.
@@ -36,7 +36,6 @@ def render_carbon_tax_tab(precomputed,
         tax_rate: Initial rate $/tCO2-e
         tax_escalation: Annual escalation (decimal)
         include_scope2: Include Scope 2 electricity pass-through (sensitivity)
-        year_type: 'FY' or 'CY'
         end_*_date: Phase boundary dates for chart markers
     """
     from datetime import datetime
@@ -50,17 +49,15 @@ def render_carbon_tax_tab(precomputed,
         f"{scope_label}."
     )
 
-    display_year = st.session_state.get('display_year', 2025)
-
     # \u2500\u2500 Build carbon tax analysis from pre-computed data (lightweight) \u2500\u2500
     carbon_tax = build_carbon_tax_projection(
-        precomputed, year_type,
-        tax_start_fy, tax_rate, tax_escalation,
+        data_frame, precomputed,
+        tax_start_fy=tax_start_fy, tax_rate=tax_rate, tax_escalation=tax_escalation,
         include_scope2=include_scope2,
         ef2_decline_rate=DEFAULT_EF2_DECLINE_RATE
     )
 
-    display_tax_single(carbon_tax, tax_start_fy, year_type=year_type)
+    display_tax_single(carbon_tax, tax_start_fy, period_label=period_label)
 
     # Data Table
     with st.expander("Tax Data Table", expanded=False):
@@ -101,7 +98,7 @@ def render_carbon_tax_tab(precomputed,
             st.info(f"Tax period starts FY{tax_start_fy}")
 
 
-def display_tax_single(carbon_tax, tax_start_fy, show_summary=True, year_type='FY'):
+def display_tax_single(carbon_tax, tax_start_fy, show_summary=True, period_label=''):
     """Display tax analysis — waterfall chart with stacked S1/S2.
 
     Uses barmode='overlay' with explicit base= on each trace so S1 and S2
@@ -109,9 +106,7 @@ def display_tax_single(carbon_tax, tax_start_fy, show_summary=True, year_type='F
     on top of S1.  Connector lines link cumulative positions.
     """
 
-    year_prefix = 'CY' if year_type == 'CY' else 'FY'
-    display_year = st.session_state.get('display_year', 2025)
-    year_label = f'{year_prefix}{display_year}'
+    year_label = period_label
 
     # Pastel palette
     GOLD_METALLIC = '#DBB12A'
@@ -292,7 +287,7 @@ def display_tax_single(carbon_tax, tax_start_fy, show_summary=True, year_type='F
 
             # Axis scaling — match original waterfall proportions
             fig.update_xaxes(
-                title_text="Calendar Year" if year_type == "CY" else "Financial Year"
+                title_text="Year"
             )
             fig.update_yaxes(
                 title_text="Tax Liability (AUD)",

@@ -19,27 +19,32 @@ from export_gri14 import (
     coverage_summary_counts,
     GRI14_QUANTITATIVE_MAP,
 )
-from calc_calendar import year_to_date_range
+from calc_calendar import detect_year_type
 
 
-def render_gri_tab(df, precomputed, display_year, year_type):
+def render_gri_tab(df, precomputed, data_frame,
+                   start_date=None, end_date=None, period_label=''):
     """Render the GRI 14 Mining Sector Reporting tab.
 
     Args:
         df: Raw DataFrame from load_all_data()
         precomputed: PrecomputedData from calc_precompute
-        display_year: Selected year (int) from sidebar
-        year_type: 'FY' or 'CY' from sidebar
+        data_frame: Annual projection (selected by app.py)
+        start_date/end_date: Display period dates
+        period_label: Display label e.g. 'CY2025'
     """
-    year_prefix = 'CY' if year_type == 'CY' else 'FY'
-    year_label = f"{year_prefix}{display_year}"
+    year_label = period_label
+
+    # Detect year_type for GRI export builder
+    year_type = detect_year_type(start_date) if start_date else 'FY'
+    if year_type == 'custom':
+        year_type = 'CY'
 
     st.subheader("GRI 14 Mining Sector Disclosure")
     st.caption(f"Reporting year: {year_label}")
 
-    # Build export for selected year only -- convert to date range
-    start_date, end_date = year_to_date_range(display_year, year_type)
-    reporting_periods = [(start_date, end_date, f"{year_prefix}{display_year}")]
+    # Build export for selected year only
+    reporting_periods = [(start_date, end_date, period_label)]
     gri_df = build_gri14_export(
         precomputed, raw_df=df, reporting_periods=reporting_periods,
         year_type=year_type

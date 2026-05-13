@@ -38,9 +38,9 @@ from config import (
     DECLINE_RATE_PHASE1,
     SAFEGUARD_THRESHOLD
 )
-from calc_calendar import date_to_fy, date_to_cy, year_to_date_range
+from calc_calendar import date_to_fy, date_to_cy, year_to_date_range, label_from_dates, detect_year_type
 from loader_data import load_all_data
-from calc_precompute import precompute_all
+from calc_precompute import precompute_all, get_annual
 
 # Import tab modules
 from tab1_ghg import render_ghg_tab
@@ -143,30 +143,49 @@ st.markdown("""
 
 # ═══════════════════════════════════════════════════════════════════════
 # ACCESS CONTROL
-# ═══════════════════════════════════════════════════════════════════════
+# ======================================================================
 
 import hashlib
+import hmac
 
-_ACCESS_HASH = "9cd8d1031365f2760dd807b98092fcb46ec79df78abe2d9f1358ec2a9bc07cca"
+try:
+    _ACCESS_HASH = st.secrets["auth"]["access_hash"]
+except (KeyError, FileNotFoundError):
+    _ACCESS_HASH = ""  # No secrets configured - auth will always fail
+_MAX_AUTH_ATTEMPTS = 5
 
 def _check_passphrase(phrase):
-    return hashlib.sha256(phrase.strip().encode()).hexdigest() == _ACCESS_HASH
+    candidate = hashlib.sha256(phrase.strip().encode()).hexdigest()
+    return hmac.compare_digest(candidate, _ACCESS_HASH)
 
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
+if "auth_attempts" not in st.session_state:
+    st.session_state.auth_attempts = 0
 
 if not st.session_state.authenticated:
     st.title("\U0001f512 Ravenswood Gold Mine")
     st.caption("Enter the passphrase to access the dashboard")
+
+    if st.session_state.auth_attempts >= _MAX_AUTH_ATTEMPTS:
+        st.error("Too many failed attempts. Restart the application.")
+        st.stop()
+
     passphrase = st.text_input("Passphrase", type="password",
                                placeholder="Enter passphrase...")
     if passphrase:
         if _check_passphrase(passphrase):
             st.session_state.authenticated = True
+            st.session_state.auth_attempts = 0
             st.session_state.data_passphrase = passphrase.strip()
             st.rerun()
         else:
-            st.error("Incorrect passphrase.")
+            st.session_state.auth_attempts += 1
+            remaining = _MAX_AUTH_ATTEMPTS - st.session_state.auth_attempts
+            if remaining > 0:
+                st.error(f"Incorrect passphrase. {remaining} attempts remaining.")
+            else:
+                st.error("Too many failed attempts. Restart the application.")
     st.stop()
 
 
@@ -261,51 +280,42 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # Display Year Selection
-    with st.expander("Display Year", expanded=True):
+    # Reporting Period Selection
+    with st.expander("Reporting Period", expanded=True):
         if 'display_year' not in st.session_state:
             st.session_state.display_year = DEFAULT_DISPLAY_YEAR
 
+        # Period type selector
+        _period_type = st.radio(
+            "Period type",
+            ['CY', 'FY'],
+            index=0 if DEFAULT_YEAR_TYPE == 'CY' else 1,
+            format_func=lambda x: 'Calendar Year (Jan-Dec)' if x == 'CY' else 'Financial Year (Jul-Jun)',
+            horizontal=True,
+            key='period_type'
+        )
+
         display_year = st.number_input(
-            "Year to Display",
+            "Year",
             min_value=2020,
-            max_value=2035,
+            max_value=2045,
             value=st.session_state.display_year,
             step=1,
-            help="Select the financial year to display in charts and summaries"
+            help="Select year for charts and summaries"
         )
         st.session_state.display_year = display_year
 
-    st.markdown("---")
+        # Compute dates from selection
+        _start_date, _end_date = year_to_date_range(display_year, _period_type)
+        _period_label = label_from_dates(_start_date, _end_date)
 
-    # Year Type Selection (FY or CY)
-    with st.expander("Year Type", expanded=True):
-        # Build year_type_options with default first
-        if DEFAULT_YEAR_TYPE == 'CY':
-            year_type_options = {
-                'CY': 'Calendar Year (Jan-Dec)',
-                'FY': 'Financial Year (July-June)'
-            }
-        else:
-            year_type_options = {
-                'FY': 'Financial Year (July-June)',
-                'CY': 'Calendar Year (Jan-Dec)'
-            }
+        st.session_state.start_date = _start_date
+        st.session_state.end_date = _end_date
+        st.session_state.period_label = _period_label
 
-        selected_year_type = st.selectbox(
-            "Year Boundary",
-            options=list(year_type_options.keys()),
-            format_func=lambda x: year_type_options[x],
-            key='year_type',
-            help="Financial Year for NGER compliance (July-June) or Calendar Year for financial reporting (Jan-Dec). Tab 2 (Safeguard) always uses Financial Year per legislation."
-        )
+        st.caption(f"Period: {_start_date.strftime('%d %b %Y')} to {(_end_date - pd.Timedelta(days=1)).strftime('%d %b %Y')}")
+        st.caption("Safeguard tab always uses FY per legislation")
 
-        st.caption("SMC compliance calculations always use FY per legislation")
-
-    # Compute date range for the selected display year and year type
-    _start_date, _end_date = year_to_date_range(display_year, selected_year_type)
-    st.session_state.start_date = _start_date
-    st.session_state.end_date = _end_date
 
     # Constants locked to config (no user override)
     fsei_rom = FSEI_ROM
@@ -377,6 +387,17 @@ with st.sidebar:
 
 
 
+# Frame selection - decide once, pass down
+# Data frame: user-selected period (CY or FY) for tab1, tab3, tab4, tab6
+display_start = st.session_state.get('start_date')
+display_end = st.session_state.get('end_date')
+period_label = st.session_state.get('period_label', '')
+data_frame = get_annual(precomputed, start_date=display_start)
+
+# NGER frame: always FY for Safeguard (tab2)
+nger_frame = precomputed.annual_fy.copy()
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # TABS — receive pre-computed data, filter and render only
 # ═══════════════════════════════════════════════════════════════════════
@@ -394,30 +415,37 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 # RENDER TABS
 with tab1:
     render_ghg_tab(
-        df, precomputed,
-        selected_year_type,
-        end_mining_date, end_processing_date, end_rehabilitation_date,
+        df, precomputed, data_frame,
+        start_date=display_start, end_date=display_end,
+        period_label=period_label,
+        end_mining_date=end_mining_date,
+        end_processing_date=end_processing_date,
+        end_rehabilitation_date=end_rehabilitation_date,
     )
 
 with tab2:
     render_safeguard_tab(
-        df, precomputed,
+        df, precomputed, nger_frame,
         fsei_rom, fsei_elec,
         carbon_credit_price, credit_escalation,
         end_mining_date, end_processing_date, end_rehabilitation_date,
-        selected_year_type
+        display_year=display_year,
     )
 
 with tab3:
-    render_gri_tab(df, precomputed, display_year, selected_year_type)
+    render_gri_tab(df, precomputed, data_frame,
+                   start_date=display_start, end_date=display_end,
+                   period_label=period_label)
 
 with tab4:
     render_carbon_tax_tab(
-        precomputed,
+        precomputed, data_frame,
         tax_start_fy, tax_rate, tax_escalation,
         include_scope2,
-        selected_year_type,
-        end_mining_date, end_processing_date, end_rehabilitation_date,
+        period_label=period_label,
+        end_mining_date=end_mining_date,
+        end_processing_date=end_processing_date,
+        end_rehabilitation_date=end_rehabilitation_date,
     )
 
 with tab5:
@@ -425,10 +453,9 @@ with tab5:
 
 with tab6:
     render_query_tab(
-        df, precomputed,
+        df, precomputed, nger_frame,
         carbon_credit_price=carbon_credit_price,
         credit_escalation=credit_escalation,
-        year_type=selected_year_type,
     )
 
 # FOOTER

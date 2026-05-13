@@ -23,12 +23,13 @@ from config import (
 
 
 def _add_phase_markers(fig, years_list, grid_connected_date,
-                       end_mining_date, end_processing_date, end_rehabilitation_date,
-                       year_type='FY'):
+                       end_mining_date, end_processing_date, end_rehabilitation_date):
     """Add phase transition vertical lines and top-aligned labels to a chart."""
     from calc_calendar import date_to_fy, date_to_cy
     _GRID_GREEN = '#2A9D8F'
     _PHASE_GREY = '#888888'
+    # Detect year type from label prefix (bare numbers default to FY for Safeguard)
+    _is_fy = not any(str(y).startswith('CY') for y in years_list)
     markers = [
         (grid_connected_date, "Grid Connection", _GRID_GREEN, "dot"),
         (end_mining_date, "End Mining", _PHASE_GREY, "dash"),
@@ -39,7 +40,7 @@ def _add_phase_markers(fig, years_list, grid_connected_date,
     for i, (dt, label, colour, dash) in enumerate(markers):
         if dt is None:
             continue
-        yr = str(date_to_cy(dt)) if year_type == 'CY' else str(date_to_fy(dt))
+        yr = str(date_to_fy(dt)) if _is_fy else str(date_to_cy(dt))
         if yr not in years_set:
             continue
         fig.add_shape(type="line", x0=yr, x1=yr, y0=0, y1=1, yref="paper",
@@ -48,11 +49,11 @@ def _add_phase_markers(fig, years_list, grid_connected_date,
                           yshift=10, font=dict(size=9, color=colour))
 
 
-def render_safeguard_tab(df, precomputed,
+def render_safeguard_tab(df, precomputed, nger_frame,
                          fsei_rom, fsei_elec,
                          carbon_credit_price, credit_escalation,
                          end_mining_date, end_processing_date, end_rehabilitation_date,
-                         year_type='FY'):
+                         display_year=2025):
     """Render Safeguard Mechanism tab.
 
     NOTE: Safeguard Mechanism operates on Financial Year (July-June) per legislation.
@@ -65,7 +66,6 @@ def render_safeguard_tab(df, precomputed,
         carbon_credit_price: SMC market price (initial year)
         credit_escalation: Annual credit price escalation rate (decimal)
         end_*_date: Phase boundary dates
-        year_type: Ignored \u2014 always uses 'FY' per Safeguard legislation
     """
     # Safeguard Mechanism operates on Financial Year per legislation
     year_type = 'FY'
@@ -76,18 +76,18 @@ def render_safeguard_tab(df, precomputed,
     st.subheader("Safeguard Mechanism Analysis")
     st.caption(f"FSEI: ROM {fsei_rom:.4f} tCO2-e/t | Elec {fsei_elec:.4f} tCO2-e/MWh | Baseline declining {DECLINE_RATE_PHASE1*100:.1f}% p.a. (FY{DECLINE_PHASE1_START}\u2013FY{DECLINE_PHASE2_END})")
 
-    display_year = st.session_state.get('display_year', 2025)
 
     # ── Build projection from pre-computed data (lightweight \u2014 no raw data) ──
     projection = build_safeguard_projection(
-        precomputed, year_type,
-        credit_start_fy, carbon_credit_price, credit_escalation
+        precomputed, year_type='FY',
+        credit_start_fy=credit_start_fy, carbon_credit_price=carbon_credit_price,
+        credit_escalation=credit_escalation
     )
 
     display_safeguard_single(
         projection, display_year, carbon_credit_price, credit_escalation,
         credit_start_fy, fsei_rom, fsei_elec,
-        df=df, year_type=year_type,
+        df=df,
         grid_connected_date=grid_connected_date,
         end_mining_date=end_mining_date,
         end_processing_date=end_processing_date,
@@ -125,7 +125,7 @@ def render_safeguard_tab(df, precomputed,
         st.dataframe(display_df, hide_index=True, width="stretch", height=400)
 
 
-def display_safeguard_single(projection, display_year, carbon_credit_price, credit_escalation, credit_start_fy, fsei_rom, fsei_elec, show_summary=True, df=None, year_type='FY', grid_connected_date=None, end_mining_date=None, end_processing_date=None, end_rehabilitation_date=None):
+def display_safeguard_single(projection, display_year, carbon_credit_price, credit_escalation, credit_start_fy, fsei_rom, fsei_elec, show_summary=True, df=None, grid_connected_date=None, end_mining_date=None, end_processing_date=None, end_rehabilitation_date=None):
     """Display safeguard analysis for single source
 
     Args:
@@ -143,9 +143,8 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
     CAFE_NOIR = '#39250B'          # Lines, text
     GRID_GREEN = '#2A9D8F'         # Grid connection marker
 
-    # Year label based on year_type
-    year_prefix = 'CY' if year_type == 'CY' else 'FY'
-    year_label = f'{year_prefix}{display_year}'
+    # Safeguard always uses FY
+    year_label = f'FY{display_year}'
 
     # Summary table - single row with all data
     if show_summary:
@@ -204,7 +203,7 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
                 showlegend=False
             )
 
-            _add_phase_markers(fig_rom, years_list, grid_connected_date, end_mining_date, end_processing_date, end_rehabilitation_date, year_type=year_type)
+            _add_phase_markers(fig_rom, years_list, grid_connected_date, end_mining_date, end_processing_date, end_rehabilitation_date)
             st.plotly_chart(fig_rom, width="stretch")
 
         with col2:
@@ -243,7 +242,7 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
                 legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="right", x=1)
             )
 
-            _add_phase_markers(fig_elec, years_list, grid_connected_date, end_mining_date, end_processing_date, end_rehabilitation_date, year_type=year_type)
+            _add_phase_markers(fig_elec, years_list, grid_connected_date, end_mining_date, end_processing_date, end_rehabilitation_date)
             st.plotly_chart(fig_elec, width="stretch")
 
     # Scope 1 Emissions vs Baseline Target (dual-axis)
@@ -355,7 +354,7 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
             secondary_y=False
         )
 
-        fig.update_xaxes(title_text="Calendar Year" if year_type == "CY" else "Financial Year")
+        fig.update_xaxes(title_text="Financial Year")
         fig.update_yaxes(title_text="Scope 1 Emissions (tCO2-e)", secondary_y=False)
         fig.update_yaxes(visible=False, secondary_y=True)
 
@@ -366,7 +365,7 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
             legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="right", x=1)
         )
 
-        _add_phase_markers(fig, years_list, grid_connected_date, end_mining_date, end_processing_date, end_rehabilitation_date, year_type=year_type)
+        _add_phase_markers(fig, years_list, grid_connected_date, end_mining_date, end_processing_date, end_rehabilitation_date)
         st.plotly_chart(fig, width="stretch")
 
     # Cumulative SMC Credits
@@ -516,7 +515,7 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
             max_bar = max(max(credit_vals), max(sold_abs), 1)
             max_cum_val = max(cum_vals.max(), 1)
 
-            fig.update_xaxes(title_text="Calendar Year" if year_type == "CY" else "Financial Year")
+            fig.update_xaxes(title_text="Financial Year")
 
             fig.update_layout(
                 title="Safeguard Mechanism Credits (SMC)",
@@ -539,7 +538,7 @@ def display_safeguard_single(projection, display_year, carbon_credit_price, cred
                 ),
             )
 
-            _add_phase_markers(fig, years_list, grid_connected_date, end_mining_date, end_processing_date, end_rehabilitation_date, year_type=year_type)
+            _add_phase_markers(fig, years_list, grid_connected_date, end_mining_date, end_processing_date, end_rehabilitation_date)
             st.plotly_chart(fig, width="stretch")
 
             # Summary stats

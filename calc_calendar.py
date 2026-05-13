@@ -349,6 +349,60 @@ def year_to_date_range(year, year_type='FY'):
         return (datetime(year, 1, 1), datetime(year + 1, 1, 1))
 
 
+
+
+def label_from_dates(start_date, end_date):
+    """Derive a human-readable period label from a date range.
+
+    If the range aligns to a standard FY or CY boundary, returns that label.
+    Otherwise returns a date-range string.
+
+    Args:
+        start_date: Period start (datetime)
+        end_date: Period end (datetime, exclusive for half-open intervals)
+
+    Returns:
+        str: e.g. 'FY2025', 'CY2024', or 'Jul 2023 - Jun 2024'
+    """
+    s = pd.Timestamp(start_date)
+    e = pd.Timestamp(end_date)
+
+    # Check FY alignment: Jul 1 to Jul 1 (half-open) or Jun 30 (inclusive)
+    if s.month == 7 and s.day == 1:
+        fy = s.year + 1
+        expected_end_ho = pd.Timestamp(datetime(fy, 7, 1))
+        expected_end_inc = pd.Timestamp(datetime(fy, 6, 30))
+        if e == expected_end_ho or e == expected_end_inc:
+            return f'FY{fy}'
+
+    # Check CY alignment: Jan 1 to Jan 1 (half-open) or Dec 31 (inclusive)
+    if s.month == 1 and s.day == 1:
+        cy = s.year
+        expected_end_ho = pd.Timestamp(datetime(cy + 1, 1, 1))
+        expected_end_inc = pd.Timestamp(datetime(cy, 12, 31))
+        if e == expected_end_ho or e == expected_end_inc:
+            return f'CY{cy}'
+
+    # Generic range label
+    return f"{s.strftime('%b %Y')} - {(e - timedelta(days=1)).strftime('%b %Y')}"
+
+
+def detect_year_type(start_date):
+    """Detect whether a period start date aligns to FY or CY.
+
+    Args:
+        start_date: Period start (datetime)
+
+    Returns:
+        str: 'FY' if July start, 'CY' if January start, 'custom' otherwise
+    """
+    s = pd.Timestamp(start_date)
+    if s.month == 7 and s.day == 1:
+        return 'FY'
+    elif s.month == 1 and s.day == 1:
+        return 'CY'
+    return 'custom'
+
 def aggregate_period(df, start_date, end_date, agg_dict=None, date_col='Date'):
     """Filter to a date range and aggregate to a single summary Series.
 

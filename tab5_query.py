@@ -19,9 +19,8 @@ from config import DEFAULT_GRID_CONNECTION_DATE, CREDIT_START_DATE
 import os
 
 
-def render_query_tab(df, precomputed,
-                     carbon_credit_price=0, credit_escalation=0,
-                     year_type='FY'):
+def render_query_tab(df, precomputed, nger_frame=None,
+                     carbon_credit_price=0, credit_escalation=0):
     """Render the Data Query tab.
 
     Two sections:
@@ -33,14 +32,13 @@ def render_query_tab(df, precomputed,
         precomputed: PrecomputedData from calc_precompute
         carbon_credit_price: SMC market price
         credit_escalation: Annual price escalation rate
-        year_type: 'FY' or 'CY' from sidebar
     """
 
     _render_emissions_query(df, precomputed.year_factor_map)
 
     st.markdown("---")
 
-    _render_smc_ledger(precomputed, carbon_credit_price, credit_escalation, year_type)
+    _render_smc_ledger(precomputed, carbon_credit_price, credit_escalation, nger_frame=nger_frame)
 
 
 # =====================================================================
@@ -314,7 +312,7 @@ def _format_emissions_table(agg, resolution='Annual'):
 # SECTION 2: SMC LEDGER
 # =====================================================================
 
-def _render_smc_ledger(precomputed, carbon_credit_price, credit_escalation, year_type='FY'):
+def _render_smc_ledger(precomputed, carbon_credit_price, credit_escalation, nger_frame=None):
     """SMC ledger: forecast, actual transactions and combined view.
 
     Uses pre-computed annual projection \u2014 no build_projection call.
@@ -328,7 +326,8 @@ def _render_smc_ledger(precomputed, carbon_credit_price, credit_escalation, year
                      horizontal=True, key="smc_view")
 
     # \u2500\u2500 Pre-computed annual projection (respects FY/CY selection) \u2500\u2500
-    annual = precomputed.annual_cy.copy() if year_type == 'CY' else precomputed.annual_fy.copy()
+    # SMC operates on FY per legislation
+    annual = nger_frame.copy() if nger_frame is not None else precomputed.annual_fy.copy()
 
     # Raw forecast (before transactions)
     forecast_raw = annual.copy()
