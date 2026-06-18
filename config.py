@@ -223,6 +223,28 @@ def get_phase_name_for_date(date, end_mining_date, end_processing_date,
 
 
 # =============================================================================
+# GHG PROTOCOL — EXPLOSIVES (NOT NGER)
+# =============================================================================
+
+# GHG Protocol Scope 1 emission factor for ANFO detonation.
+# Source: AGO / Dept of Climate Change, NGA Factors (0.17 t CO2/t ANFO).
+# Pending confirmation against current NGA publication year.
+#
+# NGER treatment: NOT reportable (CER guideline s2.7, July 2025).
+# Fuel oil component reported as consumed without combustion by Orica
+# (operational control at point of final mixing, NGER Measurement
+# Determination s2.68).
+#
+# Contracted blasting (Orica detonates on site) means under GHG Protocol
+# operational control approach these are Scope 3 for this facility.
+# However, many Australian mining companies report ANFO detonation as
+# Scope 1 in GHG/GRI disclosures using AGO methods (precedent: Balmoral
+# South Iron Ore Project GHG Assessment, Kewan Bond 2008).
+GHG_EXPLOSIVES_EF_T_CO2_PER_T = 0.17   # t CO2 per tonne ANFO
+GHG_EXPLOSIVES_EF_KG_CO2_PER_KG = 0.00017  # t CO2 per kg ANFO (data is in kg)
+
+
+# =============================================================================
 # CARBON MARKET DEFAULTS
 # =============================================================================
 

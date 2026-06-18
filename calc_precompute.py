@@ -38,6 +38,7 @@ from calc_emissions import (
     build_safeguard_production_table
 )
 from calc_calendar import date_to_fy, aggregate_by_year_type, detect_year_type
+from calc_ghg import build_ghg_frame
 
 
 @dataclass
@@ -68,6 +69,12 @@ class PrecomputedData:
 
     # --- NGA factor loader (for carbon tax Scope 2 lookup) ---
     nga_by_year: Any  # NGAFactorsByYear instance
+
+    # --- GHG Protocol frame (NGER + GHG-only items like explosives) ---
+    # Tab 1 (GHG) uses these; Safeguard/NGER tabs use the NGER fields above.
+    ghg_df: pd.DataFrame = field(default_factory=pd.DataFrame)
+    ghg_annual_fy: pd.DataFrame = field(default_factory=pd.DataFrame)
+    ghg_annual_cy: pd.DataFrame = field(default_factory=pd.DataFrame)
 
 
 def precompute_all(df, fsei_rom, fsei_elec,
@@ -119,6 +126,26 @@ def precompute_all(df, fsei_rom, fsei_elec,
     # ── 5. SMC transactions ──────────────────────────────────────────
     smc_transactions = load_smc_transactions(passphrase=passphrase)
 
+    # ── 6. GHG Protocol frame (NGER + GHG-only items) ─────────────
+    # Overlay GHG-only emissions (e.g. explosives Scope 1) onto the
+    # NGER frame.  Runs a separate projection so GHG items flow through
+    # to Tab 1 annual totals without affecting Safeguard / Carbon Tax.
+    ghg_df = build_ghg_frame(df)
+    ghg_monthly = build_projection(
+        ghg_df,
+        end_mining_date=end_mining_date,
+        end_processing_date=end_processing_date,
+        end_rehabilitation_date=end_rehabilitation_date,
+        fsei_rom=fsei_rom,
+        fsei_elec=fsei_elec,
+        credit_start_date=credit_start_date,
+        start_date=start_date,
+        end_date=end_date,
+        decline_rate_phase2=decline_rate_phase2
+    )
+    ghg_annual_fy = _aggregate_annual(ghg_monthly, 'FY')
+    ghg_annual_cy = _aggregate_annual(ghg_monthly, 'CY')
+
     return PrecomputedData(
         monthly=monthly,
         annual_fy=annual_fy,
@@ -129,6 +156,9 @@ def precompute_all(df, fsei_rom, fsei_elec,
         safeguard_electricity=safeguard_electricity,
         smc_transactions=smc_transactions,
         nga_by_year=nga_by_year,
+        ghg_df=ghg_df,
+        ghg_annual_fy=ghg_annual_fy,
+        ghg_annual_cy=ghg_annual_cy,
     )
 
 
@@ -304,3 +334,19 @@ def get_annual(precomputed, year_type=None, start_date=None):
         return precomputed.annual_fy.copy()
     else:
         return precomputed.annual_cy.copy()
+
+
+def get_ghg_annual(precomputed, year_type=None, start_date=None):
+    """Return the GHG Protocol annual DataFrame (NGER + GHG-only items).
+
+    Same interface as get_annual() but returns the GHG frame which
+    includes emissions not reportable under NGER (e.g. explosives).
+    Used by Tab 1 (GHG).
+    """
+    if start_date is not None:
+        detected = detect_year_type(start_date)
+        year_type = detected if detected != 'custom' else 'CY'
+    if year_type == 'FY':
+        return precomputed.ghg_annual_fy.copy()
+    else:
+        return precomputed.ghg_annual_cy.copy()

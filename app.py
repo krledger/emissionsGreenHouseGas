@@ -40,7 +40,7 @@ from config import (
 )
 from calc_calendar import date_to_fy, date_to_cy, year_to_date_range, label_from_dates, detect_year_type
 from loader_data import load_all_data
-from calc_precompute import precompute_all, get_annual
+from calc_precompute import precompute_all, get_annual, get_ghg_annual
 
 # Import tab modules
 from tab1_ghg import render_ghg_tab
@@ -394,6 +394,9 @@ display_end = st.session_state.get('end_date')
 period_label = st.session_state.get('period_label', '')
 data_frame = get_annual(precomputed, start_date=display_start)
 
+# GHG frame: NGER + GHG-only items (explosives etc.) for Tab 1
+ghg_frame = get_ghg_annual(precomputed, start_date=display_start)
+
 # NGER frame: always FY for Safeguard (tab2)
 nger_frame = precomputed.annual_fy.copy()
 
@@ -414,8 +417,12 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 
 # RENDER TABS
 with tab1:
+    # Use GHG frame (NGER + GHG-only items like explosives).
+    # Falls back to NGER frame if GHG frame is empty (stale cache).
+    _ghg_df = precomputed.ghg_df if len(precomputed.ghg_df) > 0 else df
+    _ghg_proj = ghg_frame if len(ghg_frame) > 0 else data_frame
     render_ghg_tab(
-        df, precomputed, data_frame,
+        _ghg_df, precomputed, _ghg_proj,
         start_date=display_start, end_date=display_end,
         period_label=period_label,
         end_mining_date=end_mining_date,

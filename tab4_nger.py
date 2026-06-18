@@ -457,7 +457,57 @@ def render_nger_tab(fsei_rom=FSEI_ROM, fsei_elec=FSEI_ELEC,
         else:
             st.warning("nga_factors.csv not found")
 
-    # SECTION 8: REFERENCES
+    # =================================================================
+    # SECTION 7A: GHG PROTOCOL vs NGER — EXPLOSIVES TREATMENT
+    # =================================================================
+    with st.expander("GHG Protocol vs NGER — Explosives (ANFO)", expanded=False):
+
+        st.markdown("""
+#### Dual-Framework Treatment of Explosives
+
+Explosives (ANFO) are treated differently under the two reporting frameworks
+used in this model.  The table below summarises the position.
+
+| Aspect | GHG Protocol (Tab 1) | NGER (Safeguard / Tab 2) |
+|--------|---------------------|--------------------------|
+| **Scope 1 emissions** | Yes — 0.17 t CO₂/t ANFO | No — not reportable |
+| **Basis** | AGO / Dept of Climate Change emission factor; GHG Protocol Corporate Standard | CER guideline s2.7 (July 2025); NGER Measurement Determination s2.68 |
+| **Rationale** | Detonation of fossil fuel component is a direct emission at the facility | Fuel oil in ANFO is reported as consumed without combustion by the entity at the point of final mixing |
+| **Reporting entity** | Facility operator (regardless of who detonates) | Entity with operational control at point of final mixing (Orica) |
+| **Scope 3** | Not applicable (Scope 1 captures the detonation) | Not applicable |
+
+**Implementation in this model:**
+
+- **Tab 1 (GHG):** Explosives consumption (kg) is multiplied by 0.17 t CO₂/t
+  (converted to kg basis) and included in Scope 1.  These rows are flagged
+  `GHG_Only = True` so they can be excluded from NGER calculations.
+
+- **Tab 2 (Safeguard):** GHG-only rows are excluded from baseline calculations,
+  emission intensity and SMC computation.  The Safeguard Mechanism operates
+  under NGER, where explosives carry zero emissions.
+
+- **Emission factor source:** AGO / Department of Climate Change, as applied
+  in Australian mining GHG assessments (e.g. Balmoral South Iron Ore Project,
+  Kewan Bond Pty Ltd, 2008).  Factor is pending confirmation against the
+  current NGA Factors publication.
+
+**Contracted blasting (Orica):**  Orica detonates on site under contract.
+Under strict GHG Protocol operational control, this could be argued as
+Scope 3 (Category 1: Purchased Goods and Services).  However, Australian
+mining industry practice commonly reports ANFO detonation as Scope 1 in
+GHG/GRI disclosures using AGO methods, regardless of who performs the blast.
+This model follows that convention for Tab 1.
+""")
+
+        st.caption(
+            "References: CER Reporting blended fuels, other fuel mixes, bitumen "
+            "and explosives guideline (July 2025) s2.7; NGER Measurement "
+            "Determination 2008 s2.68; GHG Protocol Corporate Accounting and "
+            "Reporting Standard (WRI/WBCSD); Balmoral South Iron Ore Project "
+            "GHG Assessment (Kewan Bond Pty Ltd, 2008)."
+        )
+
+        # SECTION 8: REFERENCES
     # =================================================================
     with st.expander("\U0001f4da  References & Data Sources", expanded=False):
 
