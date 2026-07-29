@@ -1,0 +1,680 @@
+"""
+Tab2Safeguard.py
+Safeguard Mechanism tab - date-based architecture
+Last updated: 2026-03-10
+
+ARCHITECTURE (v2):
+    Receives PrecomputedData from App.py.
+    No build_projection, no NGA loading.
+    Sidebar-dependent SMC valuation runs on pre-aggregated annual data.
+"""
+
+import streamlit as st
+import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from CalcPrecompute import build_safeguard_projection
+from CalcCalendar import date_to_fy
+from Config import (
+    DECLINE_RATE_PHASE1, DECLINE_PHASE1_START, DECLINE_PHASE2_END,
+    SAFEGUARD_THRESHOLD, DEFAULT_GRID_CONNECTION_DATE, CREDIT_START_DATE,
+    FSEI_ROM, FSEI_ELEC,
+)
+
+
+def _add_phase_markers(fig, years_list, grid_connected_date,
+                       end_mining_date, end_processing_date, end_rehabilitation_date):
+    """Add phase transition vertical lines and top-aligned labels to a chart."""
+    from CalcCalendar import date_to_fy, date_to_cy
+    _GRID_GREEN = '#2A9D8F'
+    _PHASE_GREY = '#888888'
+    # Detect year type from label prefix (bare numbers default to FY for Safeguard)
+    _is_fy = not any(str(y).startswith('CY') for y in years_list)
+    markers = [
+        (grid_connected_date, "Grid Connection", _GRID_GREEN, "dot"),
+        (end_mining_date, "End Mining", _PHASE_GREY, "dash"),
+        (end_processing_date, "End Processing", _PHASE_GREY, "dash"),
+        (end_rehabilitation_date, "End Rehab", _PHASE_GREY, "dash"),
+    ]
+    years_set = set(str(y) for y in years_list)
+    for i, (dt, label, colour, dash) in enumerate(markers):
+        if dt is None:
+            continue
+        yr = str(date_to_fy(dt)) if _is_fy else str(date_to_cy(dt))
+        if yr not in years_set:
+            continue
+        fig.add_shape(type="line", x0=yr, x1=yr, y0=0, y1=1, yref="paper",
+                     line=dict(color=colour, width=1.5, dash=dash))
+        fig.add_annotation(x=yr, y=1.0, yref="paper", text=label, showarrow=False,
+                          yshift=10, font=dict(size=9, color=colour))
+
+
+def render_safeguard_tab(df, precomputed, nger_frame,
+                         fsei_rom, fsei_elec,
+                         carbon_credit_price, credit_escalation,
+                         end_mining_date, end_processing_date, end_rehabilitation_date,
+                         display_year=2025):
+    """Render Safeguard Mechanism tab.
+
+    NOTE: Safeguard Mechanism operates on Financial Year (July-June) per legislation.
+    year_type is accepted for interface compatibility but ALWAYS forced to 'FY'.
+
+    Args:
+        df: Raw DataFrame from load_all_data() (for source download tables)
+        precomputed: PrecomputedData from CalcPrecompute
+        fsei_rom, fsei_elec: FSEI constants
+        carbon_credit_price: SMC market price (initial year)
+        credit_escalation: Annual credit price escalation rate (decimal)
+        end_*_date: Phase boundary dates
+    """
+    # Safeguard Mechanism operates on Financial Year per legislation
+    year_type = 'FY'
+
+    grid_connected_date = DEFAULT_GRID_CONNECTION_DATE
+    credit_start_fy = date_to_fy(CREDIT_START_DATE)
+
+    st.subheader("Safeguard Mechanism Analysis")
+    st.caption(f"FSEI: ROM {fsei_rom:.4f} tCO2-e/t | Elec {fsei_elec:.4f} tCO2-e/MWh | Baseline declining {DECLINE_RATE_PHASE1*100:.1f}% p.a. (FY{DECLINE_PHASE1_START}\u2013FY{DECLINE_PHASE2_END})")
+
+
+    # ── Build projection from pre-computed data (lightweight \u2014 no raw data) ──
+    projection = build_safeguard_projection(
+        precomputed, year_type='FY',
+        credit_start_fy=credit_start_fy, carbon_credit_price=carbon_credit_price,
+        credit_escalation=credit_escalation
+    )
+
+    display_safeguard_single(
+        projection, display_year, carbon_credit_price, credit_escalation,
+        credit_start_fy, fsei_rom, fsei_elec,
+        df=df,
+        grid_connected_date=grid_connected_date,
+        end_mining_date=end_mining_date,
+        end_processing_date=end_processing_date,
+        end_rehabilitation_date=end_rehabilitation_date
+    )
+
+    # Source data download \u2014 uses pre-computed tables
+    if df is not None and precomputed.year_factor_map:
+        render_safeguard_source_download(df, precomputed)
+
+    # Data Table
+    with st.expander("Safeguard Data Table", expanded=False):
+        cols = ['FY', 'Phase', 'ROM_Mt', 'Scope1', 'Baseline',
+                'SMC_Annual', 'SMC_Cumulative',
+                'Credit_Price', 'Credit_Value_Annual', 'Credit_Value_Cumulative']
+        cols = [c for c in cols if c in projection.columns]
+        display_df = projection[cols].copy()
+
+        display_df['ROM_Mt'] = display_df['ROM_Mt'].apply(lambda x: f"{x:.2f}")
+        display_df['Scope1'] = display_df['Scope1'].apply(lambda x: f"{x:,.0f}")
+        display_df.rename(columns={'Baseline': 'Target'}, inplace=True)
+        display_df['Target'] = display_df['Target'].apply(lambda x: f"{x:,.0f}")
+        display_df['SMC_Annual'] = display_df['SMC_Annual'].apply(lambda x: f"{x:,.0f}")
+        display_df['SMC_Cumulative'] = display_df['SMC_Cumulative'].apply(lambda x: f"{x:,.0f}")
+        if 'Credit_Price' in display_df.columns:
+            display_df.rename(columns={
+                'Credit_Price': 'SMC Price ($/t)',
+                'Credit_Value_Annual': 'SMC $ Annual',
+                'Credit_Value_Cumulative': 'SMC $ Cumulative'
+            }, inplace=True)
+            display_df['SMC Price ($/t)'] = display_df['SMC Price ($/t)'].apply(lambda x: f"${x:,.2f}")
+            display_df['SMC $ Annual'] = display_df['SMC $ Annual'].apply(lambda x: f"${x:,.0f}")
+            display_df['SMC $ Cumulative'] = display_df['SMC $ Cumulative'].apply(lambda x: f"${x:,.0f}")
+
+        st.dataframe(display_df, hide_index=True, width="stretch", height=400)
+
+
+def display_safeguard_single(projection, display_year, carbon_credit_price, credit_escalation, credit_start_fy, fsei_rom, fsei_elec, show_summary=True, df=None, grid_connected_date=None, end_mining_date=None, end_processing_date=None, end_rehabilitation_date=None):
+    """Display safeguard analysis for single source
+
+    Args:
+        show_summary: If False, skip the summary table (used in comparison mode)
+    """
+
+    # Note: smc_credit_value_analysis already applied by render_safeguard_tab
+    # before calling this function - do not apply again
+
+    # Gold color palette
+    GOLD_METALLIC = '#DBB12A'      # Primary - ROM, main bars
+    BRIGHT_GOLD = '#E8AC41'         # Secondary - Site electricity
+    DARK_GOLDENROD = '#AE8B0F'     # Tertiary - Grid electricity
+    SEPIA = '#734B1A'              # Accent - Credits
+    CAFE_NOIR = '#39250B'          # Lines, text
+    GRID_GREEN = '#2A9D8F'         # Grid connection marker
+
+    # Safeguard always uses FY
+    year_label = f'FY{display_year}'
+
+    # Summary table - single row with all data
+    if show_summary:
+        with st.expander("Summary", expanded=True):
+            year_data = projection[projection['FY'] == year_label]
+
+            if len(year_data) == 0:
+                st.warning(f"No data for {year_label}")
+            else:
+                row = year_data.iloc[0]
+
+                # Extract year number for credit comparison
+                year_num_str = row['FY'].replace('FY','').replace('CY','')
+                smc_annual = row['SMC_Annual'] if year_num_str.isdigit() and int(year_num_str) >= credit_start_fy else 0
+
+                # Summary: actual vs baseline in tCO2-e (the gap = credits/surrenders)
+                baseline = row['Baseline'] if 'Baseline' in row.index else 0
+                summary_data = [{
+                    'ROM (Mt)': f"{row['ROM_Mt']:.2f}",
+                    'Scope 1 (tCO2-e)': f"{row['Scope1']:,.0f}",
+                    'Target (tCO2-e)': f"{baseline:,.0f}",
+                    'SMC Annual': f"{smc_annual:,.0f}",
+                    'SMC Cumulative': f"{row['SMC_Cumulative']:,.0f}"
+                }]
+
+                df_summary = pd.DataFrame(summary_data)
+                st.dataframe(df_summary, hide_index=True, width="stretch")
+
+
+
+    # ROM and Electricity charts (side by side)
+    with st.expander("ROM Production & Electricity Consumption", expanded=True):
+        col1, col2 = st.columns(2)
+
+        # Prepare display years without FY
+        proj_display = projection.copy()
+        proj_display['Year'] = proj_display['FY'].str.replace(r'^[A-Z]+', '', regex=True)
+        years_list = proj_display['Year'].tolist()
+
+        with col1:
+            # ROM Production
+            fig_rom = go.Figure()
+
+            fig_rom.add_trace(go.Bar(
+                x=proj_display['Year'],
+                y=proj_display['ROM_Mt'],
+                name='ROM Production',
+                marker_color=GOLD_METALLIC
+            ))
+
+            fig_rom.update_layout(
+                title="ROM Production (Mt)",
+                xaxis_title="Financial Year",
+                yaxis_title="ROM (Mt)",
+                height=400,
+                showlegend=False
+            )
+
+            _add_phase_markers(fig_rom, years_list, grid_connected_date, end_mining_date, end_processing_date, end_rehabilitation_date)
+            st.plotly_chart(fig_rom, width="stretch")
+
+        with col2:
+            # Electricity Consumption
+            fig_elec = go.Figure()
+
+            # Convert to MWh
+            site_mwh = proj_display['Site_Electricity_kWh'] / 1000
+            grid_mwh = proj_display['Grid_Electricity_kWh'] / 1000
+
+            # Grid electricity (bottom of stack)
+            fig_elec.add_trace(go.Bar(
+                x=proj_display['Year'],
+                y=grid_mwh,
+                name='Grid Purchase',
+                marker_color=DARK_GOLDENROD,
+                opacity=0.9
+            ))
+
+            # Site electricity (top of stack)
+            fig_elec.add_trace(go.Bar(
+                x=proj_display['Year'],
+                y=site_mwh,
+                name='Site Generation',
+                marker_color=BRIGHT_GOLD,
+                opacity=0.9
+            ))
+
+            fig_elec.update_layout(
+                title="Electricity Consumption (MWh)",
+                xaxis_title="Financial Year",
+                yaxis_title="Electricity (MWh)",
+                height=400,
+                barmode='stack',
+                hovermode='x unified',
+                legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="right", x=1)
+            )
+
+            _add_phase_markers(fig_elec, years_list, grid_connected_date, end_mining_date, end_processing_date, end_rehabilitation_date)
+            st.plotly_chart(fig_elec, width="stretch")
+
+    # Scope 1 Emissions vs Baseline Target (dual-axis)
+    with st.expander("Scope 1 Emissions vs Baseline Target", expanded=True):
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+        # Prepare display years without FY
+        projection_display = projection.copy()
+        projection_display['Year'] = projection_display['FY'].str.replace(r'^[A-Z]+', '', regex=True)
+        years_list = projection_display['Year'].tolist()
+
+        # Determine Safeguard periods
+        safeguard_years = projection_display[projection_display['In_Safeguard'] == True]['Year'].tolist()
+        exit_fy = projection_display['Exit_FY'].iloc[0] if 'Exit_FY' in projection_display.columns and projection_display['Exit_FY'].notna().any() else None
+
+        # Add shaded boxes FIRST (background layer)
+        # Box 1: Safeguard years (light gray)
+        if len(safeguard_years) > 0:
+            fig.add_vrect(
+                x0=safeguard_years[0],
+                x1=safeguard_years[-1],
+                fillcolor="rgba(144, 238, 144, 0.2)",  # Light green
+                opacity=1,
+                layer="below",
+                line_width=0,
+                annotation_text="Safeguard Period (≥100k tCO2-e)",
+                annotation_position="top left",
+                annotation_font_size=10
+            )
+
+        # Opt-in period shown by bar colour change (blue tint)
+
+        # Scope 1 Actual Emissions - separate trace per SMC phase for legend
+        # Scope 1 Emissions - single trace with per-bar colours by SMC phase
+        # Using one trace avoids Plotly grouped-bar positioning issues where
+        # bars shift or disappear when phases change (e.g. moving grid year).
+        phase_colour_map = {
+            'Pre-Safeguard': GOLD_METALLIC,
+            'Safeguard':     GOLD_METALLIC,
+            'Gap':           '#E67E22',     # Amber - below 100k, s58B not available
+            'Opt-In':        '#B0B0B0',     # Medium grey
+            'Exited':        '#000000',     # Black
+        }
+        if 'SMC_Phase' in projection_display.columns:
+            bar_colours = projection_display['SMC_Phase'].map(phase_colour_map).fillna(GOLD_METALLIC).tolist()
+        else:
+            bar_colours = GOLD_METALLIC
+
+        fig.add_trace(
+            go.Bar(
+                x=projection_display['Year'],
+                y=projection_display['Scope1'],
+                name='Scope 1',
+                marker_color=bar_colours,
+                opacity=0.8,
+                showlegend=False,
+                hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'
+            ),
+            secondary_y=False
+        )
+
+        # Invisible scatter traces for phase legend entries
+        legend_phases = [
+            ('Safeguard', GOLD_METALLIC),
+            ('Gap',       '#E67E22'),
+            ('Opt-In',    '#B0B0B0'),
+            ('Exited',    '#000000'),
+        ]
+        if 'SMC_Phase' in projection_display.columns:
+            active_phases = set(projection_display['SMC_Phase'].unique())
+            active_phases.discard('Pre-Safeguard')  # Shown as Safeguard colour
+        else:
+            active_phases = {'Safeguard'}
+
+        for phase_name, colour in legend_phases:
+            if phase_name in active_phases or (phase_name == 'Safeguard' and 'Pre-Safeguard' in active_phases):
+                fig.add_trace(
+                    go.Bar(
+                        x=[None], y=[None],
+                        name=phase_name,
+                        marker_color=colour,
+                        showlegend=True,
+                    ),
+                    secondary_y=False
+                )
+
+        # Baseline Target (same axis) - the gap = credits or surrenders
+        if 'Baseline' in projection_display.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=projection_display['Year'],
+                    y=projection_display['Baseline'],
+                    name='Target',
+                    mode='lines+markers',
+                    line=dict(color=CAFE_NOIR, width=3, dash='dash'),
+                    marker=dict(size=5),
+                    hovertemplate='%{y:,.0f} tCO2-e<extra></extra>'
+                ),
+                secondary_y=False
+            )
+
+        # 100k Safeguard threshold reference line
+        fig.add_hline(
+            y=SAFEGUARD_THRESHOLD, line_dash="dot",
+            line_color="rgba(192, 57, 43, 0.5)", line_width=1.5,
+            annotation_text="100k Threshold",
+            annotation_position="bottom right",
+            annotation_font=dict(size=9, color="rgba(192, 57, 43, 0.6)"),
+            secondary_y=False
+        )
+
+        fig.update_xaxes(title_text="Financial Year")
+        fig.update_yaxes(title_text="Scope 1 Emissions (tCO2-e)", secondary_y=False)
+        fig.update_yaxes(visible=False, secondary_y=True)
+
+        fig.update_layout(
+            title="Scope 1 Emissions vs Baseline Target",
+            height=500,
+            hovermode='x unified',
+            legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="right", x=1)
+        )
+
+        _add_phase_markers(fig, years_list, grid_connected_date, end_mining_date, end_processing_date, end_rehabilitation_date)
+        st.plotly_chart(fig, width="stretch")
+
+    # Cumulative SMC Credits
+    with st.expander("SMC Credits & Value", expanded=True):
+
+        # Filter to credit period
+        credit_data = projection[projection['FY'].str.replace(r'^[A-Z]+', '', regex=True).astype(int) >= credit_start_fy].copy()
+
+        if len(credit_data) == 0:
+            st.info("No SMC credits yet - credit period starts FY{credit_start_fy}")
+        else:
+            # Prepare display years
+            credit_data['Year'] = credit_data['FY'].str.replace(r'^[A-Z]+', '', regex=True)
+
+            # Determine Safeguard periods
+            safeguard_years = credit_data[credit_data['In_Safeguard'] == True]['Year'].tolist()
+            exit_fy = credit_data['Exit_FY'].iloc[0] if 'Exit_FY' in credit_data.columns and credit_data['Exit_FY'].notna().any() else None
+
+            fig = go.Figure()
+
+            # --- Phase-shaded background regions ---
+            if 'SMC_Phase' in credit_data.columns:
+                # Safeguard period (covered, >= 100k)
+                sg_years = credit_data[credit_data['SMC_Phase'] == 'Safeguard']['Year'].tolist()
+                if sg_years:
+                    fig.add_vrect(
+                        x0=sg_years[0], x1=sg_years[-1],
+                        fillcolor="rgba(144, 238, 144, 0.15)",
+                        layer="below", line_width=0,
+                        annotation_text="Safeguard",
+                        annotation_position="top left",
+                        annotation_font=dict(size=10, color="rgba(0,100,0,0.6)")
+                    )
+                # Opt-in period (below threshold, credits only per s58B)
+                optin_years = credit_data[credit_data['SMC_Phase'] == 'Opt-In']['Year'].tolist()
+                if optin_years:
+                    fig.add_vrect(
+                        x0=optin_years[0], x1=optin_years[-1],
+                        fillcolor="rgba(100, 149, 237, 0.12)",
+                        layer="below", line_width=0,
+                        annotation_text="Opt-In (s58B)",
+                        annotation_position="top left",
+                        annotation_font=dict(size=10, color="rgba(65,105,225,0.7)")
+                    )
+                # Exited period (no credits)
+                exited_years = credit_data[credit_data['SMC_Phase'] == 'Exited']['Year'].tolist()
+                if exited_years:
+                    fig.add_vrect(
+                        x0=exited_years[0], x1=exited_years[-1],
+                        fillcolor="rgba(200, 200, 200, 0.15)",
+                        layer="below", line_width=0,
+                        annotation_text="Exited",
+                        annotation_position="top left",
+                        annotation_font=dict(size=10, color="rgba(128,128,128,0.7)")
+                    )
+
+            # --- Grouped bar chart: two traces, no gaps ---
+            # Earned/Surrendered in one trace (per-bar colour: teal or red)
+            # Sold in second trace (gold)
+            # barmode='group' gives side-by-side with no empty slot
+            annual_vals = credit_data['SMC_Annual'].values
+            cum_vals = credit_data['SMC_Cumulative'].values
+            iss_vals = credit_data['SMC_Issuance'].values if 'SMC_Issuance' in credit_data.columns else [0] * len(annual_vals)
+            sold_vals = credit_data['SMC_Sold'].values if 'SMC_Sold' in credit_data.columns else [0] * len(annual_vals)
+            years_list = credit_data['Year'].tolist()
+
+            credit_vals = []    # absolute height
+            credit_colors = []  # teal or red per bar
+            sold_abs = []       # gold
+
+            for ann, iss, sold in zip(annual_vals, iss_vals, sold_vals):
+                net = iss if iss > 0 else (ann - sold)
+                credit_vals.append(abs(net))
+                credit_colors.append('#2A9D8F' if net >= 0 else '#CA564B')
+                sold_abs.append(abs(sold))
+
+            # Earned/Surrendered bars (teal for earned, red for surrendered)
+            fig.add_trace(
+                go.Bar(
+                    x=credit_data['Year'], y=credit_vals,
+                    name='Earned / Surrendered',
+                    marker_color=credit_colors, marker_cornerradius=4,
+                    opacity=0.9,
+                    hovertemplate='%{y:,.0f} tCO\u2082-e<extra></extra>'
+                )
+            )
+
+            # Sold bars (gold)
+            fig.add_trace(
+                go.Bar(
+                    x=credit_data['Year'], y=sold_abs,
+                    name='Sold', marker_color=BRIGHT_GOLD, marker_cornerradius=4,
+                    opacity=0.9,
+                    hovertemplate='Sold: %{y:,.0f} tCO\u2082-e<extra></extra>'
+                )
+            )
+
+            # Cumulative SMC line (secondary axis — dollar value)
+            fig.add_trace(
+                go.Scatter(
+                    x=credit_data['Year'],
+                    y=cum_vals,
+                    name='Cumulative Balance',
+                    mode='lines+markers',
+                    line=dict(color=GOLD_METALLIC, width=3),
+                    marker=dict(size=6, color=GOLD_METALLIC),
+                    hovertemplate='Balance: %{y:,.0f} tCO\u2082-e<extra></extra>',
+                    yaxis='y2'
+                )
+            )
+
+            # Value + balance labels at 5-year intervals on cumulative line
+            value_vals = credit_data['Credit_Value_Cumulative'].values
+            key_indices = set()
+            for idx, yr in enumerate(years_list):
+                if int(yr) % 5 == 0:
+                    key_indices.add(idx)
+            key_indices.add(len(years_list) - 1)
+
+            for idx in key_indices:
+                if idx < len(years_list) and cum_vals[idx] > 0:
+                    val_m = value_vals[idx] / 1e6
+                    cum_k = cum_vals[idx] / 1000
+                    fig.add_annotation(
+                        x=years_list[idx],
+                        y=cum_vals[idx],
+                        yref='y2',
+                        text=f"<b>${val_m:.1f}M</b><br><b>({cum_k:.0f}k)</b>",
+                        showarrow=False, yshift=20,
+                        font=dict(size=11, color=GOLD_METALLIC),
+                    )
+
+            # Zero line
+            fig.add_hline(y=0, line_dash="solid", line_color="grey", line_width=0.5)
+
+            # Grid connection marker
+            if grid_connected_date:
+                _gc_yr = str(date_to_fy(grid_connected_date))
+                if _gc_yr in years_list:
+                    fig.add_vline(
+                        x=_gc_yr,
+                        line_dash="dot", line_color=GRID_GREEN, line_width=2
+                    )
+
+            # Axis scaling — bars and cumulative share the same unit (tCO2-e)
+            # but separate axes so the line sits above the bars
+            max_bar = max(max(credit_vals), max(sold_abs), 1)
+            max_cum_val = max(cum_vals.max(), 1)
+
+            fig.update_xaxes(title_text="Financial Year")
+
+            fig.update_layout(
+                title="Safeguard Mechanism Credits (SMC)",
+                height=500,
+                hovermode='x unified',
+                showlegend=True,
+                legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="right", x=1),
+                bargap=0.15,
+                barmode='group',
+                yaxis=dict(
+                    title="Annual SMC (tCO\u2082-e)",
+                    range=[0, max_bar * 1.3],
+                ),
+                yaxis2=dict(
+                    title="Cumulative Balance (tCO\u2082-e)",
+                    overlaying='y',
+                    side='right',
+                    range=[0, max_cum_val * 1.35],
+                    showgrid=False,
+                ),
+            )
+
+            _add_phase_markers(fig, years_list, grid_connected_date, end_mining_date, end_processing_date, end_rehabilitation_date)
+            st.plotly_chart(fig, width="stretch")
+
+            # Summary stats
+            final_credits = credit_data.iloc[-1]['SMC_Cumulative']
+            final_value = credit_data.iloc[-1]['Credit_Value_Cumulative']
+            final_price = credit_data.iloc[-1]['Credit_Price']
+            final_year = credit_data.iloc[-1]['FY']
+            total_surrenders = credit_data[credit_data['SMC_Annual'] < 0]['SMC_Annual'].sum()
+
+            summary_parts = [f"{final_year} Net Cumulative: {final_credits:,.0f} tCO\u2082-e"]
+            summary_parts.append(f"Value: {final_value:,.0f} AUD (price: {final_price:.2f}/tCO\u2082-e)")
+            if total_surrenders < 0:
+                summary_parts.append(f"Total surrenders: {abs(total_surrenders):,.0f} tCO\u2082-e")
+
+            st.markdown(
+                f'<p style="font-size:13px; color:#6B7280; margin-top:4px;">'
+                f'{" | ".join(summary_parts)}</p>',
+                unsafe_allow_html=True
+            )
+
+def render_safeguard_source_download(df, precomputed):
+    """Render Safeguard source data download table.
+
+    Provides a detailed annual breakdown of all consumable energy line items
+    with NGA emission factors and energy content attached, so a third party
+    auditor can independently verify every tCO2-e figure reported under the
+    Safeguard Mechanism.
+
+    Args:
+        df:              Processed DataFrame from load_all_data()
+        year_factor_map: Dict from build_year_factor_map() — the exact NGA
+                         factor values used in the emissions calculation
+    """
+    # Source and production tables from precomputed data
+
+    year_factor_map = precomputed.year_factor_map
+
+    with st.expander("Source Data — Validation & NGER Filing", expanded=False):
+
+        source_df = precomputed.safeguard_source
+
+        if source_df.empty:
+            st.warning("No consumable energy data available for download.")
+            return
+
+        display_df = source_df.copy()
+
+        # --- Display table ---
+        # Round for display while keeping CSV download at full precision
+        display_fmt = display_df.copy()
+        # Upcast float32 -> float64 before rounding (float32 round artefacts)
+        for _c in ['Quantity', 'EF_Scope1_kgCO2e_per_unit', 'Energy_GJ_per_unit',
+                    'Scope1_tCO2e', 'Energy_GJ']:
+            if _c in display_fmt.columns:
+                display_fmt[_c] = display_fmt[_c].astype('float64')
+        display_fmt['Quantity'] = display_fmt['Quantity'].round(1)
+        display_fmt['EF_Scope1_kgCO2e_per_unit'] = display_fmt['EF_Scope1_kgCO2e_per_unit'].round(4)
+        display_fmt['Energy_GJ_per_unit'] = display_fmt['Energy_GJ_per_unit'].round(4)
+        display_fmt['Scope1_tCO2e'] = display_fmt['Scope1_tCO2e'].round(1)
+        display_fmt['Energy_GJ'] = display_fmt['Energy_GJ'].round(1)
+
+        # Friendly column labels for display
+        display_fmt = display_fmt.rename(columns={
+            'FY': 'FY',
+            'DataSet': 'Dataset',
+            'Description': 'Description',
+            'Department': 'Department',
+            'CostCentre': 'Cost Centre',
+            'NGAFuel': 'NGA Fuel',
+            'UOM': 'UOM',
+            'NGA_Year': 'NGA Year',
+            'Quantity': 'Quantity',
+            'EF_Scope1_kgCO2e_per_unit': 'EF S1 (kg/unit)',
+            'Energy_GJ_per_unit': 'GJ/unit',
+            'Scope1_tCO2e': 'Scope 1 tCO2-e',
+            'Energy_GJ': 'Energy GJ',
+        })
+
+        st.dataframe(display_fmt, hide_index=True, width='stretch', height=400)
+
+        st.download_button(
+            label="Download emissions source data",
+            data=display_fmt.to_csv(index=False),
+            file_name="safeguard_emissions_source.csv",
+            mime="text/csv",
+            key="dl_emissions_source",
+        )
+
+        st.caption(
+            "Scope 1 only \u2014 Safeguard Mechanism reporting basis.  "
+            "All fuel sources captured: diesel (stationary + transport), LPG, oils, greases, acetylene.  "
+            "EF = NGA Scope 1 emission factor (kg CO2-e per native unit).  "
+            "Scope 1 tCO2-e = Quantity \u00d7 EF / 1000.  "
+            "Energy GJ = Quantity \u00d7 GJ/unit.  "
+            "NGA Year = publication year of the NGA factors applied.  "
+            "Annual totals reconcile exactly to the emissions model."
+        )
+
+
+
+        # --- Physical quantities for FSEI target verification ---
+        prod_tables = {'ore': precomputed.safeguard_ore, 'electricity': precomputed.safeguard_electricity}
+
+        def _render_prod_section(label, table_df, qty_label, dl_filename, dl_key):
+            st.markdown("---")
+            st.markdown(f"**{label}**")
+            if table_df.empty:
+                st.info(f"No data for {label}.")
+                return
+            fmt = table_df.rename(columns={
+                'FY': 'FY', 'DataSet': 'Dataset', 'Description': 'Description',
+                'CostCentre': 'Cost Centre', 'UOM': 'UOM', 'Quantity': qty_label,
+            }).copy()
+            fmt[qty_label] = fmt[qty_label].astype('float64').round(0)
+            st.dataframe(fmt, hide_index=True, width='stretch')
+            st.download_button(
+                label=f"Download {label.split('—')[0].strip().lower()} data",
+                data=fmt.to_csv(index=False),
+                file_name=dl_filename,
+                mime="text/csv",
+                key=dl_key,
+            )
+
+
+        _render_prod_section(
+            label="ROM Ore — tonnes by grade (FSEI production variable)",
+            table_df=prod_tables['ore'],
+            qty_label="Quantity (t)",
+            dl_filename="safeguard_rom_ore_tonnes.csv",
+            dl_key="dl_rom_ore",
+        )
+
+        _render_prod_section(
+            label="Electricity — kWh by cost centre incl. Residential (FSEI electricity variable)",
+            table_df=prod_tables['electricity'],
+            qty_label="Quantity (kWh)",
+            dl_filename="safeguard_electricity_kwh.csv",
+            dl_key="dl_electricity",
+        )

@@ -1,0 +1,225 @@
+"""
+Tab6Gri.py
+GRI 14 Mining Sector Reporting tab
+Last updated: 2026-03-23
+
+ARCHITECTURE:
+    Display only.  Receives PrecomputedData, raw_df, display_year
+    and year_type from App.py.
+    Calls ExportGri14.py for data extraction and coverage reporting.
+    Shows GRI 14.1 climate disclosures, GRI consumables and coverage
+    status for the selected reporting year.
+"""
+
+import streamlit as st
+import pandas as pd
+from ExportGri14 import (
+    build_gri14_export,
+    build_coverage_report,
+    coverage_summary_counts,
+    GRI14_QUANTITATIVE_MAP,
+)
+from CalcCalendar import detect_year_type
+
+
+def render_gri_tab(df, precomputed, data_frame,
+                   start_date=None, end_date=None, period_label=''):
+    """Render the GRI 14 Mining Sector Reporting tab.
+
+    Args:
+        df: Raw DataFrame from load_all_data()
+        precomputed: PrecomputedData from CalcPrecompute
+        data_frame: Annual projection (selected by App.py)
+        start_date/end_date: Display period dates
+        period_label: Display label e.g. 'CY2025'
+    """
+    year_label = period_label
+
+    # Detect year_type for GRI export builder
+    year_type = detect_year_type(start_date) if start_date else 'FY'
+    if year_type == 'custom':
+        year_type = 'CY'
+
+    st.subheader("GRI 14 Mining Sector Disclosure")
+    st.caption(f"Reporting year: {year_label}")
+
+    # Build export for selected year only
+    reporting_periods = [(start_date, end_date, period_label)]
+    gri_df = build_gri14_export(
+        precomputed, raw_df=df, reporting_periods=reporting_periods,
+        year_type=year_type
+    )
+
+    if gri_df.empty:
+        st.warning(f"No GRI data available for {year_label}.")
+        return
+
+    # Filter to rows with values
+    has_value = gri_df[gri_df['Value'].notna()].copy()
+
+    # === Coverage Summary ===
+    with st.expander("Coverage Summary", expanded=True):
+        _render_coverage_summary()
+
+    # Separate by GRI Topic
+    climate_sections = ['Scope 1 GHG Emissions', 'Scope 2 GHG Emissions',
+                        'Scope 3 GHG Emissions', 'GHG Emissions intensity',
+                        'Energy intensity', 'Carbon credits', 'Energy consumption',
+                        'Production metrics']
+    consumable_sections = ['Reagents and consumables', 'Wear items']
+    waste_sections = ['Waste - rock waste', 'Waste - tailings']
+
+    # === Climate Disclosures (14.1) ===
+    with st.expander(f"14.1 Climate Change Disclosures ({year_label})", expanded=False):
+        climate = has_value[has_value['Section'].isin(climate_sections)]
+        if not climate.empty:
+            display_cols = ['Section', 'GRI_Reference', 'Description', 'Unit', 'Value']
+            if 'Coverage' in climate.columns:
+                display_cols.append('Coverage')
+            display_df = climate[display_cols].copy()
+            display_df['Value'] = display_df.apply(_format_value, axis=1)
+            display_df = display_df.rename(columns={'Value': year_label})
+            st.dataframe(display_df, hide_index=True, width="stretch", height=600)
+            csv_climate = climate.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="Download Climate Disclosures (CSV)",
+                data=csv_climate,
+                file_name=f"gri14_climate_{year_label}.csv",
+                mime="text/csv",
+                key="gri14_climate_dl",
+            )
+        else:
+            st.info(f"No climate disclosure data for {year_label}.")
+
+    # === GRI Consumables ===
+    with st.expander(f"Reagents and Consumables ({year_label})", expanded=False):
+        consumables = has_value[has_value['Section'].isin(consumable_sections)]
+        if not consumables.empty:
+            display_c = consumables[['Section', 'Description', 'Unit',
+                                     'Value']].copy()
+            display_c['Value'] = display_c.apply(_format_value, axis=1)
+            display_c = display_c.rename(columns={'Value': year_label})
+            st.dataframe(display_c, hide_index=True, width="stretch")
+            csv_cons = consumables.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="Download Consumables (CSV)",
+                data=csv_cons,
+                file_name=f"gri14_consumables_{year_label}.csv",
+                mime="text/csv",
+                key="gri14_cons_dl",
+            )
+        else:
+            st.info(
+                "No consumable data available.  "
+                "Run prep_data.py with INV03 source files to populate."
+            )
+
+    # === 14.5 Waste (Limited) ===
+    with st.expander(f"14.5 Waste — Limited ({year_label})", expanded=False):
+        waste = has_value[has_value['Section'].isin(waste_sections)]
+        if not waste.empty:
+            st.caption(
+                "⚠ Limited disclosure: covers rock waste and approximate tailings "
+                "from operations data only.  Non-mineral waste streams (hazardous, "
+                "general, recycled) require a separate waste tracking register."
+            )
+            display_w = waste[['Section', 'GRI_Reference', 'Description',
+                               'Unit', 'Value']].copy()
+            display_w['Value'] = display_w.apply(_format_value, axis=1)
+            display_w = display_w.rename(columns={'Value': year_label})
+            st.dataframe(display_w, hide_index=True, width="stretch")
+            csv_waste = waste.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="Download Waste Disclosures (CSV)",
+                data=csv_waste,
+                file_name=f"gri14_waste_{year_label}.csv",
+                mime="text/csv",
+                key="gri14_waste_dl",
+            )
+        else:
+            st.info(f"No waste data available for {year_label}.")
+
+    # === Full Data Table ===
+    with st.expander(f"Full Disclosure Data ({year_label})", expanded=False):
+        display_cols = ['GRI_Topic', 'Section', 'GRI_Reference', 'Description',
+                        'Unit', 'Value', 'Coverage', 'Methodology_Note']
+        # Only include columns that exist
+        display_cols = [c for c in display_cols if c in gri_df.columns]
+        display_full = gri_df[display_cols].copy()
+        display_full['Value'] = display_full.apply(_format_value, axis=1)
+        display_full = display_full.rename(columns={'Value': year_label})
+        display_full = display_full.sort_values(['GRI_Topic', 'Section', 'Description'])
+        st.dataframe(display_full, hide_index=True, width="stretch", height=400)
+        csv_full = gri_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="Download Full Disclosure (CSV)",
+            data=csv_full,
+            file_name=f"gri14_disclosure_{year_label}.csv",
+            mime="text/csv",
+            key="gri14_full_dl",
+        )
+
+
+def _format_value(row):
+    """Format a disclosure value for display."""
+    val = row['Value']
+    if pd.isna(val):
+        return None
+    if isinstance(val, float):
+        if val == 0.0:
+            return 0
+        elif abs(val) < 0.01:
+            return round(val, 6)
+        elif abs(val) < 1:
+            return round(val, 4)
+        elif abs(val) < 100:
+            return round(val, 2)
+        else:
+            return round(val, 0)
+    return val
+
+
+def _render_coverage_summary():
+    """Show coverage summary by GRI 14 topic."""
+    counts = coverage_summary_counts()
+
+    rows = []
+    total_auto = 0
+    total_collect = 0
+    total_na = 0
+    for topic, c in counts.items():
+        a = c['auto']
+        co = c['collectible']
+        na = c['not_available']
+        total = a + co + na
+        rows.append({
+            'Topic': topic,
+            'Auto': a,
+            'Collectible': co,
+            'N/A': na,
+            'Total': total,
+            'Coverage': f"{a/total*100:.0f}%" if total > 0 else "0%",
+        })
+        total_auto += a
+        total_collect += co
+        total_na += na
+
+    grand_total = total_auto + total_collect + total_na
+    rows.append({
+        'Topic': 'TOTAL',
+        'Auto': total_auto,
+        'Collectible': total_collect,
+        'N/A': total_na,
+        'Total': grand_total,
+        'Coverage': f"{total_auto/grand_total*100:.0f}%" if grand_total > 0 else "0%",
+    })
+
+    summary_df = pd.DataFrame(rows)
+    st.dataframe(summary_df, hide_index=True, width="stretch")
+
+    st.caption(
+        "Auto = populated from emissions model and inventory data.  "
+        "Limited = partial data from operations; remaining items need external sources.  "
+        "Collectible = data exists in other systems (NPI, water balance, waste register).  "
+        "N/A = not applicable to Ravenswood."
+    )
