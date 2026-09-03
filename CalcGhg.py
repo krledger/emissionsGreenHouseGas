@@ -28,8 +28,19 @@ References:
     - GHG Protocol Corporate Accounting and Reporting Standard (WRI/WBCSD)
 """
 
+import logging
+
 import pandas as pd
+
 from Config import GHG_EXPLOSIVES_EF_T_CO2_PER_T
+from LookupIdentifiers import expected_uom
+
+logger = logging.getLogger(__name__)
+
+# The factor is tonnes of carbon dioxide per tonne of explosive, so the line
+# must be in tonnes.  The unit is read from the identifier lookup rather than
+# assumed here, so one declaration governs the factor and every consumer.
+EXPLOSIVES_UOM = expected_uom('Blasting', 'Explosives')
 
 
 def build_ghg_frame(nger_df):
@@ -63,20 +74,42 @@ def build_ghg_frame(nger_df):
     # Identify explosives rows by CommonName (set by LookupIdentifiers.py).
     # These have NGAFuel = '' and Scope1_tCO2e = 0 in the NGER frame.
     # Under GHG Protocol, detonation emissions are Scope 1.
-    expl_mask = (
-        (ghg_df['CommonName'].astype(str) == 'Explosives')
-        & (ghg_df['Quantity'].abs() > 0)
-    )
+    named = (ghg_df['CommonName'].astype(str) == 'Explosives')
+    expl_mask = named & (ghg_df['Quantity'].abs() > 0)
+
+    # The factor is per tonne, so only the tonnes line takes it.  A row
+    # carrying the name in another unit is a different thing: stores carries
+    # rock rivets by the box under the same subactivity name.  Charging it
+    # would add boxes to tonnes.
+    if EXPLOSIVES_UOM and 'UOM' in ghg_df.columns:
+        wrong_unit = expl_mask & (ghg_df['UOM'].astype(str) != EXPLOSIVES_UOM)
+        if wrong_unit.any():
+            for unit, count in ghg_df.loc[wrong_unit, 'UOM'].astype(str) \
+                    .value_counts().items():
+                logger.warning(
+                    f"Explosives: {count} rows are in '{unit}' and the factor "
+                    f"is per '{EXPLOSIVES_UOM}'.  Excluded from the GHG "
+                    f"overlay."
+                )
+        expl_mask = expl_mask & (ghg_df['UOM'].astype(str) == EXPLOSIVES_UOM)
 
     if expl_mask.any():
+        # The loader stores the emission columns float32 to save memory.  The
+        # product below is float64 on some numpy versions, and pandas will
+        # not write one into the other.  Widen first rather than depend on
+        # which promotion rules the installed numpy uses.
+        ghg_df['Scope1_tCO2e'] = ghg_df['Scope1_tCO2e'].astype('float64')
         # Factor: 0.17 t CO₂ per tonne ANFO (AGO / Dept of Climate Change)
-        # Source data UOM is tonnes.  If UOM changes, adjust here.
         # tCO2-e = Quantity (t) * 0.17 (t CO₂/t ANFO)
         ghg_df.loc[expl_mask, 'Scope1_tCO2e'] = (
             ghg_df.loc[expl_mask, 'Quantity'] * GHG_EXPLOSIVES_EF_T_CO2_PER_T
         )
-        # Set a pseudo NGAFuel so tab1 summary includes these rows
-        ghg_df.loc[expl_mask, 'NGAFuel'] = 'Explosives (GHG only)'
+        # Name the source for what it is.  Where it discloses is not part of
+        # what it is called: explosives are Scope 1 under the GHG Protocol
+        # and outside NGER and the Safeguard Mechanism, and that is carried
+        # by GHG_Source here and by the applicability flags on the canonical
+        # table, not by decorating the name.
+        ghg_df.loc[expl_mask, 'NGAFuel'] = 'Explosives'
         ghg_df.loc[expl_mask, 'GHG_Source'] = 'AGO 0.17 t CO₂/t ANFO'
 
     return ghg_df

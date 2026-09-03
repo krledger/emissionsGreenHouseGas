@@ -12,3 +12,14 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# Raw data — encrypted .enc versions are tracked instead
+Data/OperationsMetricsActual.csv
+Data/OperationsMetricsBudget.csv
+Data/PrepData.txt
+
+# Generated output, logs, local reference material
+Out/
+*.log
+Documentation/
+*.xlsx

@@ -1,0 +1,15 @@
+Category,Group,Parameter,Value,Unit,Path,Source
+5,General waste to landfill,tonnes_per_year,,t per year,category_5.streams.General waste to landfill.tonnes_per_year,"NGA Factors, solid waste to landfill, mixed municipal"
+5,Prescribed and hazardous waste,tonnes_per_year,,t per year,category_5.streams.Prescribed and hazardous waste.tonnes_per_year,"Treatment and disposal, screening factor"
+5,Recycled metals,tonnes_per_year,,t per year,category_5.streams.Recycled metals.tonnes_per_year,"Recycling, screening factor"
+5,General waste to landfill,factor_tco2e_per_t,0.586,t CO2-e per t,category_5.streams.General waste to landfill.factor_tco2e_per_t,"NGA Factors, solid waste to landfill, mixed municipal"
+5,Prescribed and hazardous waste,factor_tco2e_per_t,0.02,t CO2-e per t,category_5.streams.Prescribed and hazardous waste.factor_tco2e_per_t,"Treatment and disposal, screening factor"
+5,Recycled metals,factor_tco2e_per_t,0.021,t CO2-e per t,category_5.streams.Recycled metals.factor_tco2e_per_t,"Recycling, screening factor"
+6,Brisbane to Townsville,sectors_per_week,1.5,sectors per week,category_6.air_legs.Brisbane to Townsville.sectors_per_week,"Recognised aviation factor, domestic short haul, economy"
+6,Brisbane to Townsville,km_per_sector,1110.0,km,category_6.air_legs.Brisbane to Townsville.km_per_sector,"Recognised aviation factor, domestic short haul, economy"
+6,Brisbane to Townsville,factor_kgco2e_per_pkm,0.155,kg CO2-e per passenger km,category_6.air_legs.Brisbane to Townsville.factor_kgco2e_per_pkm,"Recognised aviation factor, domestic short haul, economy"
+7,roster,workforce_headcount,500.0,people,category_7.roster..workforce_headcount,"NGA Factors, passenger vehicle, diesel and petrol blend"
+7,roster,return_trips_per_person_per_year,52.0,trips per year,category_7.roster..return_trips_per_person_per_year,"NGA Factors, passenger vehicle, diesel and petrol blend"
+7,roster,occupancy,1.0,people per vehicle,category_7.roster..occupancy,"NGA Factors, passenger vehicle, diesel and petrol blend"
+7,roster,factor_kgco2e_per_km,0.181,kg CO2-e per km,category_7.roster..factor_kgco2e_per_km,"NGA Factors, passenger vehicle, diesel and petrol blend"
+10,,refining_intensity_kgco2e_per_kg_au,,kg CO2-e per kg gold,category_10.refining_intensity_kgco2e_per_kg_au,None

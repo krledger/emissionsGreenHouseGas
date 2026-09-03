@@ -1,0 +1,98 @@
+ListName,Code,Label,Dimension,EmissionScale,QuantityScale,SortOrder,Active,Notes
+AssetClass,Transmission and distribution lines,Power and Communication Line and Related Structures Construction,,,,1,true,NAICS 237130
+AssetClass,Substation civil and earthworks,Other Heavy and Civil Engineering Construction,,,,2,true,NAICS 237990
+AssetClass,Concrete foundations and plinths,Poured Concrete Foundation and Structure Contractors,,,,3,true,NAICS 238110
+AssetClass,Electrical installation and cabling,Electrical Contractors and Other Wiring Installation,,,,4,true,NAICS 238210
+AssetClass,"Mechanical installation, specialty trades",All Other Specialty Trade Contractors,,,,5,true,NAICS 238990
+AssetClass,Industrial building construction,Industrial Building Construction,,,,6,true,NAICS 236210
+AssetClass,"Building construction, commercial and office",Commercial and Institutional Building Construction,,,,7,true,NAICS 236220
+AssetClass,"Structural steel, gantries, frames",Fabricated Structural Metal Manufacturing,,,,8,true,NAICS 332312
+AssetClass,Transportable and modular buildings,Prefabricated Metal Building and Component Manufacturing,,,,9,true,NAICS 332311
+AssetClass,Prefabricated timber buildings,Prefabricated Wood Building Manufacturing,,,,10,true,NAICS 321992
+AssetClass,Tanks and heavy gauge vessels,Metal Tank (Heavy Gauge) Manufacturing,,,,11,true,NAICS 332420
+AssetClass,"Kilns, furnaces and ovens",Industrial Process Furnace and Oven Manufacturing,,,,12,true,NAICS 333994
+AssetClass,Other industrial machinery,Other Industrial Machinery Manufacturing,,,,13,true,NAICS 333249
+AssetClass,Power transformers,"Power, Distribution, and Specialty Transformer Manufacturing",,,,14,true,NAICS 335311
+AssetClass,"Switchgear, circuit breakers, metering",Switchgear and Switchboard Apparatus Manufacturing,,,,15,true,NAICS 335313
+AssetClass,STATCOM and power electronics,All Other Miscellaneous Electrical Equipment and Component Mfg,,,,16,true,NAICS 335999
+AssetClass,Protection relays and control systems,Relay and Industrial Control Manufacturing,,,,17,true,NAICS 335314
+AssetClass,Motors and generators,Motor and Generator Manufacturing,,,,18,true,NAICS 335312
+AssetClass,Light vehicles and utilities,Light Truck and Utility Vehicle Manufacturing,,,,19,true,NAICS 336112
+AssetClass,Heavy road trucks,Heavy Duty Truck Manufacturing,,,,20,true,NAICS 336120
+AssetClass,Trailers and floats,Truck Trailer Manufacturing,,,,21,true,NAICS 336212
+AssetClass,Tractors and agricultural plant,Farm Machinery and Equipment Manufacturing,,,,22,true,NAICS 333111
+AssetClass,"Forklifts, stackers, yard tractors","Industrial Truck, Tractor, Trailer and Stacker Machinery Mfg",,,,23,true,NAICS 333924
+AssetClass,"Mobile mining plant, dozers, graders",Construction Machinery Manufacturing,,,,24,true,NAICS 333120
+AssetClass,Office furniture and fit-out,Office Furniture (except Wood) Manufacturing,,,,25,true,NAICS 337214
+AssetClass,"Design and engineering, external",Engineering Services,,,,26,true,NAICS 541330
+Basis,spend,spend,,,,1,true,Priced on expenditure.
+Basis,physical,physical,,,,2,true,Priced on quantity.  Takes precedence over spend for the same group.
+Basis,capital,capital,,,,3,true,"Category 2, priced on recognised capital value."
+Basis,travel,travel,,,,4,true,Priced on passenger distance.
+Basis,vehicle,vehicle,,,,5,true,Priced on vehicle distance.
+Basis,treatment,treatment,,,,6,true,Priced on tonnes of waste.
+Basis,excluded,excluded,,,,7,true,Not priced in this category.  The reason says where it is counted instead.
+Category,1,Purchased goods and services,,,,1,true,
+Category,2,Capital goods,,,,2,true,
+Category,3,Fuel and energy related activities,,,,3,true,
+Category,4,Upstream transportation and distribution,,,,4,true,
+Category,5,Waste generated in operations,,,,5,true,
+Category,6,Business travel,,,,6,true,
+Category,7,Employee commuting,,,,7,true,
+Category,10,Processing of sold products,,,,8,true,
+Class,Internal,Internal,,,,1,true,Chosen or derived here.  Editable.
+Class,NGA,NGA,,,,2,true,"National Greenhouse Accounts, used as published.  Fixed."
+Class,Spend-based,Spend-based,,,,3,true,"Environmentally extended input output, used as published.  Fixed."
+Dimension,mass,mass,,,,1,true,base unit t
+Dimension,volume,volume,,,,2,true,base unit kL
+Dimension,energy,energy,,,,3,true,base unit GJ
+Dimension,distance,distance,,,,4,true,base unit km
+Dimension,passenger-distance,passenger-distance,,,,5,true,base unit passenger km
+Dimension,spend-AUD,spend-AUD,,,,6,true,base unit AUD.  Separate from USD on purpose: a factor published per US dollar cannot price Australian spend until it has been converted on import.
+Dimension,spend-USD,spend-USD,,,,7,true,"base unit USD, of the year the publication states."
+Dimension,count,count,,,,8,true,base unit each
+ImportType,NGA workbook,NGA workbook,,,,1,true,DCCEEW National Greenhouse Accounts Factors.
+ImportType,EPA SCEF,EPA SCEF,,,,2,true,US EPA supply chain factors by NAICS.
+ImportType,Scope 3 factors,Scope 3 factors,,,,3,true,The distributed factor and item table.
+ImportType,Operations actual,Operations actual,,,,4,true,Recorded physicals.
+ImportType,Operations budget,Operations budget,,,,5,true,Projected physicals.
+ImportType,Lookups,Lookups,,,,6,true,This table.
+ImportType,Factors (generic),Factors (generic),,,,7,true,"Any source, reshaped into the Factors columns.  The way in that always works."
+Region,Australia,Australia,,,,1,true,National.
+Region,NSW,NSW,,,,2,true,Grid.
+Region,VIC,VIC,,,,3,true,Grid.
+Region,QLD,QLD,,,,4,true,Grid.
+Region,SA,SA,,,,5,true,Grid.
+Region,WA,WA,,,,6,true,Grid.
+Region,TAS,TAS,,,,7,true,Grid.
+Region,NT,NT,,,,8,true,Darwin Katherine Interconnected System.
+Region,NWIS,NWIS,,,,9,true,North West Interconnected System.
+Region,SWIS,SWIS,,,,10,true,South West Interconnected System.
+Region,National,National,,,,11,true,The national grid factor.
+Region,USA,USA,,,,12,true,The US EPA supply chain factors are published for United States production and say so in their own limitations.
+Region,China,China,,,,13,true,
+Region,Global,Global,,,,14,true,A world average.
+Region,United Kingdom,United Kingdom,,,,15,true,
+Rule,Column,Column,,,,1,true,Take a source column as it stands.
+Rule,Constant,Constant,,,,2,true,The file does not carry it; the mapping supplies it.
+Rule,Pivot,Pivot,,,,3,true,The source puts in rows what the target puts in columns.
+Rule,Derive,Derive,,,,4,true,Computed from fields already mapped.
+Rule,Ignore,Ignore,,,,5,true,"Present in the file, not wanted."
+Status,Active,Active,,,,1,true,
+Status,Retired,Retired,,,,2,true,
+Tenure,Owned,Owned,,,,1,true,Capitalised.  Produces a Category 2 event.
+Tenure,Finance lease,Finance lease,,,,2,true,Capitalised.  Produces a Category 2 event.
+Tenure,Rental,Rental,,,,3,true,"An expensed service.  Category 1, not capital."
+Unit,kg CO2-e/t,kg CO2-e/t,mass,1,1,1,true,
+Unit,t CO2-e per t,t CO2-e per t,mass,1000,1,2,true,A thousand times kg CO2-e/t.  Kept apart because the difference is the error nobody sees.
+Unit,kg CO2-e/kg,kg CO2-e/kg,mass,1,0.001,3,true,
+Unit,kg CO2-e/kL,kg CO2-e/kL,volume,1,1,4,true,
+Unit,kg CO2-e/L,kg CO2-e/L,volume,1,0.001,5,true,
+Unit,kg CO2-e/m3,kg CO2-e/m3,volume,1,1,6,true,Gaseous fuels are metered in cubic metres and priced against them.
+Unit,kg CO2-e/GJ,kg CO2-e/GJ,energy,1,1,7,true,
+Unit,kg CO2-e/kWh,kg CO2-e/kWh,energy,1,0.0036,8,true,One kilowatt hour is 0.0036 GJ.
+Unit,kg CO2-e per km,kg CO2-e per km,distance,1,1,9,true,
+Unit,kg CO2-e per passenger km,kg CO2-e per passenger km,passenger-distance,1,1,10,true,
+Unit,kg/USD,kg/USD,spend-USD,1,1,11,true,Denominated in the dollar year the publication states.
+Unit,kg CO2-e per AUD,kg CO2-e per AUD,spend-AUD,1,1,12,true,What a spend factor becomes once converted on import.
+Unit,t CO2-e per $1M AUD,t CO2-e per $1M AUD,spend-AUD,1000,1000000,13,true,"The capital bands, banded from the EPA factors."

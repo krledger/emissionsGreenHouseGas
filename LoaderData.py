@@ -32,19 +32,30 @@ MatchKey field (constructed by loader):
     for that pair are excluded.  This prevents double-counting in the
     overlap period where both datasets have data.
 
+ProductGroup and Value (2026-08 PrepData change):
+    The actuals CSV carries two further columns.  ProductGroup is the Pronto
+    product group code verbatim; Value is the inventory line cost in AUD as
+    recorded, with no conversion and no exchange rate applied.  Both are blank
+    on operations report and legacy rows, and the budget CSV does not carry
+    either column at all.  The loader creates them where absent so the two
+    frames concatenate, and carries them through aggregation, which is what
+    makes spend-based Scope 3 possible in CalcScope3.py.
+
 Output columns:
     Year, Month, FY, DataSet, Activity, SubActivity, Description,
     Department, CostCentre, State, UOM, Quantity, Identifier, MatchKey,
-    NGAFuel, CommonName, RowType, Scope1_tCO2e, Scope2_tCO2e,
-    Scope3_tCO2e, Energy_GJ, Source
+    ProductGroup, Value, Mass_kg, NGAFuel, CommonName, RowType,
+    Scope1_tCO2e, Scope2_tCO2e, Scope3_tCO2e, Energy_GJ, Source
 """
 
 import io
 import pandas as pd
 import os
 from pathlib import Path
-from CalcCalendar import date_to_fy
-from Config import NGER_FY_START_MONTH, DIESEL_TRANSPORT_COSTCENTRES, DIESEL_TRANSPORT_NGAFUEL
+from CalcCalendar import date_to_fy, series_to_fy
+from Config import (NGER_FY_START_MONTH, DIESEL_TRANSPORT_COSTCENTRES,
+                    DIESEL_TRANSPORT_NGAFUEL)
+from CalcUnits import canonical as canonical_uom
 from LookupIdentifiers import enrich_with_lookup
 from LoaderNga import NGAFactorsByYear
 from CalcEmissions import (
@@ -126,6 +137,45 @@ def load_all_data(actual_path=None,
     df = pd.concat(frames, ignore_index=True)
     print(f'Combined: {len(df):,} records')
 
+    # 1b. RECONCILE OPTIONAL COLUMNS
+    # The actuals CSV carries ProductGroup and Value; the budget CSV does not.
+    # Create whichever is absent so the concatenated frame has one schema.
+    # A blank product group and a nil value are the correct reading of a row
+    # that never carried the field, so no row is dropped and no spend invented.
+    if 'ProductGroup' not in df.columns:
+        df['ProductGroup'] = ''
+    if 'Value' not in df.columns:
+        df['Value'] = 0.0
+    # Mass of the issue, where the upstream register establishes one.  Blank
+    # is the normal case and is not a gap: an item assessed on expenditure
+    # needs no mass.  Carried so a physical factor can be applied to the few
+    # groups where one is a better basis than a dollar one.
+    if 'Mass_kg' not in df.columns:
+        df['Mass_kg'] = float('nan')
+
+    # 1c. NORMALISE UNIT SPELLINGS
+    # The same physical unit occasionally appears under two spellings, for
+    # example 'kilogram' beside 'kg'.  PrepData feeds several programs, so the
+    # variant is normalised here on read rather than corrected upstream.  A
+    # synonym is a spelling and never a conversion, so the quantity is not
+    # touched and the source file is not written to.
+    df['UOM'] = df['UOM'].astype(str).str.strip()
+    _mapping = {u: canonical_uom(u) for u in df['UOM'].unique()}
+    _changed = {u: c for u, c in _mapping.items() if c != u}
+    if _changed:
+        _counts = {u: int((df['UOM'] == u).sum()) for u in _changed}
+        df['UOM'] = df['UOM'].map(_mapping)
+        print('Unit spellings normalised: '
+              + ', '.join(f'{u} to {c} ({_counts[u]:,} rows)'
+                          for u, c in sorted(_changed.items())))
+
+    df['ProductGroup'] = df['ProductGroup'].fillna('').astype(str).str.strip()
+    df['Value'] = pd.to_numeric(df['Value'], errors='coerce').fillna(0.0)
+    df['Mass_kg'] = pd.to_numeric(df['Mass_kg'], errors='coerce')
+
+    _valued = int((df['Value'] != 0).sum())
+    print(f'Spend carried: {_valued:,} rows, ${df["Value"].sum():,.0f} AUD')
+
     # 2. PARSE DATES AND ADD TIME COLUMNS
     # Source files use DD/MM/YYYY format, all dates are 1st of month.
     df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
@@ -149,7 +199,9 @@ def load_all_data(actual_path=None,
     df['Year'] = df['Date'].dt.year
     df['Month'] = df['Date'].dt.month
     # Calculate FY from Date (July start = FY, not CY)
-    df['FY'] = df['Date'].apply(date_to_fy)
+    # Financial year in one vectorised pass.  The projection frame runs to
+    # several hundred thousand rows, so a call per row is not affordable.
+    df['FY'] = series_to_fy(df['Date']).astype('int64')
 
     print(f"Date range: {df['Date'].min():%Y-%m} to {df['Date'].max():%Y-%m}")
 
@@ -196,12 +248,26 @@ def load_all_data(actual_path=None,
         'Year', 'Month', 'FY', 'DataSet',
         'Activity', 'SubActivity', 'Description',
         'Department', 'CostCentre', 'State', 'UOM',
-        'NGAFuel', 'CommonName', 'RowType', 'MatchKey'
-    ], dropna=False).agg({
-        'Quantity': 'sum',
-        'Source': 'first',     # Keep first source as metadata
-        'Identifier': 'first'  # Budget: Budget|SubActivity|CostCentre; Actuals: invoice number
-    }).reset_index()
+        'NGAFuel', 'CommonName', 'RowType', 'MatchKey', 'ProductGroup'
+    ], dropna=False).agg(
+        Quantity=('Quantity', 'sum'),
+        # AUD as recorded, summed with the quantity it belongs to
+        Value=('Value', 'sum'),
+        Mass_kg=('Mass_kg', 'sum'),
+        # Count of masses actually recorded in the group, used immediately
+        # below and then dropped.  A python aggregation over the whole frame
+        # is far too slow at projection scale, so the blanking is done in one
+        # vectorised step instead of a per-group lambda.
+        Mass_rows=('Mass_kg', 'count'),
+        Source=('Source', 'first'),
+        # Budget: Budget|SubActivity|CostCentre; Actuals: invoice number
+        Identifier=('Identifier', 'first'),
+    ).reset_index()
+
+    # A group with no mass at all stays blank rather than nil, so an unknown
+    # mass is never read as a mass of zero.
+    agg_df.loc[agg_df['Mass_rows'] == 0, 'Mass_kg'] = float('nan')
+    agg_df = agg_df.drop(columns=['Mass_rows'])
 
     print(f'Aggregated: {len(df):,} → {len(agg_df):,} records')
 
@@ -262,10 +328,16 @@ def load_all_data(actual_path=None,
     agg_df['CommonName'] = agg_df['CommonName'].astype('category')
     agg_df['RowType'] = agg_df['RowType'].astype('category')
     agg_df['MatchKey'] = agg_df['MatchKey'].astype('category')
+    agg_df['ProductGroup'] = agg_df['ProductGroup'].astype('category')
     agg_df['Year'] = agg_df['Year'].astype('int16')
     agg_df['Month'] = agg_df['Month'].astype('int8')
     agg_df['FY'] = agg_df['FY'].astype('int16')
     agg_df['Quantity'] = agg_df['Quantity'].astype('float32')
+    # Value stays float64.  Spend runs to nine figures and float32 loses
+    # dollars at that magnitude, which would show up as a reconciliation break
+    # against the inventory export.
+    agg_df['Value'] = agg_df['Value'].astype('float64')
+    agg_df['Mass_kg'] = agg_df['Mass_kg'].astype('float64')
     agg_df['Scope1_tCO2e'] = agg_df['Scope1_tCO2e'].astype('float32')
     agg_df['Scope2_tCO2e'] = agg_df['Scope2_tCO2e'].astype('float32')
     agg_df['Scope3_tCO2e'] = agg_df['Scope3_tCO2e'].astype('float32')
@@ -279,7 +351,19 @@ def load_all_data(actual_path=None,
         agg_df['Year'].astype(str) + '-' + agg_df['Month'].astype(str).str.zfill(2) + '-01'
     )
 
-    # 9. SORT AND FINALIZE
+    # 9. ONE NAME PER DEPARTMENT
+    # Applied here, once, so every consumer groups the same way.  Without it
+    # the mining operation reports under two names and neither total is the
+    # operation's.
+    from Config import canonical_department
+    original = agg_df['Department'].astype(str)
+    renamed = original.map(canonical_department)
+    moved = int((original != renamed).sum())
+    agg_df['Department'] = renamed.astype('category')
+    if moved:
+        print(f'Department names: {moved:,} rows renamed to the reported name')
+
+    # 10. SORT AND FINALIZE
     agg_df = agg_df.sort_values(['DataSet', 'Year', 'Month', 'Description']).reset_index(drop=True)
 
     print(f'\n' + '=' * 80)

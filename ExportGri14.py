@@ -53,6 +53,7 @@ import pandas as pd
 import numpy as np
 from typing import Optional, Dict, Any, List
 
+from CalcUnits import UnitError, factor as uom_factor
 from CalcCalendar import period_filter, year_to_date_range, date_to_fy
 
 # ─────────────────────────────────────────────────────────────────────
@@ -121,6 +122,14 @@ GRI14_QUANTITATIVE_MAP = [
      'description': 'Scope 1  - N2O component',
      'unit': 'tCO2-e', 'calc_fn': '_get_scope1_gas', 'calc_args': {'gas': 'N2O'}},
 
+    # Biogenic carbon dioxide is reported separately and is not part of the
+    # gross Scope 1 figure above.  The facility has no material biogenic
+    # source, but the disclosure requires the nil to be stated rather than
+    # left out.
+    {'id': 'scope1_biogenic',   'gri_ref': '102-5c', 'section': 'Scope 1 GHG Emissions',
+     'description': 'Biogenic CO2, reported separately from gross Scope 1',
+     'unit': 'tCO2-e', 'calc_fn': '_get_zero'},
+
     {'id': 'scope1_hfcs',       'gri_ref': '102-5b',       'section': 'Scope 1 GHG Emissions',
      'description': 'Scope 1  - HFCs',
      'unit': 'tCO2-e', 'calc_fn': '_get_zero'},  # No HFC sources
@@ -137,7 +146,7 @@ GRI14_QUANTITATIVE_MAP = [
      'description': 'Scope 1  - NF3',
      'unit': 'tCO2-e', 'calc_fn': '_get_zero'},
 
-    {'id': 'scope1_site',       'gri_ref': '14.1-sector',  'section': 'Scope 1 GHG Emissions',
+    {'id': 'scope1_site',       'gri_ref': '102-5a (site)','section': 'Scope 1 GHG Emissions',
      'description': 'Scope 1 by mine site (Ravenswood  - single facility)',
      'unit': 'tCO2-e', 'calc_fn': '_get_scope1_total'},
 
@@ -147,15 +156,54 @@ GRI14_QUANTITATIVE_MAP = [
      'description': 'Gross location-based Scope 2 GHG emissions',
      'unit': 'tCO2-e', 'calc_fn': '_get_scope2_total'},
 
-    {'id': 'scope2_site',       'gri_ref': '14.1-sector',  'section': 'Scope 2 GHG Emissions',
+    {'id': 'scope2_site',       'gri_ref': '102-6a (site)','section': 'Scope 2 GHG Emissions',
      'description': 'Scope 2 by mine site (Ravenswood  - single facility)',
      'unit': 'tCO2-e', 'calc_fn': '_get_scope2_total'},
 
     # ── SCOPE 3 GHG EMISSIONS ────────────────────────────────────────
 
     {'id': 'scope3_total',      'gri_ref': '102-7a',       'section': 'Scope 3 GHG Emissions',
-     'description': 'Gross Scope 3 GHG emissions (fuel combustion + grid T&D only)',
+     'description': 'Gross Scope 3 GHG emissions, all fifteen categories',
      'unit': 'tCO2-e', 'calc_fn': '_get_scope3_total'},
+
+    # The disclosure requires the categories included in the measure to be
+    # stated.  Each is published as its own line, so a reader sees which
+    # categories carry a figure and which are nil, rather than a total alone.
+    {'id': 'scope3_cat1',       'gri_ref': '102-7b',       'section': 'Scope 3 GHG Emissions',
+     'description': 'Category 1  - Purchased goods and services',
+     'unit': 'tCO2-e', 'calc_fn': '_get_scope3_category', 'calc_args': {'category': 1}},
+
+    {'id': 'scope3_cat2',       'gri_ref': '102-7b',       'section': 'Scope 3 GHG Emissions',
+     'description': 'Category 2  - Capital goods',
+     'unit': 'tCO2-e', 'calc_fn': '_get_scope3_category', 'calc_args': {'category': 2}},
+
+    {'id': 'scope3_cat3',       'gri_ref': '102-7b',       'section': 'Scope 3 GHG Emissions',
+     'description': 'Category 3  - Fuel and energy related activities',
+     'unit': 'tCO2-e', 'calc_fn': '_get_scope3_category', 'calc_args': {'category': 3}},
+
+    {'id': 'scope3_cat4',       'gri_ref': '102-7b',       'section': 'Scope 3 GHG Emissions',
+     'description': 'Category 4  - Upstream transportation and distribution',
+     'unit': 'tCO2-e', 'calc_fn': '_get_scope3_category', 'calc_args': {'category': 4}},
+
+    {'id': 'scope3_cat5',       'gri_ref': '102-7b',       'section': 'Scope 3 GHG Emissions',
+     'description': 'Category 5  - Waste generated in operations',
+     'unit': 'tCO2-e', 'calc_fn': '_get_scope3_category', 'calc_args': {'category': 5}},
+
+    {'id': 'scope3_cat6',       'gri_ref': '102-7b',       'section': 'Scope 3 GHG Emissions',
+     'description': 'Category 6  - Business travel',
+     'unit': 'tCO2-e', 'calc_fn': '_get_scope3_category', 'calc_args': {'category': 6}},
+
+    {'id': 'scope3_cat7',       'gri_ref': '102-7b',       'section': 'Scope 3 GHG Emissions',
+     'description': 'Category 7  - Employee commuting',
+     'unit': 'tCO2-e', 'calc_fn': '_get_scope3_category', 'calc_args': {'category': 7}},
+
+    {'id': 'scope3_cat10',      'gri_ref': '102-7b',       'section': 'Scope 3 GHG Emissions',
+     'description': 'Category 10  - Processing of sold products',
+     'unit': 'tCO2-e', 'calc_fn': '_get_scope3_category', 'calc_args': {'category': 10}},
+
+    {'id': 'scope3_categories',  'gri_ref': '102-7b',      'section': 'Scope 3 GHG Emissions',
+     'description': 'Categories carrying a figure (of fifteen considered)',
+     'unit': 'count', 'calc_fn': '_get_scope3_category_count'},
 
     # ── EMISSIONS INTENSITY ──────────────────────────────────────────
 
@@ -163,7 +211,7 @@ GRI14_QUANTITATIVE_MAP = [
      'description': 'Scope 1 emissions intensity (tCO2-e per tonne ROM ore)',
      'unit': 'tCO2-e/t ROM', 'calc_fn': '_get_emission_intensity'},
 
-    {'id': 'rom_total',         'gri_ref': '302-3b',       'section': 'GHG Emissions intensity',
+    {'id': 'rom_total',         'gri_ref': '102-8b',       'section': 'GHG Emissions intensity',
      'description': 'Total ROM ore mined (intensity denominator)',
      'unit': 't', 'calc_fn': '_get_rom_tonnes'},
 
@@ -254,102 +302,102 @@ GRI14_QUANTITATIVE_MAP = [
     {'id': 'milled_tonnes',    'gri_ref': 'context',       'section': 'Production metrics',
      'description': 'Milled tonnes (ore processed through mill)',
      'unit': 't', 'calc_fn': '_get_production_metric',
-     'calc_args': {'common_name': 'Ore milled', 'row_types': ['total']}},
+     'calc_args': {'common_name': 'Ore milled', 'row_types': ['total'], 'uom': 't'}},
 
     {'id': 'gold_recovered',   'gri_ref': 'context',       'section': 'Production metrics',
      'description': 'Gold recovered',
      'unit': 'oz', 'calc_fn': '_get_production_metric',
-     'calc_args': {'common_name': 'Gold recovered', 'row_types': ['production']}},
+     'calc_args': {'common_name': 'Gold recovered', 'row_types': ['production'], 'uom': 'oz'}},
 
     # -- GRI CONSUMABLES (from consolidated_emissions_data.csv ReportingCategory='GRI') --
 
-    {'id': 'cyanide_kg',       'gri_ref': '14.1-consumables', 'section': 'Reagents and consumables',
+    {'id': 'cyanide_kg',       'gri_ref': '301-1a', 'section': 'Reagents and consumables',
      'description': 'Sodium cyanide consumption',
      'unit': 'kg', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Cyanide', 'row_types': ['consumption']}},
+     'calc_args': {'common_name': 'Cyanide', 'row_types': ['consumption'], 'uom': 'kg'}},
 
-    {'id': 'quicklime_t',      'gri_ref': '14.1-consumables', 'section': 'Reagents and consumables',
+    {'id': 'quicklime_t',      'gri_ref': '301-1a', 'section': 'Reagents and consumables',
      'description': 'Quicklime consumption',
      'unit': 't', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Lime', 'row_types': ['consumption']}},
+     'calc_args': {'common_name': 'Lime', 'row_types': ['consumption'], 'uom': 't'}},
 
-    {'id': 'grinding_media_t', 'gri_ref': '14.1-consumables', 'section': 'Reagents and consumables',
+    {'id': 'grinding_media_t', 'gri_ref': '301-1a', 'section': 'Reagents and consumables',
      'description': 'Grinding media consumption',
      'unit': 't', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Grinding media', 'row_types': ['consumption']}},
+     'calc_args': {'common_name': 'Grinding media', 'row_types': ['consumption'], 'uom': 't'}},
 
-    {'id': 'caustic_kg',       'gri_ref': '14.1-consumables', 'section': 'Reagents and consumables',
+    {'id': 'caustic_kg',       'gri_ref': '301-1a', 'section': 'Reagents and consumables',
      'description': 'Caustic soda consumption',
      'unit': 'kg', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Caustic soda', 'row_types': ['consumption']}},
+     'calc_args': {'common_name': 'Caustic soda', 'row_types': ['consumption'], 'uom': 'kg'}},
 
-    {'id': 'hcl_kg',           'gri_ref': '14.1-consumables', 'section': 'Reagents and consumables',
+    {'id': 'hcl_kg',           'gri_ref': '301-1a', 'section': 'Reagents and consumables',
      'description': 'Hydrochloric acid consumption',
      'unit': 'kg', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Hydrochloric acid', 'row_types': ['consumption']}},
+     'calc_args': {'common_name': 'Hydrochloric acid', 'row_types': ['consumption'], 'uom': 'kg'}},
 
-    {'id': 'oxygen_m3',        'gri_ref': '14.1-consumables', 'section': 'Reagents and consumables',
+    {'id': 'oxygen_m3',        'gri_ref': '301-1a', 'section': 'Reagents and consumables',
      'description': 'Liquid oxygen consumption',
      'unit': 'm3', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Liquid oxygen', 'row_types': ['consumption']}},
+     'calc_args': {'common_name': 'Liquid oxygen', 'row_types': ['consumption'], 'uom': 'm3'}},
 
-    {'id': 'flocculant_kg',    'gri_ref': '14.1-consumables', 'section': 'Reagents and consumables',
+    {'id': 'flocculant_kg',    'gri_ref': '301-1a', 'section': 'Reagents and consumables',
      'description': 'Flocculant consumption',
      'unit': 'kg', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Flocculant', 'row_types': ['consumption']}},
+     'calc_args': {'common_name': 'Flocculant', 'row_types': ['consumption'], 'uom': 'kg'}},
 
-    {'id': 'tyres_each',       'gri_ref': '14.5-waste',       'section': 'Wear items',
+    {'id': 'tyres_each',       'gri_ref': '301-1a',           'section': 'Wear items',
      'description': 'Tyres consumed',
      'unit': 'each', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Tyres', 'row_types': ['consumption']}},
+     'calc_args': {'common_name': 'Tyres', 'row_types': ['consumption'], 'uom': 'each'}},
 
-    {'id': 'explosives_kg',    'gri_ref': '14.3-emissions',   'section': 'Wear items',
+    {'id': 'explosives_kg',    'gri_ref': '301-1a',           'section': 'Wear items',
      'description': 'Explosives consumption',
      'unit': 'kg', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Explosives', 'row_types': ['consumption']}},
+     'calc_args': {'common_name': 'Explosives', 'row_types': ['consumption'], 'uom': 'kg'}},
 
     # ── ADDITIONAL REAGENTS / CONSUMABLES (GRI 301-1 Materials used) ───
 
-    {'id': 'carbon_t',        'gri_ref': '301-1',            'section': 'Reagents and consumables',
+    {'id': 'carbon_t',        'gri_ref': '301-1a',            'section': 'Reagents and consumables',
      'description': 'Activated carbon consumption',
      'unit': 't', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Carbon', 'row_types': ['consumption']},
+     'calc_args': {'common_name': 'Activated carbon', 'row_types': ['consumption'], 'uom': 't'},
      'gri_topic': '14.1 Climate Change'},
 
-    {'id': 'leach_aid_t',     'gri_ref': '301-1',            'section': 'Reagents and consumables',
+    {'id': 'leach_aid_t',     'gri_ref': '301-1a',            'section': 'Reagents and consumables',
      'description': 'Leach aid consumption',
      'unit': 't', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Leach aid', 'row_types': ['consumption']},
+     'calc_args': {'common_name': 'Leach aid', 'row_types': ['consumption'], 'uom': 't'},
      'gri_topic': '14.1 Climate Change'},
 
-    {'id': 'antiscalant_t',   'gri_ref': '301-1',            'section': 'Reagents and consumables',
+    {'id': 'antiscalant_t',   'gri_ref': '301-1a',            'section': 'Reagents and consumables',
      'description': 'Antiscalant consumption',
      'unit': 't', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Antiscalant', 'row_types': ['consumption']},
+     'calc_args': {'common_name': 'Antiscalant', 'row_types': ['consumption'], 'uom': 't'},
      'gri_topic': '14.1 Climate Change'},
 
-    {'id': 'soda_ash_t',      'gri_ref': '301-1',            'section': 'Reagents and consumables',
+    {'id': 'soda_ash_t',      'gri_ref': '301-1a',            'section': 'Reagents and consumables',
      'description': 'Soda ash consumption',
      'unit': 't', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Soda ash', 'row_types': ['consumption']},
+     'calc_args': {'common_name': 'Soda ash', 'row_types': ['consumption'], 'uom': 't'},
      'gri_topic': '14.1 Climate Change'},
 
-    {'id': 'sodium_chlorite_t','gri_ref': '301-1',           'section': 'Reagents and consumables',
+    {'id': 'sodium_chlorite_t','gri_ref': '301-1a',           'section': 'Reagents and consumables',
      'description': 'Sodium chlorite consumption',
      'unit': 't', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Sodium chlorite', 'row_types': ['consumption']},
+     'calc_args': {'common_name': 'Sodium chlorite', 'row_types': ['consumption'], 'uom': 't'},
      'gri_topic': '14.1 Climate Change'},
 
-    {'id': 'sodium_hypochlorite_kl', 'gri_ref': '301-1',     'section': 'Reagents and consumables',
+    {'id': 'sodium_hypochlorite_kl', 'gri_ref': '301-1a',     'section': 'Reagents and consumables',
      'description': 'Sodium hypochlorite consumption',
      'unit': 'kL', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Sodium hypochlorite', 'row_types': ['consumption']},
+     'calc_args': {'common_name': 'Sodium hypochlorite', 'row_types': ['consumption'], 'uom': 'kL'},
      'gri_topic': '14.1 Climate Change'},
 
-    {'id': 'dust_suppressant_kl', 'gri_ref': '301-1',        'section': 'Reagents and consumables',
+    {'id': 'dust_suppressant_kl', 'gri_ref': '301-1a',        'section': 'Reagents and consumables',
      'description': 'Dust suppressant consumption',
      'unit': 'kL', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Dust suppressant', 'row_types': ['consumption']},
+     'calc_args': {'common_name': 'Dust suppressant', 'row_types': ['consumption'], 'uom': 'kL'},
      'gri_topic': '14.1 Climate Change'},
 
     # ── EMISSION INTENSITY - GOLD (sector benchmark) ──────────────────
@@ -362,39 +410,48 @@ GRI14_QUANTITATIVE_MAP = [
     {'id': 'gold_sold_oz',    'gri_ref': 'context',           'section': 'Production metrics',
      'description': 'Gold sold',
      'unit': 'oz', 'calc_fn': '_get_production_metric',
-     'calc_args': {'common_name': 'Gold sold', 'row_types': ['production']},
+     'calc_args': {'common_name': 'Gold sold', 'row_types': ['production'], 'uom': 'oz'},
      'gri_topic': '14.1 Climate Change'},
 
     # ── 14.5 WASTE (Limited - rock waste from operations data) ────────
+
+    # 306-3 asks for total waste generated and a breakdown by composition.
+    # Rock waste and tailings are the two streams GRI 14 names for this
+    # sector, both come from the monthly operating report, and both are
+    # therefore reported inside the total rather than beside it.
+    {'id': 'waste_total_t',   'gri_ref': '306-3a',            'section': 'Waste - total',
+     'description': 'Total waste generated (rock waste plus tailings)',
+     'unit': 't', 'calc_fn': '_get_waste_total',
+     'gri_topic': '14.5 Waste', 'coverage': 'Full'},
 
     {'id': 'waste_rock_t',    'gri_ref': '306-3a',            'section': 'Waste - rock waste',
      'description': 'Waste rock moved',
      'unit': 't', 'calc_fn': '_get_ore_waste',
      'calc_args': {'uom': 't'},
-     'gri_topic': '14.5 Waste', 'coverage': 'Limited'},
+     'gri_topic': '14.5 Waste', 'coverage': 'Full'},
 
     {'id': 'waste_rock_bcm',  'gri_ref': '306-3a',            'section': 'Waste - rock waste',
      'description': 'Waste rock moved (bank cubic metres)',
      'unit': 'BCM', 'calc_fn': '_get_ore_waste',
      'calc_args': {'uom': 'BCM'},
-     'gri_topic': '14.5 Waste', 'coverage': 'Limited'},
+     'gri_topic': '14.5 Waste', 'coverage': 'Full'},
 
     {'id': 'tailings_approx_t','gri_ref': '306-3a',           'section': 'Waste - tailings',
      'description': 'Tailings produced (approx: milled tonnes less gold recovered)',
      'unit': 't', 'calc_fn': '_get_tailings_approx',
-     'gri_topic': '14.5 Waste', 'coverage': 'Limited'},
+     'gri_topic': '14.5 Waste', 'coverage': 'Full'},
 
-    {'id': 'strip_ratio',     'gri_ref': '14.5-sector',       'section': 'Waste - rock waste',
+    {'id': 'strip_ratio',     'gri_ref': 'sector rec.',       'section': 'Waste - rock waste',
      'description': 'Strip ratio (waste rock t / ROM ore t)',
      'unit': 'ratio', 'calc_fn': '_get_strip_ratio',
-     'gri_topic': '14.5 Waste', 'coverage': 'Limited'},
+     'gri_topic': '14.5 Waste', 'coverage': 'Full'},
 
     # ── 14.8 CLOSURE (Limited - LOM from budget projections) ──────────
 
     {'id': 'drilling_m',      'gri_ref': 'context',            'section': 'Production metrics',
      'description': 'Total drilling metres',
      'unit': 'm', 'calc_fn': '_get_gri_consumable',
-     'calc_args': {'common_name': 'Drilling', 'row_types': ['production']},
+     'calc_args': {'common_name': 'Drilling', 'row_types': ['production'], 'uom': 'm'},
      'gri_topic': '14.1 Climate Change'},
 ]
 
@@ -420,7 +477,8 @@ def _load_nga_gas_split():
         return _NGA_GAS_CACHE
 
     import os
-    csv_path = os.path.join(os.path.dirname(__file__) or '.', 'NgaFactors.csv')
+    csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            'Data', 'NgaFactors.csv')
     if not os.path.exists(csv_path):
         _NGA_GAS_CACHE = {}
         return _NGA_GAS_CACHE
@@ -498,12 +556,61 @@ def _get_scope2_total(precomputed, start_date, end_date, raw_df=None, **kw):
 
 
 def _get_scope3_total(precomputed, start_date, end_date, raw_df=None, **kw):
-    """Gross Scope 3 tCO2-e (fuel combustion + grid T&D)."""
+    """Gross Scope 3 tCO2-e, every category.
+
+    The disclosure is gross Scope 3, which means all fifteen GHG Protocol
+    categories and not the fuel and energy related coefficients alone.  The
+    annual frame carries both: Scope3 is Category 3 on its own, and
+    Scope3_Total is Category 3 plus the other fourteen.  Prefer the total and
+    fall back only where the Scope 3 build did not run, so a partial figure is
+    never published as a gross one.
+    """
     row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
     if row.empty:
         return None
-    val = float(row['Scope3'].iloc[0])
+    column = 'Scope3_Total' if 'Scope3_Total' in row.columns else 'Scope3'
+    val = float(row[column].iloc[0])
     return round(val, 2) if val > 0 else None
+
+
+def _get_scope3_category(precomputed, start_date, end_date, raw_df=None,
+                         category=None, **kw):
+    """One Scope 3 category for the period.
+
+    The disclosure requires the categories included in the measure to be
+    stated, not only the total, so each category is published as its own line
+    and the reader can see which carry a figure and which are nil.
+    """
+    result = getattr(precomputed, 'scope3', None)
+    if result is None or category is None:
+        return None
+    detail = getattr(result, 'detail', None)
+    if detail is None or detail.empty:
+        return None
+    # period_filter is the half-open window the rest of this module uses.  A
+    # closed window here pulls in the first day of the next period, and the
+    # categories then do not sum to the total.
+    rows = period_filter(detail, start_date, end_date, date_col='Date')
+    rows = rows[rows['Category'] == category]
+    if rows.empty:
+        return None
+    val = float(rows['tCO2e'].sum())
+    return round(val, 2) if val > 0 else None
+
+
+def _get_scope3_category_count(precomputed, start_date, end_date, raw_df=None, **kw):
+    """How many of the fifteen categories carry a figure for the period."""
+    result = getattr(precomputed, 'scope3', None)
+    if result is None:
+        return None
+    detail = getattr(result, 'detail', None)
+    if detail is None or detail.empty:
+        return None
+    rows = period_filter(detail, start_date, end_date, date_col='Date')
+    if rows.empty:
+        return None
+    carrying = rows.groupby('Category', observed=True)['tCO2e'].sum()
+    return int((carrying > 0).sum())
 
 
 def _get_scope1_gas(precomputed, start_date, end_date, raw_df=None, gas='CO2', **kw):
@@ -696,7 +803,57 @@ def _get_site_electricity_kwh(precomputed, start_date, end_date, raw_df=None, **
     return round(val, 0) if val > 0 else None
 
 
-def _get_production_metric(precomputed, start_date, end_date, raw_df=None, common_name='', row_types=None, desc='', **kw):
+# ---------------------------------------------------------------------
+# UNIT GUARD
+# ---------------------------------------------------------------------
+
+def _finalise(value):
+    """Round a disclosure value, and report nothing rather than a nil."""
+    if value is None:
+        return None
+    return round(value, 2) if abs(value) > 0.001 else None
+
+
+def _sum_in_uom(frame, mask, to_uom, label):
+    """Total the matched rows in the unit the disclosure is published in.
+
+    A GRI figure carries a unit, and the physicals carry their own.  Cyanide
+    is recorded in tonnes and the disclosure is in kilograms; summing the
+    quantity and printing it as kilograms understates it a thousandfold.  Each
+    row is therefore carried to the reporting unit before it is added.
+
+    Conversion comes from CalcUnits, the one place units are defined.  A row
+    whose unit cannot be carried to the reporting unit is reported and left
+    out: that is a count against a mass, or a stores line that has taken the
+    name of a mapped line, and it must not be added in either case.
+    """
+    import logging
+
+    if not mask.any():
+        return None
+
+    rows = frame.loc[mask]
+    if not to_uom or 'UOM' not in rows.columns:
+        return float(rows['Quantity'].sum())
+
+    total = 0.0
+    excluded = {}
+    for unit, group in rows.groupby(rows['UOM'].astype(str), observed=True):
+        try:
+            total += float(group['Quantity'].sum()) * uom_factor(unit, to_uom)
+        except UnitError:
+            excluded[unit] = int(len(group))
+
+    if excluded:
+        logging.getLogger(__name__).warning(
+            f"GRI '{label}' is reported in '{to_uom}' and matched rows in "
+            f"{excluded} that cannot be carried to it.  Those rows are "
+            f"excluded."
+        )
+    return total
+
+
+def _get_production_metric(precomputed, start_date, end_date, raw_df=None, common_name='', row_types=None, desc='', uom='', **kw):
     """Production quantity from raw data by CommonName.
 
     Used for Ore milled, Gold recovered, Gold sold, etc.
@@ -725,21 +882,21 @@ def _get_production_metric(precomputed, start_date, end_date, raw_df=None, commo
         )
         if row_types and 'RowType' in filtered.columns:
             mask = mask & (filtered['RowType'].astype(str).isin(row_types))
-    else:
-        # Fallback: match by Description (legacy behaviour)
-        lookup = desc if desc else common_name
-        mask = (
-            (filtered['DataSet'] == 'Actual')
-            & (filtered['Description'].astype(str) == lookup)
-        )
+        return _finalise(_sum_in_uom(filtered, mask, uom, common_name))
 
+    # Fallback: match by Description (legacy behaviour)
+    lookup = desc if desc else common_name
+    mask = (
+        (filtered['DataSet'] == 'Actual')
+        & (filtered['Description'].astype(str) == lookup)
+    )
     if not mask.any():
         return None
     val = float(filtered.loc[mask, 'Quantity'].sum())
     return round(val, 0) if val > 0 else None
 
 
-def _get_gri_consumable(precomputed, start_date, end_date, raw_df=None, common_name='', row_types=None, desc='', **kw):
+def _get_gri_consumable(precomputed, start_date, end_date, raw_df=None, common_name='', row_types=None, desc='', uom='', **kw):
     """Get GRI consumable quantity from raw data using CommonName.
 
     Matches rows by CommonName (normalised grouping key) rather than
@@ -774,6 +931,7 @@ def _get_gri_consumable(precomputed, start_date, end_date, raw_df=None, common_n
         # Filter by RowType if available
         if row_types and 'RowType' in filtered.columns:
             mask = mask & (filtered['RowType'].astype(str).isin(row_types))
+        return _finalise(_sum_in_uom(filtered, mask, uom, common_name))
     else:
         # Fallback: match by Description (legacy behaviour)
         lookup = desc if desc else common_name
@@ -782,10 +940,7 @@ def _get_gri_consumable(precomputed, start_date, end_date, raw_df=None, common_n
             & (filtered['Description'].astype(str) == lookup)
         )
 
-    if not mask.any():
-        return None
-    val = float(filtered.loc[mask, 'Quantity'].sum())
-    return round(val, 2) if abs(val) > 0.001 else None
+    return _finalise(_sum_in_uom(filtered, mask, uom, common_name or desc))
 
 
 def _get_emission_intensity_gold(precomputed, start_date, end_date, raw_df=None, **kw):
@@ -836,6 +991,28 @@ def _get_tailings_approx(precomputed, start_date, end_date, raw_df=None, **kw):
     return round(milled, 0)
 
 
+def _get_waste_total(precomputed, start_date, end_date, raw_df=None, **kw):
+    """Total waste generated, being rock waste plus tailings.
+
+    306-3 asks for a total and a breakdown by composition.  The two streams
+    below are the breakdown; this is the total they sum to, so the disclosure
+    is complete rather than a pair of loose lines.  Both streams come from the
+    monthly operating report.
+
+    Process residue retained on site is reported here.  Whether it is waste
+    "transferred for treatment" is a separate question the Company answers in
+    its contextual disclosure under 306-3(b); it is not a reason to leave the
+    tonnage out of the total.
+    """
+    rock = _get_ore_waste(precomputed, start_date, end_date, raw_df=raw_df,
+                          uom='t')
+    tails = _get_tailings_approx(precomputed, start_date, end_date,
+                                 raw_df=raw_df)
+    if rock is None and tails is None:
+        return None
+    return round((rock or 0.0) + (tails or 0.0), 2)
+
+
 def _get_strip_ratio(precomputed, start_date, end_date, raw_df=None, **kw):
     """Strip ratio: waste rock tonnes / ROM ore tonnes."""
     waste_t = _get_ore_waste(precomputed, start_date, end_date, raw_df=raw_df, uom='t')
@@ -856,6 +1033,8 @@ _CALC_FN_MAP = {
     '_get_scope1_total':          _get_scope1_total,
     '_get_scope2_total':          _get_scope2_total,
     '_get_scope3_total':          _get_scope3_total,
+    '_get_scope3_category':       _get_scope3_category,
+    '_get_scope3_category_count': _get_scope3_category_count,
     '_get_scope1_gas':            _get_scope1_gas,
     '_get_emission_intensity':    _get_emission_intensity,
     '_get_energy_intensity':      _get_energy_intensity,
@@ -873,6 +1052,7 @@ _CALC_FN_MAP = {
     '_get_emission_intensity_gold': _get_emission_intensity_gold,
     '_get_ore_waste':             _get_ore_waste,
     '_get_tailings_approx':       _get_tailings_approx,
+    '_get_waste_total':           _get_waste_total,
     '_get_strip_ratio':           _get_strip_ratio,
     '_get_zero':                  _get_zero,
 }
@@ -894,7 +1074,9 @@ _METHODOLOGY = {
     'scope1_site':        'Single facility.  Site total = facility total.',
     'scope2_total':       'Location-based: Grid kWh x NGA Scope 2 EF for QLD (kgCO2-e/kWh) / 1000.',
     'scope2_site':        'Single facility.  Location-based method, QLD grid factor.',
-    'scope3_total':       'Fuel combustion Scope 3 (NGA indirect factors) + grid T&D losses.  Does not include purchased goods, transport or other Scope 3 categories.',
+    'scope3_total':       'Gross Scope 3, all fifteen GHG Protocol categories: Category 3 from NGA indirect factors and grid transmission and distribution losses, plus the other fourteen from CalcScope3.  See Documentation/Scope3Method.md.',
+    'scope3_categories':  'Count of the fifteen categories carrying a figure for the period.  Every category is considered; those reporting nil are stated with their reason in Documentation/Scope3Method.md.',
+    'scope1_biogenic':    'Biogenic CO2 is reported separately and is not included in gross Scope 1.  The facility has no material biogenic source, so the figure is nil, stated rather than omitted.',
     'ei_scope1_rom':      'Scope 1 tCO2-e / ROM ore tonnes.  Operational control boundary.',
     'rom_total':          'Sum of all ROM ore grades (HG, MG, LG, VLG) from BRW and SARS beneficiation streams.',
     'energy_intensity':   'Total fuel Energy_GJ / ROM ore tonnes.  Excludes electricity.',
@@ -999,8 +1181,20 @@ def build_gri14_export(precomputed, raw_df=None, reporting_fys=None,
         calc_args = entry.get('calc_args', {})
 
         for start_date, end_date, label in reporting_periods:
-            # Pass selected annual table so extraction functions use correct year_type
-            annual_df = precomputed.annual_cy if year_type == 'CY' else precomputed.annual_fy
+            # Pass the selected annual table so the extraction functions use
+            # the right year basis.  Prefer the GHG frame: it carries the same
+            # Scope 1 and Scope 2 figures as the Safeguard frame plus the
+            # Scope 3 columns for all fifteen categories, so a disclosure
+            # asking for gross Scope 3 gets a gross figure rather than
+            # Category 3 alone.
+            if year_type == 'CY':
+                annual_df = getattr(precomputed, 'ghg_annual_cy', None)
+                if annual_df is None or annual_df.empty:
+                    annual_df = precomputed.annual_cy
+            else:
+                annual_df = getattr(precomputed, 'ghg_annual_fy', None)
+                if annual_df is None or annual_df.empty:
+                    annual_df = precomputed.annual_fy
             value = fn(precomputed, start_date, end_date, raw_df=raw_df,
                        annual_df=annual_df, **calc_args)
 
@@ -1037,7 +1231,7 @@ GRI14_COVERAGE = {
             ('102-6a',   'Scope 2 total (location-based)',             'tCO2-e'),
             ('102-7a',   'Scope 3 total (fuel + grid T&D)',            'tCO2-e'),
             ('102-8a',   'Emissions intensity (Scope 1 / ROM t)',      'tCO2-e/t'),
-            ('302-3b',   'ROM ore tonnes',                             't'),
+            ('102-8b',   'ROM ore tonnes, intensity denominator',      't'),
             ('102-10a',  'SMC issued, surrendered, sold',              'tCO2-e'),
             ('103-2a',   'Total fuel consumption + by type',           'GJ'),
             ('103-2b',   'Purchased grid electricity (GJ + kWh)',      'GJ'),

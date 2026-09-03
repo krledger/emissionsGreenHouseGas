@@ -1,0 +1,31 @@
+Unit,Category,Department,Make,Model,Model_Year,Tenure,Market_Value_AUD,Cat2_Applies
+EX21,Excavator,Mining,Liebherr,R9350,2025,Rental,5000000.0,No — Category 1 service
+EX18,Excavator,Mining,Komatsu,3D67E-2,2025,Rental,4000000.0,No — Category 1 service
+CN28,Crane,Maintenance,Liebherr,LTM 1090-4.1,2025,Rental,900000.0,No — Category 1 service
+CST299,Truck,Mining,Volvo,FMX410,2025,Rental,600000.0,No — Category 1 service
+SFS02,Crane,Maintenance,Franna,AT20,2025,Rental,300000.0,No — Category 1 service
+XYZ02,Mobile Crusher,Mining,Finlay,TC80,2025,Rental,195000.0,No — Category 1 service
+93PL009,Elevated Work Platform,Processing,Haulotte,HT28 RTJ PRO,2026,Rental,80000.0,No — Category 1 service
+93PL010,Elevated Work Platform,Processing,Haulotte,HA41RTJ PRO,2026,Rental,80000.0,No — Category 1 service
+CH04,Elevated Work Platform,Processing,,,2025,Rental,80000.0,No — Category 1 service
+ZZCH03,Elevated Work Platform,Processing,COA002AUD,,2025,Rental,80000.0,No — Category 1 service
+71PU102,Pump/Compressor,,Pinnacle,SPP QP150M,2025,Rental,80000.0,No — Category 1 service
+93FK025,Forklift,Mining,2022-03-01 00:00:00,LSRT25-4,2025,Rental,50000.0,No — Category 1 service
+FFU196,Forklift,Maintenance,Ausa,2.5t 4X4 Liftsmart,2025,Rental,50000.0,No — Category 1 service
+71PU099,Pump/Compressor,,,Atlas Copco / PAC H108,2025,Rental,50000.0,No — Category 1 service
+71PU106,Pump/Compressor,,Sykes,CAT C4.4,2025,Rental,50000.0,No — Category 1 service
+71PU107,Pump/Compressor,,Sykes,QSM11-C Cummins,2025,Rental,50000.0,No — Category 1 service
+71PU098,Pump/Compressor,Mining,NPE,100,2025,Rental,40000.0,No — Category 1 service
+96GE623,Generator,Mining,Able Kruger,LG30X3,2025,Rental,25000.0,No — Category 1 service
+GE01,Generator,Mining,Kubota,SQ3300B-AU-B,2025,Rental,25000.0,No — Category 1 service
+GEN009,Generator,Mining,FG Wilson,P44E3,2025,Rental,25000.0,No — Category 1 service
+96GE058,Generator,Mining,Coates Hire,P22-6,2025,Rental,15000.0,No — Category 1 service
+BRG010-GE01,Generator,Mining,Kubota,SQ3200AUS,2025,Rental,15000.0,No — Category 1 service
+FH109,Pump/Compressor,Mining,Atlas Copco,CPS 450-14,2026,Owned,40000.0,Yes
+96GE057,Generator,Mining,Kubota,SQ3300B-AU-B,2025,Owned,25000.0,Yes
+PUM011,Generator,Mining,Denyo,DB-0391KV,2026,Owned,25000.0,Yes
+96GE621,Generator,Maintenance,Airman,DGA-25-6SK,2025,Owned,15000.0,Yes
+GEN023,Generator,Mining,Genelite,GK105.1,2025,Owned,15000.0,Yes
+96GE060,Generator,,Kubota,GL9000D,2026,Owned,8000.0,Yes
+G0913,Generator,Mining,Kubota,GL9000 - AUS,2026,Owned,8000.0,Yes
+93TA027,Trailer,Maintenance,Budget Trailers,10 X 6 Flat Deck,2025,Owned,5000.0,Yes

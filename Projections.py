@@ -30,10 +30,10 @@ from Config import (
     CREDIT_START_DATE, SAFEGUARD_START_DATE,
     FSEI_ROM, FSEI_ELEC, SITE_GENERATION_RATIO,
     DEFAULT_INDUSTRY_EI_ROM, DEFAULT_INDUSTRY_EI_ELEC,
-    SAFEGUARD_MINIMUM_BASELINE, SAFEGUARD_THRESHOLD,
+    SAFEGUARD_MINIMUM_BASELINE, SAFEGUARD_THRESHOLD, SAFEGUARD_FINAL_FY,
     GRID_SITE_ELEC_DESCRIPTION, GRID_GRID_ELEC_DESCRIPTION,
     DIESEL_TRANSPORT_COSTCENTRES, DIESEL_TRANSPORT_NGAFUEL,
-    ROM_SUBACTIVITY, SITE_ELEC_COMMONNAME, GRID_ELEC_COMMONNAME,
+    ROM_SUBACTIVITY, GOLD_SUBACTIVITY, SITE_ELEC_COMMONNAME, GRID_ELEC_COMMONNAME,
     DECLINE_RATE_PHASE1, DECLINE_RATE_PHASE2,
     DECLINE_PHASE1_START, DECLINE_PHASE1_END, DECLINE_PHASE2_START, DECLINE_PHASE2_END,
     DEFAULT_GRID_CONNECTION_DATE, DEFAULT_START_DATE,
@@ -41,9 +41,11 @@ from Config import (
     get_transition_proportion, get_phase_name_for_date,
     S58B_EARLIEST_FY, S58B_LOOKBACK, S58B_MIN_COVERED,
 )
-from CalcCalendar import date_to_fy, fy_to_date_range
+from CalcCalendar import date_to_fy, series_to_fy, fy_to_date_range
 from LoaderNga import NGAFactorsByYear
-from CalcEmissions import build_year_factor_map, apply_emissions_to_df
+from CalcEmissions import (build_year_factor_map, apply_emissions_to_df,
+                           merge_key_column, superseded_by_actual)
+from CalcUnits import KWH_PER_MWH
 
 
 # =============================================================================
@@ -97,10 +99,9 @@ def build_projection(df, dataset='Actual',
     #   Budget Identifier = Budget|SubActivity|CostCentre
     # When actuals exist for a (Date, MatchKey) pair, ALL budget rows for that
     # pair are excluded — preventing double-counting in the overlap period.
-    merge_col = 'MatchKey' if 'MatchKey' in actuals.columns else 'SubActivity'
-    actual_keys = set(zip(actuals['Date'], actuals[merge_col]))
+    merge_col = merge_key_column(actuals)
     budget_fill = budget[
-        ~budget.apply(lambda r: (r['Date'], r[merge_col]) in actual_keys, axis=1)
+        ~superseded_by_actual(budget, actuals, merge_col)
     ].copy()
 
     # Log Identifier coverage for traceability
@@ -153,7 +154,7 @@ def recalculate_emissions(data, nga_by_year):
     to ensure identical calculation logic between actuals and budget.
     """
     result = data.copy()
-    result['FY_temp'] = result['Date'].apply(date_to_fy)
+    result['FY_temp'] = series_to_fy(result['Date']).astype('int64')
     unique_years = result['FY_temp'].unique()
     year_factor_map = build_year_factor_map(nga_by_year, unique_years, state='QLD')
     result = apply_emissions_to_df(result, year_factor_map, fy_col='FY_temp')
@@ -169,7 +170,8 @@ def recalculate_emissions(data, nga_by_year):
 def aggregate_to_monthly(monthly):
     """Aggregate detailed rows to one row per month.
 
-    Extracts ROM tonnes, site/grid electricity, and sums scope emissions.
+    Extracts ROM tonnes, gold ounces, site/grid electricity, and sums
+    scope emissions.
     """
     # ROM tonnes: SubActivity == 'Ore ROM' (2026-03 CSV restructure)
     # Previously matched CostCentre == 'ROM' but actuals now use CostCentre == 'Hauling'
@@ -177,6 +179,16 @@ def aggregate_to_monthly(monthly):
     rom_mask = (monthly['SubActivity'].astype(str) == ROM_SUBACTIVITY)
     rom_data = monthly[rom_mask].groupby('Date')['Quantity'].sum().reset_index()
     rom_data.columns = ['Date', 'ROM_t']
+
+    # Gold ounces: SubActivity == 'Gold Sold' (UOM = oz in both CSVs).
+    # Extracted here, from the SAME de-duplicated actual+budget frame that
+    # produces the emissions totals, so the intensity numerator and
+    # denominator always cover an identical set of months.  Deriving gold
+    # separately from the raw df applied a different de-duplication rule and
+    # silently dropped every budget year.
+    gold_mask = (monthly['SubActivity'].astype(str) == GOLD_SUBACTIVITY)
+    gold_data = monthly[gold_mask].groupby('Date')['Quantity'].sum().reset_index()
+    gold_data.columns = ['Date', 'Gold_oz']
 
     # Site and grid electricity via CommonName (set by LookupIdentifiers.py)
     # CommonName == 'Site electricity' captures all site generation entries
@@ -196,11 +208,13 @@ def aggregate_to_monthly(monthly):
 
     # Merge all
     result = emissions.merge(rom_data, on='Date', how='left')
+    result = result.merge(gold_data, on='Date', how='left')
     result = result.merge(site_elec, on='Date', how='left')
     result = result.merge(grid_elec, on='Date', how='left')
 
     # Fill NaN
     result['ROM_t'] = result['ROM_t'].fillna(0)
+    result['Gold_oz'] = result['Gold_oz'].fillna(0)
     result['Site_Electricity_kWh'] = result['Site_Electricity_kWh'].fillna(0)
     result['Grid_Electricity_kWh'] = result['Grid_Electricity_kWh'].fillna(0)
 
@@ -278,12 +292,36 @@ def calculate_hybrid_ei(fy, fsei_rom, fsei_elec,
 
 
 def calculate_annual_baseline(fy, rom_t, site_mwh, fsei_rom, fsei_elec,
-                              decline_rate_phase2=None):
-    """Calculate Section 11 baseline for a financial year.
+                              decline_rate_phase2=None,
+                              borrowing_adjustment=0.0):
+    """Calculate the Section 11 baseline for a financial year.
 
-    Returns both the raw (unfloored) baseline and the floored baseline:
-      - Floored: subject to s10(1) minimum of 100,000 tCO2-e
-      - Unfloored: per s56(4), SMC uses baseline "as if s10(1) not enacted"
+    Section 11 in full, summed over each production variable p, is
+
+        Baseline = ERC x SUM[ (h x EI + (1 - h) x EI_F) x Q + EI_B x Q_B ] + BA
+
+    where Q is the quantity only where an emissions intensity determination
+    specifies a facility-specific intensity for that variable, and Q_B is the
+    mirror: the quantity only where one does not, charged at the best practice
+    intensity with no transition proportion at all.
+
+    This facility holds a determination for both production variables, so Q_B
+    is zero for both and the best practice branch does not arise.  What is
+    computed below is therefore the Q branch alone.  If a determination lapses
+    or a new production variable is declared without one, this function
+    ceases to be the right calculation and must be extended before it is
+    relied on.
+
+    Returns both the floored and the unfloored baseline, because the two
+    provisions require different numbers:
+      - Floored: subject to the s10(1) minimum of 100,000 tCO2-e.  Compliance.
+      - Unfloored: per s56(4), credits use the baseline that would be
+        ascertained "if subsection 10(1) had not been enacted".
+
+    Args:
+        borrowing_adjustment: the BA term of s11, from s47.  Zero unless a
+            borrowing adjustment has been granted.  Carried explicitly rather
+            than omitted, so the code matches the provision it implements.
 
     Returns:
         tuple: (floored_baseline, unfloored_baseline) in tCO2-e
@@ -291,10 +329,19 @@ def calculate_annual_baseline(fy, rom_t, site_mwh, fsei_rom, fsei_elec,
     erc = calculate_erc_for_fy(fy, decline_rate_phase2)
     hybrid_rom, hybrid_elec = calculate_hybrid_ei(fy, fsei_rom, fsei_elec)
 
-    # Section 11 formula (unfloored)
-    unfloored = erc * ((hybrid_rom * rom_t) + (hybrid_elec * site_mwh))
+    # s10(3): the baseline is zero for a financial year beginning after
+    # 30 June 2049.  FY2050 begins on 1 July 2049, so FY2050 is the first
+    # year that qualifies, not FY2051.  The model horizon reaches it, so the
+    # rule is applied rather than left to produce a baseline, and a floor,
+    # for a year that cannot have one.
+    if fy >= SAFEGUARD_FINAL_FY:
+        return 0.0, 0.0
 
-    # s10(1) minimum baseline floor (for compliance only)
+    # Section 11, the Q branch, plus the borrowing adjustment.
+    unfloored = (erc * ((hybrid_rom * rom_t) + (hybrid_elec * site_mwh))
+                 + borrowing_adjustment)
+
+    # s10(1) minimum baseline floor, for compliance only.
     floored = max(unfloored, SAFEGUARD_MINIMUM_BASELINE)
 
     return floored, unfloored
@@ -342,7 +389,7 @@ def calculate_safeguard_metrics(monthly, fsei_rom, fsei_elec, credit_start_date,
 
     # Annual totals for production variables
     fy_rom = result.groupby('_fy')['ROM_t'].sum()
-    fy_site_mwh = result.groupby('_fy')['Site_Electricity_kWh'].sum() / 1000  # kWh to MWh
+    fy_site_mwh = result.groupby('_fy')['Site_Electricity_kWh'].sum() / KWH_PER_MWH
 
     # Calculate annual baseline per FY (both floored and unfloored per s56(4))
     fy_baselines = {}
@@ -371,7 +418,7 @@ def calculate_safeguard_metrics(monthly, fsei_rom, fsei_elec, credit_start_date,
         # Monthly weights based on production share
         hybrid_rom, hybrid_elec = calculate_hybrid_ei(fy, fsei_rom, fsei_elec)
         month_rom_contrib = fy_rows['ROM_t'] * hybrid_rom
-        month_elec_contrib = (fy_rows['Site_Electricity_kWh'] / 1000) * hybrid_elec
+        month_elec_contrib = (fy_rows['Site_Electricity_kWh'] / KWH_PER_MWH) * hybrid_elec
         month_total = month_rom_contrib + month_elec_contrib
 
         total_weight = month_total.sum()
@@ -392,7 +439,7 @@ def calculate_safeguard_metrics(monthly, fsei_rom, fsei_elec, credit_start_date,
             continue
         hybrid_rom, hybrid_elec = calculate_hybrid_ei(fy, fsei_rom, fsei_elec)
         month_rom_contrib = fy_rows['ROM_t'] * hybrid_rom
-        month_elec_contrib = (fy_rows['Site_Electricity_kWh'] / 1000) * hybrid_elec
+        month_elec_contrib = (fy_rows['Site_Electricity_kWh'] / KWH_PER_MWH) * hybrid_elec
         month_total = month_rom_contrib + month_elec_contrib
         total_weight = month_total.sum()
         if total_weight > 0:
@@ -591,7 +638,7 @@ def carbon_tax_analysis(projection, tax_start_fy, tax_rate_initial, tax_escalati
     if 'Grid_Electricity_MWh' in result.columns:
         result['Grid_MWh'] = result['Grid_Electricity_MWh']
     elif 'Grid_Electricity_kWh' in result.columns:
-        result['Grid_MWh'] = result['Grid_Electricity_kWh'] / 1000.0
+        result['Grid_MWh'] = result['Grid_Electricity_kWh'] / KWH_PER_MWH
     else:
         result['Grid_MWh'] = 0.0
 

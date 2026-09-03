@@ -1,0 +1,30 @@
+Project,Description,Department,ApprovalStatus,ApprovalDate,NAICS,FactorClass,tCO2e_per_1M_AUD,Treatment,ApprovedValue_AUD
+CAIP0026,Datacentre server hardware EoL Replacement,Commercial & Administration,Fully Approved,2026-01-29,334111,Electronic computer manufacturing,36.5,Category 2,NOT IN TRACKER
+CAIP0027,Ramesys Upgrade,Commercial & Administration,Fully Approved,2026-02-09,511210,Software publishers,—,"Excluded, intangible asset",NOT IN TRACKER
+CAIP0036,Development of Mining Operating System,Commercial & Administration,Fully Approved,2026-06-10,511210,Software publishers,—,"Excluded, intangible asset",NOT IN TRACKER
+CALP0013,Site entry access relocation to Western gate,"Health, Safety and Training",Fully Approved,2026-05-14,237310,"Highway, street and bridge construction",160.4,Category 2,NOT IN TRACKER
+CALP0016,Respirator & Hearing Protection Testing Equipment Legislative Requirement,"Health, Safety and Training",Fully Approved,2026-02-09,334519,Other measuring and controlling device mfg,54.7,Category 2,NOT IN TRACKER
+CALP0008,Lifepak 12 (Clinic Defibrator),"Health, Safety and Training",Fully Approved,2026-05-18,339112,Surgical and medical instrument mfg,98.1,Category 2,NOT IN TRACKER
+CAKP0051,4 post light vehicle hoist 4 tonne,Maintenance,Fully Approved,2026-03-09,333924,"Industrial truck, tractor and stacker mfg",161.0,Category 2,NOT IN TRACKER
+CAKP0046,Sub board upgrade (offices /Buildings) N7 elect shock,Maintenance,Fully Approved,2026-03-19,335313,Switchgear and switchboard apparatus mfg,109.5,Category 2,NOT IN TRACKER
+CAKP0048,Structural repairs on CV007 and infrastructure,Maintenance,Fully Approved,2026-02-09,332312,Fabricated structural metal manufacturing,164.8,"Category 2 if capitalised, otherwise Category 1",NOT IN TRACKER
+CAKP0050,Lift and Lock Jack,Maintenance,Fully Approved,2026-07-14,333924,"Industrial truck, tractor and stacker mfg",161.0,Category 2,NOT IN TRACKER
+CAKP0052,Blast Walls - Engineering review and the installation,Maintenance,Fully Approved,2026-05-18,332312,Fabricated structural metal manufacturing,164.8,Category 2,NOT IN TRACKER
+CAKP0054,Stocked Spare Nolans 66/11KV 10MVA Incomer Transformer,Maintenance,Fully Approved,2026-05-18,335311,Power and distribution transformer mfg,83.7,"Category 1 on issue from stores, Category 2 if installed",NOT IN TRACKER
+CAKP0056,Stripping Column 2 Replacement,Maintenance,Fully Approved,2026-01-30,332420,"Metal tank, heavy gauge, manufacturing",175.5,Category 2,NOT IN TRACKER
+CAKP0057,Hungry Board install - Over roadways,Maintenance,Fully Approved,2026-05-18,332312,Fabricated structural metal manufacturing,164.8,Category 2,NOT IN TRACKER
+CAKP0058,BRW TX 2.5 MVA,Maintenance,Fully Approved,1900-07-11,335311,Power and distribution transformer mfg,83.7,Category 2,NOT IN TRACKER
+CAKP0059,Digital Radios,Maintenance,Fully Approved,2026-03-04,334220,Radio and wireless communications equipment mfg,69.8,Category 2,NOT IN TRACKER
+CAKP0060,Recovery Trailer and Slings,Maintenance,Fully Approved,2026-07-07,336212,Truck trailer manufacturing,125.8,Category 2,NOT IN TRACKER
+CAGP0075,Services relocation for joining pits,Mining Open Pit,Fully Approved,2026-05-18,237990,Other heavy and civil engineering construction,127.1,Category 2,NOT IN TRACKER
+CAGP0076,11kV Powerline Relocation (NTSFE St2c Works),Mining Open Pit,Fully Approved,2026-05-14,237130,Power and communication line construction,174.2,Category 2,NOT IN TRACKER
+CAGP0077,Noisebund BRW-Sars,Mining Open Pit,Fully Approved,2026-08-07,237990,Other heavy and civil engineering construction,127.1,Category 2,NOT IN TRACKER
+CAMP0072,Regen Kiln (carry over) (Part 2) (Part 1 CAMP0063),Processing,Waiting Site Sign Off,,236210,Industrial building construction,150.3,"Category 2, CY2027",NOT IN TRACKER
+CAMP0069,BRW High Flow Spider Upgrade,Processing,Fully Approved,2025-09-03,333249,Other industrial machinery manufacturing,116.4,Category 2,NOT IN TRACKER
+CAMP0063,TR1200 Regeneration Kiln - Carbon Reactivation (BCG) (Part 1),Processing,Not Started,,333994,Industrial process furnace and oven mfg,119.5,"Category 2, CY2027",NOT IN TRACKER
+CACP0043,Water Destruction,Projects,Fully Approved,2025-12-03,333249,Other industrial machinery manufacturing,116.4,Category 2,NOT IN TRACKER
+CACP0025,66kv Powerline reroute,Projects,Fully Approved,2026-03-28,237130,Power and communication line construction,174.2,Category 2,NOT IN TRACKER
+CACP0024,EQL Solution – 66 kV STATCOM and Metering Station No. 2,Projects,Fully Approved,2026-05-11,335999,Miscellaneous electrical equipment manufacturing,80.5,Category 2,NOT IN TRACKER
+CAFP0019,Bulk Tainings Mining Additional Fleet,Mining Open Pit,Fully Approved,2026-06-01,333120,Construction machinery manufacturing,143.4,"Category 2 if purchased, lessor if leased",NOT IN TRACKER
+CAGP0070,Purchase of Wi-Fi Coverage Trailers,Commercial & Administration,Fully Approved,2026-08-21,336212,Truck trailer manufacturing,125.8,Category 2,NOT IN TRACKER
+CAIP0041,Townsville Office Fit Out,Commercial & Administration,Fully Approved,2026-08-24,337214,Office furniture manufacturing and fit-out,151.0,Category 2,NOT IN TRACKER

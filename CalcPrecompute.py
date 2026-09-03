@@ -39,6 +39,9 @@ from CalcEmissions import (
 )
 from CalcCalendar import date_to_fy, aggregate_by_year_type, detect_year_type
 from CalcGhg import build_ghg_frame
+from CalcScope3 import build_scope3, add_other_categories_to_annual
+from CalcUnits import TONNES_PER_MEGATONNE, KWH_PER_MWH
+
 
 
 @dataclass
@@ -75,6 +78,16 @@ class PrecomputedData:
     ghg_df: pd.DataFrame = field(default_factory=pd.DataFrame)
     ghg_annual_fy: pd.DataFrame = field(default_factory=pd.DataFrame)
     ghg_annual_cy: pd.DataFrame = field(default_factory=pd.DataFrame)
+
+    # --- Scope 3, all fifteen categories (Scope3Result from CalcScope3) ---
+    # Every GHG Protocol category except 3, which is already on the frames
+    # above.  Deliberately separate: Scope 3 sits outside the Safeguard
+    # baseline and the NGER position, so no tab reading those fields sees it.
+    scope3: Any = None
+
+    # Why Scope 3 is absent, where it is.  Carried so the tab can say what
+    # went wrong instead of guessing at the cause.
+    scope3_error: str = ''
 
 
 def precompute_all(df, fsei_rom, fsei_elec,
@@ -146,6 +159,30 @@ def precompute_all(df, fsei_rom, fsei_elec,
     ghg_annual_fy = _aggregate_annual(ghg_monthly, 'FY')
     ghg_annual_cy = _aggregate_annual(ghg_monthly, 'CY')
 
+    # ── 7. Scope 3, all fifteen categories ───────────
+    # Runs on the same frame and the same horizon as the projection, so the
+    # Scope 3 years line up with the Scope 1 and 2 years.  A failure here is
+    # reported and does not stop the model: every other tab is independent
+    # of it.
+    scope3_error = ''
+    try:
+        scope3 = build_scope3(df, end_date=end_date)
+        print(f'Scope 3: {len(scope3.detail):,} rows, '
+              f'{len(scope3.outstanding)} open items')
+    except Exception as exc:
+        import traceback
+        scope3_error = f'{type(exc).__name__}: {exc}'
+        print(f'Scope 3 not computed: {scope3_error}')
+        traceback.print_exc()
+        scope3 = None
+
+    # The GHG view reports the whole inventory, so the categories other than 3
+    # go onto the GHG frames.  The Safeguard and NGER frames above are left
+    # alone: their Scope3 column is the Category 3 figure the baseline and the
+    # reported position are built on.
+    ghg_annual_fy = add_other_categories_to_annual(ghg_annual_fy, scope3)
+    ghg_annual_cy = add_other_categories_to_annual(ghg_annual_cy, scope3)
+
     return PrecomputedData(
         monthly=monthly,
         annual_fy=annual_fy,
@@ -159,6 +196,8 @@ def precompute_all(df, fsei_rom, fsei_elec,
         ghg_df=ghg_df,
         ghg_annual_fy=ghg_annual_fy,
         ghg_annual_cy=ghg_annual_cy,
+        scope3=scope3,
+        scope3_error=scope3_error,
     )
 
 
@@ -186,6 +225,11 @@ def _aggregate_annual(monthly, year_type='FY'):
         'ROM_t': 'sum',
     }
 
+    # Gold ounces sold — denominator for the gold intensity series.
+    # Guarded so older cached monthly frames without the column still work.
+    if 'Gold_oz' in monthly.columns:
+        agg_dict['Gold_oz'] = 'sum'
+
     # Optional columns — include if present
     optional_sum = ['Site_Electricity_kWh', 'Grid_Electricity_kWh',
                     'Baseline', 'SMC_Monthly', 'Baseline_Unfloored']
@@ -211,11 +255,13 @@ def _aggregate_annual(monthly, year_type='FY'):
     annual['Scope2'] = annual['Scope2_tCO2e']
     annual['Scope3'] = annual['Scope3_tCO2e']
     annual['Total'] = annual['Scope1'] + annual['Scope2'] + annual['Scope3']
-    annual['ROM_Mt'] = annual['ROM_t'] / 1_000_000
+    annual['ROM_Mt'] = annual['ROM_t'] / TONNES_PER_MEGATONNE
+    if 'Gold_oz' not in annual.columns:
+        annual['Gold_oz'] = 0.0
 
     # Grid electricity in MWh (for carbon tax)
     if 'Grid_Electricity_kWh' in annual.columns:
-        annual['Grid_Electricity_MWh'] = annual['Grid_Electricity_kWh'] / 1000.0
+        annual['Grid_Electricity_MWh'] = annual['Grid_Electricity_kWh'] / KWH_PER_MWH
     else:
         annual['Grid_Electricity_MWh'] = 0.0
 
@@ -224,10 +270,19 @@ def _aggregate_annual(monthly, year_type='FY'):
     annual['Total_Intensity'] = 0.0
     mask = annual['ROM_Mt'] > 0
     annual.loc[mask, 'Scope1_Intensity'] = (
-        annual.loc[mask, 'Scope1'] / (annual.loc[mask, 'ROM_Mt'] * 1_000_000)
+        annual.loc[mask, 'Scope1'] / (annual.loc[mask, 'ROM_Mt'] * TONNES_PER_MEGATONNE)
     )
     annual.loc[mask, 'Total_Intensity'] = (
-        annual.loc[mask, 'Total'] / (annual.loc[mask, 'ROM_Mt'] * 1_000_000)
+        annual.loc[mask, 'Total'] / (annual.loc[mask, 'ROM_Mt'] * TONNES_PER_MEGATONNE)
+    )
+
+    # Gold intensity: total (Scope 1+2+3) emissions per ounce of gold sold.
+    # Uses the same 'Total' numerator as Total_Intensity so both series are
+    # inclusive of every scope, not just the mining-phase sources.
+    annual['Gold_Intensity'] = 0.0
+    gold_mask = annual['Gold_oz'] > 0
+    annual.loc[gold_mask, 'Gold_Intensity'] = (
+        annual.loc[gold_mask, 'Total'] / annual.loc[gold_mask, 'Gold_oz']
     )
     # Legacy alias (consumers should migrate to explicit names)
     annual['Emission_Intensity'] = annual['Scope1_Intensity']

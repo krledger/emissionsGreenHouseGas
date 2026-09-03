@@ -13,6 +13,8 @@ Displays:
 """
 # NOTE FOR CLAUDE: This file contains emojis and special chars. Use binary-safe editing (rb/wb).
 
+import os
+
 import streamlit as st
 import pandas as pd
 from Config import (
@@ -379,9 +381,13 @@ def render_nger_tab(fsei_rom=FSEI_ROM, fsei_elec=FSEI_ELEC,
 
         # Build comprehensive factor table from NgaFactors.csv
         try:
-            nga_df = pd.read_csv('NgaFactors.csv')
+            nga_df = pd.read_csv(os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), 'Data',
+                'NgaFactors.csv'))
         except FileNotFoundError:
             nga_df = pd.DataFrame()
+            st.warning('Data/NgaFactors.csv was not found, so the factor '
+                       'table cannot be shown.')
 
         if len(nga_df) > 0:
             # Fuels used at Ravenswood (matching NGAFuel column in emissions data)

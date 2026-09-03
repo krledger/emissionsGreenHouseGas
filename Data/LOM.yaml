@@ -1,0 +1,70 @@
+# =============================================================================
+# LOM.yaml - key milestones and headline plan figures for the Ravenswood LOM.
+#
+# Small by design.  This is the shared reference every downstream program reads
+# so they all use the same dates and the same plan identity.  Detail belongs in
+# the CSVs; anything that is not a milestone or a headline total stays out.
+#
+# Distributed unencrypted with the PrepData outputs.
+# Updated by hand when a new LOM revision lands - twice a year.
+# =============================================================================
+
+plan:
+  name: LOM Dec25 REV04
+  source: Fin Model_Site Costs Analysis- 2026 Budget LOM_REV04 16.12.25.xlsx
+  source_sha256_16: ef7c54437595de9e
+  source_dated: 2025-12-16
+  basis: CY
+  note: >
+    The Fin Model is a 2026-2039 cost window, not a life of mine.  It stops at
+    Dec-2039 with 38.1 Mt of the 151.5 Mt mined still on stockpile, so it does
+    not set end of processing.
+
+facility:
+  name: Ravenswood Gold Mine
+  operator: Ravenswood Gold Pty Ltd
+  state: QLD
+  country: AU
+
+# -----------------------------------------------------------------------------
+# Milestones - the single set of dates, set by hand from the LOM.
+# No program derives its own, and no forecast run changes them.
+# -----------------------------------------------------------------------------
+milestones:
+  actuals_from: 2022-01-01
+  actuals_to: 2026-07-31            # last closed month
+  forecast_from: 2026-08-01
+  grid_connection: 2028-07-01       # site power generation ceases
+  end_of_mining: 2037-12-31         # LOM Dec25 REV04, last ore mined
+  end_of_processing: 2039-12-31     # LOM Dec25 REV04, last ore milled
+  end_of_rehabilitation: 2049-12-31 # rehab decision, sets the reporting horizon
+
+# -----------------------------------------------------------------------------
+# Headline plan totals
+# -----------------------------------------------------------------------------
+lom_totals:
+  ore_mined_mt: 151.2
+  ore_grade_gpt: 0.60
+  waste_mined_mt: 214.7
+  total_material_mt: 366
+  strip_ratio: 1.4
+  gold_recoverable_moz: 2.63
+  metallurgical_recovery: 0.90
+
+# -----------------------------------------------------------------------------
+# Plant limits
+# -----------------------------------------------------------------------------
+plant:
+  mill_nameplate_mtpa: 8.6          # PFD rating - never achieved
+  mill_best_achieved_mtpa: 7.71     # best rolling 12 months, to May 2026
+  crushing_capacity_mtpa: 14.4
+
+units:
+  ore: t
+  gold: oz
+  diesel: kL
+  electricity: kWh
+  reagents: t
+  explosives: t
+  grade: g/t
+  currency: AUD

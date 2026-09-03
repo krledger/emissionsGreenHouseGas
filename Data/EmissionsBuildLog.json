@@ -1,0 +1,46 @@
+{
+  "BuildID": "7fb7d7b1ef6b",
+  "BuiltAt": "2026-09-03T01:13:17",
+  "ActualsTo": "2026-07-31 00:00:00",
+  "ForecastTo": "2049-12-01 00:00:00",
+  "Rows": {
+    "lines": 850646,
+    "published": 297839
+  },
+  "Totals_tCO2e": {
+    "by_scope": {
+      "Scope 1": 1820625.47,
+      "Scope 2": 2238930.23,
+      "Scope 3": 1442231.14
+    },
+    "by_basis": {
+      "Actual": 1172945.66,
+      "Forecast": 4328841.18
+    },
+    "total": 5501786.84
+  },
+  "Outstanding": 17,
+  "Inputs": {
+    "OperationsMetricsActual.csv": {
+      "bytes": 1888006,
+      "modified": "2026-09-02T23:07:20"
+    },
+    "OperationsMetricsBudget.csv": {
+      "bytes": 68040492,
+      "modified": "2026-09-02T23:08:56"
+    },
+    "NgaFactors.csv": {
+      "bytes": 94644,
+      "modified": "2026-03-23T03:19:56"
+    },
+    "ReferenceFx.csv": {
+      "bytes": 7704,
+      "modified": "2026-08-19T01:58:15"
+    },
+    "LOM.yaml": {
+      "bytes": 2625,
+      "modified": "2026-08-18T22:27:40"
+    }
+  },
+  "Notes": "One name per department; blanks read back as blanks."
+}

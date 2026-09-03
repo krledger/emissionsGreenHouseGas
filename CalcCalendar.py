@@ -74,6 +74,24 @@ def date_to_fy(date):
         return date.year
 
 
+def series_to_fy(dates):
+    """Financial year for a column of dates, calculated in one pass.
+
+    Same rule as date_to_fy: a date in or after the FY start month belongs to
+    the following financial year.  Vectorised so a projection frame of several
+    hundred thousand rows costs a single pass rather than one call per row.
+
+    Args:
+        dates: Series of datetimes.
+
+    Returns:
+        Series of nullable integers, blank where the date is blank.
+    """
+    dates = pd.to_datetime(dates)
+    fy = dates.dt.year + (dates.dt.month >= NGER_FY_START_MONTH).astype('int64')
+    return fy.where(dates.notna()).astype('Int64')
+
+
 def fy_to_date_range(fy):
     """
     Convert FY number to start and end dates.

@@ -1,2 +1,9 @@
-operations_metrics_actual.csv
-operations_metrics_budget.csv
+OperationsMetricsActual.csv
+OperationsMetricsBudget.csv
+LOM.yaml
+Scope3Factors.csv
+Scope3Inputs.yaml
+ReferenceFx.csv
+Cat2RegisterReview.csv
+Cat2ProjectScreen.csv
+ApSpendClassification.csv

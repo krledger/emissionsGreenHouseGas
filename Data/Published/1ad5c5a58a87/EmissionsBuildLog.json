@@ -1,0 +1,54 @@
+{
+  "BuildID": "1ad5c5a58a87",
+  "BuiltAt": "2026-09-02T23:44:06",
+  "ActualsTo": "2026-07-31",
+  "ForecastTo": "2049-12-01 00:00:00",
+  "Rows": {
+    "lines": 850974,
+    "published": 298167
+  },
+  "Totals_tCO2e": {
+    "by_scope": {
+      "Scope 1": 1820625.47,
+      "Scope 2": 2238930.23,
+      "Scope 3": 1442203.23
+    },
+    "by_basis": {
+      "Actual": 1167600.85,
+      "Forecast": 4334158.08
+    },
+    "total": 5501758.93
+  },
+  "Outstanding": 17,
+  "Inputs": {
+    "OperationsMetricsActual.csv": {
+      "bytes": 1888006,
+      "modified": "2026-09-02T23:07:20"
+    },
+    "OperationsMetricsBudget.csv": {
+      "bytes": 68040492,
+      "modified": "2026-09-02T23:08:56"
+    },
+    "NgaFactors.csv": {
+      "bytes": 94644,
+      "modified": "2026-03-23T03:19:56"
+    },
+    "ReferenceFx.csv": {
+      "bytes": 7704,
+      "modified": "2026-08-19T01:58:15"
+    },
+    "LOM.yaml": {
+      "bytes": 2625,
+      "modified": "2026-08-18T22:27:40"
+    },
+    "Scope3Inputs.yaml": {
+      "bytes": 17168,
+      "modified": "2026-09-02T23:17:31"
+    },
+    "CapitalGoodsRegister.csv": {
+      "bytes": 7468,
+      "modified": "2026-09-02T23:31:43"
+    }
+  },
+  "Notes": "explosives renamed; scope 3 ownership moved to Emissions"
+}

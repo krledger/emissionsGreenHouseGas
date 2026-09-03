@@ -15,6 +15,7 @@ from CalcPrecompute import build_safeguard_projection
 from Projections import apply_smc_transactions, smc_credit_value_analysis
 from LoaderData import load_smc_transactions
 from CalcCalendar import date_to_fy
+from CalcEmissions import superseded_by_actual
 from Config import DEFAULT_GRID_CONNECTION_DATE, CREDIT_START_DATE
 import os
 
@@ -91,9 +92,8 @@ def _render_emissions_query(df, year_factor_map):
         # Actuals take precedence; budget fills gaps per (Date, Description)
         actuals = df[df['DataSet'] == 'Actual'].copy()
         budget = df[df['DataSet'] == 'Budget'].copy()
-        actual_keys = set(zip(actuals['Date'], actuals['Description']))
         budget_fill = budget[
-            ~budget.apply(lambda r: (r['Date'], r['Description']) in actual_keys, axis=1)
+            ~superseded_by_actual(budget, actuals, 'Description')
         ]
         pool = pd.concat([actuals, budget_fill], ignore_index=True)
         pool['DataSet'] = pool['DataSet'].astype(str)  # drop categorical for mixed labels

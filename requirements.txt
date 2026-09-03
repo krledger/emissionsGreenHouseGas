@@ -11,6 +11,7 @@ plotly>=5.18.0
 
 # Data handling
 openpyxl>=3.1.0  # For Excel file reading
+PyYAML>=6.0      # LOM.yaml milestones and the Scope 3 parameter file
 python-dateutil>=2.8.2
 cryptography>=42.0.0  # For decrypting .enc data files
 

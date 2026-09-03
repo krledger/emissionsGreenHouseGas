@@ -34,21 +34,28 @@ from Config import (
     DEFAULT_DISPLAY_YEAR,
     DEFAULT_YEAR_TYPE,
     DEFAULT_GRID_CONNECTION_DATE,
+    DEFAULT_ACTUALS_TO_DATE,
     DECLINE_RATE_PHASE2,
     DECLINE_RATE_PHASE1,
-    SAFEGUARD_THRESHOLD
+    SAFEGUARD_THRESHOLD,
+    MILESTONE_SOURCE
 )
 from CalcCalendar import date_to_fy, date_to_cy, year_to_date_range, label_from_dates, detect_year_type
 from LoaderData import load_all_data
 from CalcPrecompute import precompute_all, get_annual, get_ghg_annual
+from CalcDashboard import filter_options
 
 # Import tab modules
 from Tab1Ghg import render_ghg_tab
 from Tab2Safeguard import render_safeguard_tab
 from Tab3CarbonTax import render_carbon_tax_tab
-from Tab4Nger import render_nger_tab
+# Tab4Nger is retired.  Its content, the Safeguard formula, the legislative
+# mapping and the National Greenhouse Account factor set, is now carried as
+# documents in the About tab.
 from Tab5Query import render_query_tab
 from Tab6Gri import render_gri_tab
+from Tab7Lifecycle import render_lifecycle_tab
+from AboutPanel import render_about
 
 # PAGE CONFIG
 st.set_page_config(
@@ -252,10 +259,152 @@ precomputed = precompute_cached(df, st.session_state.get('data_passphrase'))
 # ═══════════════════════════════════════════════════════════════════════
 
 with st.sidebar:
-    st.header("Configuration")
+    st.header("Filters")
+    st.caption("These apply across the model.  The Safeguard and GRI views "
+               "are always facility wide and whole of period, because that is "
+               "what is reported; a department or scope filter narrows the GHG "
+               "view only.")
 
-    # Key Constants (read-only, top of sidebar)
-    with st.expander("Key Constants", expanded=True):
+    st.caption(f"Milestones: {MILESTONE_SOURCE}")
+
+    st.markdown("---")
+
+    # The Builder is a separate application, not a tab.  It owns the
+    # emissions methodology, the assumptions, the capital register and the
+    # credit ledger, and it publishes the inventory this application reports.
+    # This view keeps working whether or not it is running.
+    with st.expander("Emissions Data Builder", expanded=False):
+        try:
+            from ExportEmissionsTable import published_summary
+            st.caption(published_summary())
+        except Exception:                        # pragma: no cover
+            st.caption("No published build")
+        st.caption(
+            "Builds the inventory, holds the assumptions and the capital "
+            "register, and publishes what this application reports.  Run it "
+            "beside this one:")
+        st.code("streamlit run AppBuilder.py --server.port 8502",
+                language="bash")
+
+    st.markdown("---")
+
+    # Reporting basis is fixed.  The GHG view reports calendar years,
+    # which is the corporate reporting period, and the Safeguard view reports
+    # financial years, which is what the legislation requires.  Only the year
+    # is a choice, so there is no control for something that cannot change.
+    with st.expander("Reporting year", expanded=True):
+        if 'display_year' not in st.session_state:
+            st.session_state.display_year = DEFAULT_DISPLAY_YEAR
+
+        _period_type = 'CY'
+        st.session_state['period_type'] = _period_type
+
+        display_year = st.number_input(
+            "Year",
+            min_value=2020,
+            max_value=2049,
+            value=st.session_state.display_year,
+            step=1,
+        )
+        st.session_state.display_year = display_year
+
+        _start_date, _end_date = year_to_date_range(display_year, _period_type)
+        _period_label = label_from_dates(_start_date, _end_date)
+
+        st.session_state.start_date = _start_date
+        st.session_state.end_date = _end_date
+        st.session_state.period_label = _period_label
+
+        st.caption(f"GHG, GRI and carbon tax report CY{display_year}.  "
+                   f"Safeguard reports FY{display_year} per the legislation.")
+
+    # Department and scope.  Options come from the data, so a department
+    # that stops reporting leaves the list on its own.  There is no actual
+    # against budget choice: the projection fills forward from the last closed
+    # month on its own and a reader does not pick between them.
+    _options = filter_options(df)
+
+    with st.expander("Narrow the GHG view", expanded=False):
+        selected_departments = st.multiselect(
+            "Departments", _options['departments'], default=[],
+            help="Empty means every department.")
+        selected_scopes = st.multiselect(
+            "Scopes", ['Scope 1', 'Scope 2', 'Scope 3'], default=[],
+            help="Empty means every scope.")
+
+    _department_filter = selected_departments or None
+    _scope_filter = selected_scopes or None
+    if _department_filter or _scope_filter:
+        st.caption("A filter is active.  The GHG view is narrowed; the "
+                   "Safeguard, GRI and Carbon Tax views are not.")
+
+
+    # Constants locked to config (no user override)
+    fsei_rom = FSEI_ROM
+    fsei_elec = FSEI_ELEC
+    decline_rate_phase2 = DECLINE_RATE_PHASE2
+
+    # Phase dates locked to config constants (baked into CSV)
+    start_date = DEFAULT_START_DATE
+    end_date = DEFAULT_END_REHABILITATION_DATE
+    end_mining_date = DEFAULT_END_MINING_DATE
+    end_processing_date = DEFAULT_END_PROCESSING_DATE
+    end_rehabilitation_date = DEFAULT_END_REHABILITATION_DATE
+
+
+
+# Frame selection - decide once, pass down
+# Data frame: user-selected period (CY or FY) for tab1, tab3, tab4, tab6
+display_start = st.session_state.get('start_date')
+display_end = st.session_state.get('end_date')
+period_label = st.session_state.get('period_label', '')
+data_frame = get_annual(precomputed, start_date=display_start)
+
+# GHG frame: NGER + GHG-only items (explosives etc.) for Tab 1
+ghg_frame = get_ghg_annual(precomputed, start_date=display_start)
+
+# NGER frame: always FY for Safeguard (tab2)
+nger_frame = precomputed.annual_fy.copy()
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# TABS — receive pre-computed data, filter and render only
+# ═══════════════════════════════════════════════════════════════════════
+
+tab1, tab2, tab3, tab4, tab6, tab7, tab9 = st.tabs([
+    "GHG Emissions",
+    "Safeguard Mechanism",
+    "GRI 14 Reporting",
+    "Carbon Tax Analysis",
+    "Data Query",
+    "Lifecycle",
+    "About"
+])
+
+
+# RENDER TABS
+with tab1:
+    # Use GHG frame (NGER + GHG-only items like explosives).
+    # Falls back to NGER frame if GHG frame is empty (stale cache).
+    _ghg_df = precomputed.ghg_df if len(precomputed.ghg_df) > 0 else df
+    _ghg_proj = ghg_frame if len(ghg_frame) > 0 else data_frame
+    render_ghg_tab(
+        _ghg_df, precomputed, _ghg_proj,
+        start_date=display_start, end_date=display_end,
+        period_label=period_label,
+        end_mining_date=end_mining_date,
+        end_processing_date=end_processing_date,
+        end_rehabilitation_date=end_rehabilitation_date,
+        year_type=_period_type,
+        display_year=display_year,
+        dataset='Actual',
+        departments=_department_filter,
+        scopes=_scope_filter,
+    )
+
+with tab2:
+    # The legislated parameters, beside the baseline they govern.
+    with st.expander("Key constants and legislated parameters", expanded=False):
         _grid_str = DEFAULT_GRID_CONNECTION_DATE.strftime('%d %b %Y')
         _em_str = DEFAULT_END_MINING_DATE.strftime('%d %b %Y')
         _ep_str = DEFAULT_END_PROCESSING_DATE.strftime('%d %b %Y')
@@ -276,61 +425,11 @@ with st.sidebar:
             f"| **Phase 2 Decline** | {_p2_pct}% p.a. (FY2031+) |\n"
             f"| **Safeguard Threshold** | {_threshold} tCO2-e |"
         )
-        st.caption("CER approved Oct 2024.  All parameters from Config.py.")
+        st.caption("CER approved Oct 2024.  Safeguard parameters from "
+                   "Config.py; milestones from Data/LOM.yaml.")
+        st.caption(f"Milestones: {MILESTONE_SOURCE}")
 
-    st.markdown("---")
-
-    # Reporting Period Selection
-    with st.expander("Reporting Period", expanded=True):
-        if 'display_year' not in st.session_state:
-            st.session_state.display_year = DEFAULT_DISPLAY_YEAR
-
-        # Period type selector
-        _period_type = st.radio(
-            "Period type",
-            ['CY', 'FY'],
-            index=0 if DEFAULT_YEAR_TYPE == 'CY' else 1,
-            format_func=lambda x: 'Calendar Year (Jan-Dec)' if x == 'CY' else 'Financial Year (Jul-Jun)',
-            horizontal=True,
-            key='period_type'
-        )
-
-        display_year = st.number_input(
-            "Year",
-            min_value=2020,
-            max_value=2045,
-            value=st.session_state.display_year,
-            step=1,
-            help="Select year for charts and summaries"
-        )
-        st.session_state.display_year = display_year
-
-        # Compute dates from selection
-        _start_date, _end_date = year_to_date_range(display_year, _period_type)
-        _period_label = label_from_dates(_start_date, _end_date)
-
-        st.session_state.start_date = _start_date
-        st.session_state.end_date = _end_date
-        st.session_state.period_label = _period_label
-
-        st.caption(f"Period: {_start_date.strftime('%d %b %Y')} to {(_end_date - pd.Timedelta(days=1)).strftime('%d %b %Y')}")
-        st.caption("Safeguard tab always uses FY per legislation")
-
-
-    # Constants locked to config (no user override)
-    fsei_rom = FSEI_ROM
-    fsei_elec = FSEI_ELEC
-    decline_rate_phase2 = DECLINE_RATE_PHASE2
-
-    # Phase dates locked to config constants (baked into CSV)
-    start_date = DEFAULT_START_DATE
-    end_date = DEFAULT_END_REHABILITATION_DATE
-    end_mining_date = DEFAULT_END_MINING_DATE
-    end_processing_date = DEFAULT_END_PROCESSING_DATE
-    end_rehabilitation_date = DEFAULT_END_REHABILITATION_DATE
-
-
-        # Carbon Credit Market
+    # Carbon Credit Market
     with st.expander("Carbon Credit Market", expanded=False):
         carbon_credit_price = st.number_input(
             "SMC Credit Price ($/tCO2-e)",
@@ -348,7 +447,20 @@ with st.sidebar:
             step=0.5
         ) / 100
 
+    render_safeguard_tab(
+        df, precomputed, nger_frame,
+        fsei_rom, fsei_elec,
+        carbon_credit_price, credit_escalation,
+        end_mining_date, end_processing_date, end_rehabilitation_date,
+        display_year=display_year,
+    )
 
+with tab3:
+    render_gri_tab(df, precomputed, data_frame,
+                   start_date=display_start, end_date=display_end,
+                   period_label=period_label)
+
+with tab4:
     # Carbon Tax Settings
     with st.expander("Carbon Tax Scenario", expanded=False):
         tax_start_fy = st.number_input(
@@ -385,66 +497,6 @@ with st.sidebar:
                  "cost passed through in wholesale prices via NGA Scope 2 emission factor."
         )
 
-
-
-# Frame selection - decide once, pass down
-# Data frame: user-selected period (CY or FY) for tab1, tab3, tab4, tab6
-display_start = st.session_state.get('start_date')
-display_end = st.session_state.get('end_date')
-period_label = st.session_state.get('period_label', '')
-data_frame = get_annual(precomputed, start_date=display_start)
-
-# GHG frame: NGER + GHG-only items (explosives etc.) for Tab 1
-ghg_frame = get_ghg_annual(precomputed, start_date=display_start)
-
-# NGER frame: always FY for Safeguard (tab2)
-nger_frame = precomputed.annual_fy.copy()
-
-
-# ═══════════════════════════════════════════════════════════════════════
-# TABS — receive pre-computed data, filter and render only
-# ═══════════════════════════════════════════════════════════════════════
-
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "Total GHG Emissions",
-    "Safeguard Mechanism",
-    "GRI 14 Reporting",
-    "Carbon Tax Analysis",
-    "NGER Factors",
-    "Data Query"
-])
-
-
-# RENDER TABS
-with tab1:
-    # Use GHG frame (NGER + GHG-only items like explosives).
-    # Falls back to NGER frame if GHG frame is empty (stale cache).
-    _ghg_df = precomputed.ghg_df if len(precomputed.ghg_df) > 0 else df
-    _ghg_proj = ghg_frame if len(ghg_frame) > 0 else data_frame
-    render_ghg_tab(
-        _ghg_df, precomputed, _ghg_proj,
-        start_date=display_start, end_date=display_end,
-        period_label=period_label,
-        end_mining_date=end_mining_date,
-        end_processing_date=end_processing_date,
-        end_rehabilitation_date=end_rehabilitation_date,
-    )
-
-with tab2:
-    render_safeguard_tab(
-        df, precomputed, nger_frame,
-        fsei_rom, fsei_elec,
-        carbon_credit_price, credit_escalation,
-        end_mining_date, end_processing_date, end_rehabilitation_date,
-        display_year=display_year,
-    )
-
-with tab3:
-    render_gri_tab(df, precomputed, data_frame,
-                   start_date=display_start, end_date=display_end,
-                   period_label=period_label)
-
-with tab4:
     render_carbon_tax_tab(
         precomputed, data_frame,
         tax_start_fy, tax_rate, tax_escalation,
@@ -455,9 +507,6 @@ with tab4:
         end_rehabilitation_date=end_rehabilitation_date,
     )
 
-with tab5:
-    render_nger_tab()
-
 with tab6:
     render_query_tab(
         df, precomputed, nger_frame,
@@ -465,6 +514,59 @@ with tab6:
         credit_escalation=credit_escalation,
     )
 
+with tab7:
+    # Display-only view of the physical lifecycle and the wind-down rules that
+    # shape it.  Uses the full dataset, not the selected period, because the
+    # point of the tab is the whole mine life.
+    render_lifecycle_tab(
+        df,
+        start_date=DEFAULT_START_DATE,
+        end_mining_date=end_mining_date,
+        end_processing_date=end_processing_date,
+        end_rehabilitation_date=end_rehabilitation_date,
+        grid_connected_date=DEFAULT_GRID_CONNECTION_DATE,
+    )
+
+with tab9:
+    # Release history and the documents that govern the model, read in place
+    # rather than downloaded.
+    render_about(
+        app_name="Ravenswood Gold Emissions Calculator",
+        changelog="Changelog.md",
+        description="Emissions tracking, Safeguard Mechanism compliance and "
+                    "value chain projections for the Ravenswood Gold Mine.",
+        documents=[
+            ("GHG emissions method", "Documentation/GhgEmissionsMethod.md"),
+            ("Safeguard Mechanism method", "Documentation/SafeguardMechanismMethod.md"),
+            ("GRI 14 method", "Documentation/Gri14Method.md"),
+            ("Scope 3 method", "Documentation/Scope3Method.md"),
+            ("NGER and NGA factors", "Documentation/NgerFactors.md"),
+            ("Life of mine milestones", "Data/LOM.yaml"),
+            ("Scope 3 parameters", "Data/ConfigScope3.yaml"),
+            ("Scope 3 factors", "Scope3/Factors.csv"),
+            ("Scope 3 items", "Scope3/Items.csv"),
+        ],
+        facts={
+            "Milestones": MILESTONE_SOURCE,
+            "Actuals to": DEFAULT_ACTUALS_TO_DATE.strftime('%d %b %Y')
+                          if DEFAULT_ACTUALS_TO_DATE else 'not stated',
+            "Model horizon": DEFAULT_END_REHABILITATION_DATE.strftime('%d %b %Y'),
+            "Records loaded": f"{len(df):,}",
+        },
+    )
+
+
 # FOOTER
 st.markdown("---")
-st.caption("Safeguard Mechanism Compliance Model for Ravenswood Gold Mine")
+_footer_left, _footer_right = st.columns([3, 2])
+_footer_left.caption(
+    "Safeguard Mechanism Compliance Model for Ravenswood Gold Mine")
+# Which published inventory these figures come from, stated unobtrusively.
+# A reader who needs to reproduce a number needs the build it came from.
+try:
+    from ExportEmissionsTable import published_summary as _published_summary
+    _footer_right.caption(
+        f"<div style='text-align:right'>{_published_summary()}</div>",
+        unsafe_allow_html=True)
+except Exception:                                # pragma: no cover - defensive
+    pass
