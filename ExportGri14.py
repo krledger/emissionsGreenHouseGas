@@ -50,6 +50,8 @@ Last updated: 2026-05-12
 """
 
 import pandas as pd
+
+import Paths as _PATHS
 import numpy as np
 from typing import Optional, Dict, Any, List
 
@@ -477,12 +479,10 @@ def _load_nga_gas_split():
         return _NGA_GAS_CACHE
 
     import os
-    csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            'Data', 'NgaFactors.csv')
+    csv_path = _PATHS.data('NgaFactors.csv')
     if not os.path.exists(csv_path):
         _NGA_GAS_CACHE = {}
         return _NGA_GAS_CACHE
-
     ndf = pd.read_csv(csv_path)
     cache = {}
 

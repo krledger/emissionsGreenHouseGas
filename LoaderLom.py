@@ -42,7 +42,7 @@ except ModuleNotFoundError as exc:                # pragma: no cover
         "(it is listed in requirements.txt)."
     ) from exc
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Data')
+from Paths import DATA_DIR
 DEFAULT_LOM_PATH = os.path.join(DATA_DIR, 'LOM.yaml')
 
 # Milestone keys this model consumes.  A key absent from the file falls back

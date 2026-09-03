@@ -25,6 +25,8 @@ MATCHING:
 import pandas as pd
 import os
 
+import Paths as _PATHS
+
 
 class NGAFactorsByYear:
     """Provide access to NGA emission factors for multiple years.
@@ -40,9 +42,7 @@ class NGAFactorsByYear:
             folder_path: Optional override.  Normal usage: no argument.
         """
         if folder_path is None:
-            folder_path = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), 'Data'
-            )
+            folder_path = _PATHS.DATA_DIR
         self.folder_path = folder_path
         self.df = None
         self.available_years = []

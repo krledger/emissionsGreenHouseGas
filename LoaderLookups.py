@@ -31,7 +31,7 @@ import os
 
 import pandas as pd
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+from Paths import ROOT as BASE_DIR
 SCOPE3_DIR = os.path.join(BASE_DIR, 'Scope3')
 LOOKUPS_PATH = os.path.join(SCOPE3_DIR, 'Lookups.csv')
 PRICE_INDEX_PATH = os.path.join(SCOPE3_DIR, 'PriceIndex.csv')

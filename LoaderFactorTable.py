@@ -26,11 +26,12 @@ import pandas as pd
 import LoaderLookups as Lookups
 from Config import (CLASS_INTERNAL, CLASS_NGA, CLASS_SPEND, FACTOR_CLASSES)
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+from Paths import ROOT as BASE_DIR
 SCOPE3_DIR = os.path.join(BASE_DIR, 'Scope3')
 FACTORS_PATH = os.path.join(SCOPE3_DIR, 'Factors.csv')
 
 COLUMNS = ['FactorID', 'FactorKey', 'Class', 'Source', 'DisplaySource',
+           'SourceCode',
            'Name', 'Release',
            'EffectiveFrom', 'Region', 'Unit', 'Scope1', 'Scope2', 'Scope3',
            'Obsolete', 'Reason', 'Import', 'SourceUnit', 'SourceFactor',

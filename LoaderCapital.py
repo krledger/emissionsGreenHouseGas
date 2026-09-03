@@ -39,7 +39,7 @@ __all__ = [
     'resolve_register', 'register_issues', 'to_scope3_register',
 ]
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+from Paths import ROOT as BASE_DIR
 SCOPE3_DIR = os.path.join(BASE_DIR, 'Scope3')
 REGISTER_PATH = os.path.join(SCOPE3_DIR, 'CapitalGoodsRegister.csv')
 

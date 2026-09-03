@@ -25,7 +25,7 @@ import pandas as pd
 import LoaderFactorTable as Factors
 import LoaderLookups as Lookups
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+from Paths import ROOT as BASE_DIR
 SCOPE3_DIR = os.path.join(BASE_DIR, 'Scope3')
 ITEMS_PATH = os.path.join(SCOPE3_DIR, 'Items.csv')
 

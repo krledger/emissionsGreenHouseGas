@@ -37,7 +37,7 @@ __all__ = [
     'load_build_log', 'compare_builds', 'published_summary',
 ]
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+from Paths import ROOT as BASE_DIR
 DATA_DIR = os.path.join(BASE_DIR, 'Data')
 ARCHIVE_DIR = os.path.join(DATA_DIR, 'Published')
 

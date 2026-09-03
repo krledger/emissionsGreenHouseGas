@@ -717,5 +717,5 @@ COLORS = {
 DEFAULT_PATHS = {
     'actual': 'OperationsMetricsActual.csv',
     'budget': 'OperationsMetricsBudget.csv',
-    'nga': 'NationalGreenhouseAccountFactors2025.xlsx',
+    'nga': 'Data/NgaSource/NationalGreenhouseAccountFactors2026.xlsx',
 }

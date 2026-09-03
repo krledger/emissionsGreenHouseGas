@@ -52,7 +52,7 @@ except ModuleNotFoundError as exc:                # pragma: no cover
         "(it is listed in requirements.txt)."
     ) from exc
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+from Paths import ROOT as BASE_DIR
 DATA_DIR = os.path.join(BASE_DIR, 'Data')
 
 # Scope 3 methodology is owned here, not upstream.  PrepData prepares the

@@ -42,7 +42,7 @@ from LoaderScope3 import CONFIG_PATH, load_scope3_reference
 st.set_page_config(page_title='Emissions Data Builder', layout='wide',
                    page_icon='⚙️')
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Data')
+from Paths import DATA_DIR
 SMC_PATH = os.path.join(DATA_DIR, 'SmcTransactions.csv')
 
 TRACKED_INPUTS = [
