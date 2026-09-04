@@ -24,20 +24,109 @@ Safeguard Mechanism baseline formula per Section 11:
         BA   = Borrowing Adjustment (zero for Ravenswood)
 """
 
+import os
 import re
 from datetime import datetime
 
 from LoaderLom import LOM
+
+# ---------------------------------------------------------------------
+# ASSUMPTIONS
+# ---------------------------------------------------------------------
+# Every rate, threshold and intensity below is read from
+# Data/Assumptions.yaml rather than written here.  An assumption in code is
+# an assumption nobody finds when it is time to review it, and each of these
+# has a source and a review date that belong beside the value.
+#
+# The names are unchanged, so every module that imports them is unchanged
+# too.  What has moved is where the number lives, not what it is called.
+
+import yaml as _yaml
+
+_ASSUMPTIONS_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 'Data', 'Assumptions.yaml')
+
+with open(_ASSUMPTIONS_PATH, encoding='utf-8') as _handle:
+    _ASSUMPTIONS = _yaml.safe_load(_handle)
+
+
+def _assumption(group, name):
+    """One value, or a clear failure.
+
+    A missing assumption is not something to default: a silent zero for a
+    decline rate produces a baseline that looks plausible and is wrong.
+    """
+    try:
+        return _ASSUMPTIONS[group][name]
+    except KeyError:
+        raise KeyError(
+            '%s.%s is not in Data/Assumptions.yaml.  Every assumption the '
+            'model applies is declared there.' % (group, name))
+
+
+NGER_FY_START_MONTH = _assumption('reporting', 'NGER_FY_START_MONTH')
+DEFAULT_FY_START_MONTH = NGER_FY_START_MONTH
+DEFAULT_DISPLAY_YEAR = _assumption('reporting', 'DEFAULT_DISPLAY_YEAR')
+
+FSEI_ELEC = _assumption('facility_intensity', 'FSEI_ELEC')
+FSEI_ROM = _assumption('facility_intensity', 'FSEI_ROM')
+SITE_GENERATION_RATIO = _assumption('facility_intensity',
+                                    'SITE_GENERATION_RATIO')
+
+DEFAULT_INDUSTRY_EI_ROM = _assumption('industry_intensity',
+                                      'DEFAULT_INDUSTRY_EI_ROM')
+DEFAULT_INDUSTRY_EI_ELEC = _assumption('industry_intensity',
+                                       'DEFAULT_INDUSTRY_EI_ELEC')
+BEST_PRACTICE_EI_ROM = _assumption('industry_intensity',
+                                   'BEST_PRACTICE_EI_ROM')
+BEST_PRACTICE_EI_ELEC = _assumption('industry_intensity',
+                                    'BEST_PRACTICE_EI_ELEC')
+
+DECLINE_RATE_PHASE1 = _assumption('safeguard', 'DECLINE_RATE_PHASE1')
+DECLINE_RATE_PHASE2 = _assumption('safeguard', 'DECLINE_RATE_PHASE2')
+DECLINE_PHASE1_START = _assumption('safeguard', 'DECLINE_PHASE1_START')
+DECLINE_PHASE1_END = _assumption('safeguard', 'DECLINE_PHASE1_END')
+DECLINE_PHASE2_START = _assumption('safeguard', 'DECLINE_PHASE2_START')
+DECLINE_PHASE2_END = _assumption('safeguard', 'DECLINE_PHASE2_END')
+DECLINE_RATE = DECLINE_RATE_PHASE1
+DECLINE_FROM = DECLINE_PHASE1_START
+DECLINE_TO = DECLINE_PHASE2_END
+SAFEGUARD_THRESHOLD = _assumption('safeguard', 'SAFEGUARD_THRESHOLD')
+SAFEGUARD_MINIMUM_BASELINE = _assumption('safeguard',
+                                         'SAFEGUARD_MINIMUM_BASELINE')
+SAFEGUARD_FINAL_FY = _assumption('safeguard', 'SAFEGUARD_FINAL_FY')
+
+S58B_EARLIEST_FY = _assumption('section_58b', 'S58B_EARLIEST_FY')
+S58B_LOOKBACK = _assumption('section_58b', 'S58B_LOOKBACK')
+S58B_MIN_COVERED = _assumption('section_58b', 'S58B_MIN_COVERED')
+
+GHG_EXPLOSIVES_EF_T_CO2_PER_T = _assumption(
+    'explosives', 'GHG_EXPLOSIVES_EF_T_CO2_PER_T')
+GHG_EXPLOSIVES_EF_KG_CO2_PER_KG = _assumption(
+    'explosives', 'GHG_EXPLOSIVES_EF_KG_CO2_PER_KG')
+
+DEFAULT_TAX_RATE = _assumption('carbon_market', 'DEFAULT_TAX_RATE')
+DEFAULT_TAX_ESCALATION = _assumption('carbon_market', 'DEFAULT_TAX_ESCALATION')
+DEFAULT_EF2_DECLINE_RATE = _assumption('carbon_market',
+                                       'DEFAULT_EF2_DECLINE_RATE')
+
+# A movement is reported only where the prior period is material against the
+# current total.  Below the threshold a percentage swing is arithmetic on
+# noise and reads as a finding.
+MATERIALITY_THRESHOLD = _assumption('materiality', 'MATERIALITY_THRESHOLD')
+
+WEEKS_PER_YEAR = _assumption('periods', 'WEEKS_PER_YEAR')
+
+TRANSITION_SCHEDULE = {int(_year): float(_value) for _year, _value
+                       in _ASSUMPTIONS['transition_schedule'].items()}
+
 
 
 # =============================================================================
 # FISCAL YEAR
 # =============================================================================
 
-NGER_FY_START_MONTH = 7       # July start for NGER reporting
-DEFAULT_FY_START_MONTH = NGER_FY_START_MONTH
 
-DEFAULT_DISPLAY_YEAR = 2025
 DEFAULT_YEAR_TYPE = 'CY'
 DEFAULT_DATA_SOURCE = 'Actual'
 
@@ -50,21 +139,14 @@ DEFAULT_DATA_SOURCE = 'Actual'
 #   1. ROM metal ore (tonnes)
 #   2. Electricity generation (MWh)
 
-FSEI_ELEC = 0.9081            # tCO2-e/MWh site generation (EIF_p for electricity)
-FSEI_ROM = 0.0177             # tCO2-e/t ROM (EIF_p for ROM metal ore)
-SITE_GENERATION_RATIO = 0.008735  # MWh/t ROM (8.735 kWh/t)
 
 # Industry benchmarks â€” Default EI values from Safeguard Rule Schedule 1
 # These are the industry-average emissions intensity values (EI_p in Section 11)
 # Used in hybrid baseline blending with FSEI values above
 # Confirmed by CER October 2024: existing facilities use Default EI (not Best Practice)
-DEFAULT_INDUSTRY_EI_ROM = 0.00859   # tCO2-e/t ROM (industry average)
-DEFAULT_INDUSTRY_EI_ELEC = 0.539    # tCO2-e/MWh (industry average)
 
 # Best Practice EI (for reference only â€” applies to NEW facilities/products)
 # Risk: If EID lapses, existing PVs fall to Best Practice (catastrophic for SMCs)
-BEST_PRACTICE_EI_ROM = 0.00247     # tCO2-e/t ROM
-BEST_PRACTICE_EI_ELEC = 0.236      # tCO2-e/MWh
 
 
 # =============================================================================
@@ -119,30 +201,18 @@ GRID_ELEC_COMMONNAME = 'Grid electricity'
 # This is LINEAR subtraction: ERC = 1 - (n x decline_rate)
 # where n = FY - 2023 (i.e. n=1 for FY2024, the first reform year)
 
-DECLINE_RATE_PHASE1 = 0.049   # 4.9% p.a. (FY2024-FY2030) â€” legislated
-DECLINE_RATE_PHASE2 = 0.03285 # 3.285% p.a. (FY2031-FY2050) â€” indicative
 
 # FY boundaries for decline phases
-DECLINE_PHASE1_START = 2024   # First FY with ERC < 1.0
-DECLINE_PHASE1_END = 2030     # Last FY of Phase 1
-DECLINE_PHASE2_START = 2031
-DECLINE_PHASE2_END = 2050
 
 # Legacy aliases (used in some older code paths)
-DECLINE_RATE = DECLINE_RATE_PHASE1
-DECLINE_FROM = DECLINE_PHASE1_START
-DECLINE_TO = DECLINE_PHASE2_END
 
 # Safeguard thresholds and dates
-SAFEGUARD_THRESHOLD = 100000          # tCO2-e facility threshold
-SAFEGUARD_MINIMUM_BASELINE = 100000   # tCO2-e minimum baseline floor (CER rule)
 SAFEGUARD_START_DATE = datetime(2023, 7, 1)
 
 # s10(3): the baseline emissions number is zero for a financial year
 # beginning after 30 June 2049.  FY2050 begins on 1 July 2049, so FY2050 is
 # the first year that qualifies and the last year carrying a baseline is
 # FY2049.  The model horizon reaches this.
-SAFEGUARD_FINAL_FY = 2050
 SAFEGUARD_DATE = datetime(2023, 7, 1)
 CREDIT_START_DATE = datetime(2023, 7, 1)
 # SMC_EXIT_PERIOD_YEARS removed - s58B lookback replaces hardcoded timer
@@ -159,15 +229,6 @@ CREDIT_START_DATE = datetime(2023, 7, 1)
 # h increases each year, shifting from FSEI toward Default EI.
 # Per CER: transition increases from 10% per year to 20% from FY2027-28.
 
-TRANSITION_SCHEDULE = {
-    2024: 0.10,   # FY2023-24:  10% Default, 90% FSEI
-    2025: 0.20,   # FY2024-25:  20% Default, 80% FSEI
-    2026: 0.30,   # FY2025-26:  30% Default, 70% FSEI
-    2027: 0.40,   # FY2026-27:  40% Default, 60% FSEI
-    2028: 0.60,   # FY2027-28:  60% Default, 40% FSEI  (step-up to 20%/yr)
-    2029: 0.80,   # FY2028-29:  80% Default, 20% FSEI
-    2030: 1.00,   # FY2029-30: 100% Default,  0% FSEI
-}
 
 
 def get_transition_proportion(fy):
@@ -194,9 +255,6 @@ def get_transition_proportion(fy):
 #   1. Date gate: FY must begin after 30 June 2028 (earliest = FY2029)
 #   2. Coverage history: facility covered >= 3 of previous 5 FYs
 
-S58B_EARLIEST_FY = 2029
-S58B_LOOKBACK = 5
-S58B_MIN_COVERED = 3
 
 
 # =============================================================================
@@ -614,8 +672,6 @@ def canonical_department(name):
 
 
 GHG_EXPLOSIVES_SOURCE = 'AGO 2004, Table 11, ANFO detonation'
-GHG_EXPLOSIVES_EF_T_CO2_PER_T = 0.17   # t CO2 per tonne ANFO
-GHG_EXPLOSIVES_EF_KG_CO2_PER_KG = 0.00017  # t CO2 per kg ANFO (data is in kg)
 
 
 # =============================================================================
@@ -626,9 +682,6 @@ DEFAULT_CARBON_CREDIT_PRICE = 35.0
 DEFAULT_CREDIT_ESCALATION = 0.03
 
 DEFAULT_TAX_START_DATE = datetime(2029, 7, 1)
-DEFAULT_TAX_RATE = 48.0           # Lower bound of derived Australian range (OECD modifier method)
-DEFAULT_TAX_ESCALATION = 0.08     # 8% p.a. escalation
-DEFAULT_EF2_DECLINE_RATE = 0.05   # 5% p.a. decline in grid emission factor (NGA EF2) for future years
 
 
 # =============================================================================

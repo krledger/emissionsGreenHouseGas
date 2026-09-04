@@ -55,7 +55,7 @@ import Paths as _PATHS
 import numpy as np
 from typing import Optional, Dict, Any, List
 
-from CalcUnits import UnitError, factor as uom_factor
+from CalcUnits import UnitError, factor as uom_factor, GJ_PER_KWH
 from CalcCalendar import period_filter, year_to_date_range, date_to_fy
 
 # ─────────────────────────────────────────────────────────────────────
@@ -773,7 +773,7 @@ def _get_grid_electricity_gj(precomputed, start_date, end_date, raw_df=None, **k
     if row.empty:
         return None
     kwh = float(row['Grid_Electricity_kWh'].iloc[0])
-    return round(kwh * 0.0036, 2) if kwh > 0 else None
+    return round(kwh * GJ_PER_KWH, 2) if kwh > 0 else None
 
 
 def _get_grid_electricity_kwh(precomputed, start_date, end_date, raw_df=None, **kw):
@@ -791,7 +791,7 @@ def _get_site_electricity_gj(precomputed, start_date, end_date, raw_df=None, **k
     if row.empty:
         return None
     kwh = float(row['Site_Electricity_kWh'].iloc[0])
-    return round(kwh * 0.0036, 2) if kwh > 0 else None
+    return round(kwh * GJ_PER_KWH, 2) if kwh > 0 else None
 
 
 def _get_site_electricity_kwh(precomputed, start_date, end_date, raw_df=None, **kw):

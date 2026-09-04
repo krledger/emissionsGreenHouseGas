@@ -1,0 +1,125 @@
+# Assumptions.yaml
+#
+# Every assumption, rate and threshold the model applies.  A value here
+# is one a person may need to defend, so each carries its unit and what
+# it means.  Nothing in this file is derived: a figure computed from
+# others belongs in a Calc module, not here.
+#
+# Unit conversions are not assumptions and live in Units.yaml.
+
+# ------------------------------------------------------------------
+# Reporting period and display
+# ------------------------------------------------------------------
+reporting:
+  # NGER reporting year starts in July  [month]
+  NGER_FY_START_MONTH: 7
+  # Year the app opens on  [year]
+  DEFAULT_DISPLAY_YEAR: 2025
+
+# ------------------------------------------------------------------
+# Facility emissions intensities (EIF_p)
+# ------------------------------------------------------------------
+facility_intensity:
+  # Facility specific emissions intensity, site generated electricity  [t CO2-e per MWh]
+  FSEI_ELEC: 0.9081
+  # Facility specific emissions intensity, ROM ore  [t CO2-e per t]
+  FSEI_ROM: 0.0177
+  # Site generation per tonne of ROM ore, 8.735 kWh/t  [MWh per t ROM]
+  SITE_GENERATION_RATIO: 0.008735
+
+# ------------------------------------------------------------------
+# Default industry intensities (EI_p)
+# ------------------------------------------------------------------
+industry_intensity:
+  # Industry average intensity for metal ore, Safeguard default  [t CO2-e per t]
+  DEFAULT_INDUSTRY_EI_ROM: 0.00859
+  # Industry average intensity for electricity, Safeguard default  [t CO2-e per MWh]
+  DEFAULT_INDUSTRY_EI_ELEC: 0.539
+  # Best practice intensity for metal ore, comparison only  [t CO2-e per t]
+  BEST_PRACTICE_EI_ROM: 0.00247
+  # Best practice intensity for electricity, comparison only  [t CO2-e per MWh]
+  BEST_PRACTICE_EI_ELEC: 0.236
+
+# ------------------------------------------------------------------
+# Safeguard Mechanism
+# ------------------------------------------------------------------
+safeguard:
+  # 4.9 per cent a year, FY2024 to FY2030, legislated  [proportion per year]
+  DECLINE_RATE_PHASE1: 0.049
+  # 3.285 per cent a year, FY2031 to FY2050, indicative  [proportion per year]
+  DECLINE_RATE_PHASE2: 0.03285
+  # First year with an emissions reduction contribution below one  [financial year]
+  DECLINE_PHASE1_START: 2024
+  # Last year of phase one  [financial year]
+  DECLINE_PHASE1_END: 2030
+  # First year of phase two  [financial year]
+  DECLINE_PHASE2_START: 2031
+  # Last year of phase two  [financial year]
+  DECLINE_PHASE2_END: 2050
+  # Facility threshold for Safeguard coverage  [t CO2-e]
+  SAFEGUARD_THRESHOLD: 100000
+  # Minimum baseline floor, CER rule  [t CO2-e]
+  SAFEGUARD_MINIMUM_BASELINE: 100000
+  # Last year the mechanism is modelled to  [financial year]
+  SAFEGUARD_FINAL_FY: 2050
+
+# ------------------------------------------------------------------
+# Section 58B opt-in eligibility
+# ------------------------------------------------------------------
+section_58b:
+  # Earliest year an opt-in applies  [financial year]
+  S58B_EARLIEST_FY: 2029
+  # Years of history the test considers  [years]
+  S58B_LOOKBACK: 5
+  # Years within the lookback that must be covered  [years]
+  S58B_MIN_COVERED: 3
+
+# ------------------------------------------------------------------
+# Explosives detonation
+# ------------------------------------------------------------------
+explosives:
+  # ANFO detonation, quantities recorded in tonnes  [t CO2 per t]
+  GHG_EXPLOSIVES_EF_T_CO2_PER_T: 0.17
+  # ANFO detonation, quantities recorded in kilograms  [t CO2 per kg]
+  GHG_EXPLOSIVES_EF_KG_CO2_PER_KG: 0.00017
+
+# ------------------------------------------------------------------
+# Carbon market defaults
+# ------------------------------------------------------------------
+carbon_market:
+  # Carbon price the scenario opens on  [AUD per t CO2-e]
+  DEFAULT_TAX_RATE: 48.0
+  # Annual escalation applied to the carbon price  [proportion per year]
+  DEFAULT_TAX_ESCALATION: 0.08
+  # Assumed annual decline in the grid emission factor  [proportion per year]
+  DEFAULT_EF2_DECLINE_RATE: 0.05
+
+# ------------------------------------------------------------------
+# Materiality and presentation thresholds
+# ------------------------------------------------------------------
+materiality:
+  # A movement is shown only where the prior period is at least this share of the current total.  Below it the percentage is noise.  [proportion]
+  MATERIALITY_THRESHOLD: 0.02
+
+# ------------------------------------------------------------------
+# Period definitions
+# ------------------------------------------------------------------
+periods:
+  # Used to annualise a weekly travel pattern  [weeks]
+  WEEKS_PER_YEAR: 52.0
+
+# ------------------------------------------------------------------
+# Hybrid transition schedule, Safeguard Section 11
+# ------------------------------------------------------------------
+# Proportion of the baseline set by the default industry
+# intensity rather than the facility intensity, by financial
+# year.  It rises to one, at which point the facility figure no
+# longer enters the baseline at all.
+transition_schedule:
+  2024: 0.1
+  2025: 0.2
+  2026: 0.3
+  2027: 0.4
+  2028: 0.6
+  2029: 0.8
+  2030: 1.0

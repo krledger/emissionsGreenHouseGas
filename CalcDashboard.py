@@ -29,7 +29,8 @@ from CalcEmissions import dedupe_actual_over_budget as _dedupe
 from Config import (DEFAULT_ACTUALS_TO_DATE, DEFAULT_FORECAST_FROM_DATE,
                     DEFAULT_GRID_CONNECTION_DATE,
                     DEFAULT_END_MINING_DATE, DEFAULT_END_PROCESSING_DATE,
-                    DEFAULT_END_REHABILITATION_DATE)
+                    DEFAULT_END_REHABILITATION_DATE,
+                    MATERIALITY_THRESHOLD)
 
 SCOPE_COLUMNS = ('Scope1', 'Scope2', 'Scope3')
 
@@ -881,7 +882,8 @@ def cost_centre_ranked(df, period_label, top=10, **kwargs):
         prior_totals = prior.groupby('CostCentre', observed=True)['Total'].sum()
         grouped['Prior'] = grouped['CostCentre'].map(prior_totals)
         prior_values = grouped['Prior'].fillna(0)
-        material = prior_values > (grouped['Total'].abs() * 0.02)
+        material = prior_values > (grouped['Total'].abs()
+                                   * MATERIALITY_THRESHOLD)
         grouped['Movement'] = np.where(
             material,
             (grouped['Total'] - prior_values) / prior_values.replace(0, np.nan) * 100.0,

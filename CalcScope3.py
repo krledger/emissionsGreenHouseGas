@@ -90,6 +90,7 @@ DETAIL_COLUMNS = [
 
 from CalcUnits import (TROY_OUNCE_KG, KG_PER_TONNE_CO2E,
                        TONNES_PER_MEGATONNE)
+from Config import WEEKS_PER_YEAR
 
 # Currency, not a unit of measure, so it is named here rather than in
 # CalcUnits.  The capital goods factors are published per million dollars.
@@ -993,7 +994,7 @@ def _category_6(df, reference, rates):
         for leg in air_legs:
             sectors = leg.get('sectors_per_year')
             if sectors is None and leg.get('sectors_per_week') is not None:
-                sectors = float(leg['sectors_per_week']) * 52.0
+                sectors = float(leg['sectors_per_week']) * WEEKS_PER_YEAR
             km = leg.get('km_per_sector')
             if sectors is None or km is None:
                 gaps.append({

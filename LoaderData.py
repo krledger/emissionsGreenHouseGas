@@ -343,6 +343,16 @@ def load_all_data(actual_path=None,
     agg_df['Scope3_tCO2e'] = agg_df['Scope3_tCO2e'].astype('float32')
     agg_df['Energy_GJ'] = agg_df['Energy_GJ'].astype('float32')
 
+    # A column whose values repeat is a category.  Source carries four
+    # distinct values across four hundred thousand rows and Identifier
+    # carries under two thousand, so both are held as codes against one copy
+    # of each value rather than as a string per row.  The saving is
+    # incidental; the point is that every groupby downstream then compares
+    # integers.
+    for _column in ('Source', 'Identifier'):
+        if _column in agg_df.columns and agg_df[_column].dtype == object:
+            agg_df[_column] = agg_df[_column].astype('category')
+
     memory_mb = agg_df.memory_usage(deep=True).sum() / 1024**2
     print(f'Memory optimized: {memory_mb:.2f} MB')
 

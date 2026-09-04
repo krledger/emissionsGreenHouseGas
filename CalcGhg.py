@@ -112,4 +112,12 @@ def build_ghg_frame(nger_df):
         ghg_df.loc[expl_mask, 'NGAFuel'] = 'Explosives'
         ghg_df.loc[expl_mask, 'GHG_Source'] = 'AGO 0.17 t CO₂/t ANFO'
 
+    # Converted last, after the explosives overlay has written its values in.
+    # A category cannot take a value it does not already hold, so narrowing
+    # the column before the last write to it turns a working assignment into
+    # an error.
+    for _column in ('NGAFuel', 'GHG_Source'):
+        if _column in ghg_df.columns and ghg_df[_column].dtype == object:
+            ghg_df[_column] = ghg_df[_column].astype('category')
+
     return ghg_df
