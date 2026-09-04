@@ -24,6 +24,8 @@ import streamlit as st
 
 import CalcGhgCategoryStatus as Status
 import CalcProduction as Production
+import CalcImport as Import
+import LoaderImport as Importer
 import ConfigEdit
 import ExportEmissionsTable as Publisher
 import LoaderCapital
@@ -1784,11 +1786,299 @@ def _lookups_tab(lookups):
         st.rerun()
 
 
+
+# ---------------------------------------------------------------------
+# IMPORT
+# ---------------------------------------------------------------------
+# One table.  A file arrives, every row is placed against what the model
+# already holds, and the table shows whichever rows you ask for.  Nothing is
+# written until the button at the bottom, and the button says what it will do.
+
+OVERWRITE_CHOICES = {
+    'No, stop': 'Nothing is imported while a reported month would move.  '
+                'The safest, and why it is first.',
+    'Ignore them': 'New rows are imported, reported months are left as they '
+                   'are.  Right when the model is correct and the file is '
+                   'not.',
+    'Overwrite them': 'Reported months take the file\'s values.  Right when '
+                      'you know why the source changed.',
+    'Row by row': 'Tick the ones to overwrite in the table.',
+}
+
+VERDICT_MARK = {'rejected': '✕  cannot import', 'questioned': '⚠  look at it',
+                'restated': '↻  already reported', 'new': '✓  new',
+                'unchanged': '·  unchanged'}
+
+IMPORT_FIELDS = ['Date', 'Activity', 'SubActivity', 'Description',
+                 'Department', 'CostCentre', 'UOM', 'Quantity',
+                 'ProductGroup', 'Value']
+
+
+def _live_operations():
+    """The operations file as it stands, read as text so nothing is coerced."""
+    path = os.path.join(DATA_DIR, 'OperationsMetricsActual.csv')
+    if not os.path.exists(path):
+        return pd.DataFrame()
+    return pd.read_csv(path, dtype=str)
+
+
+def page_import():
+    st.subheader('Import')
+    st.caption('Every row of the file, placed against what the model already '
+               'holds.  Nothing is written until the button at the bottom.')
+
+    top = st.columns([3, 1])
+    uploaded = top[0].file_uploader(
+        'Operations file, csv or Excel', type=['csv', 'xlsx', 'xlsm'],
+        key='import_file', label_visibility='collapsed')
+    top[1].download_button(
+        'Blank template', Importer.template().to_csv(index=False),
+        file_name='OperationsImportTemplate.csv', mime='text/csv',
+        width='stretch')
+
+    if uploaded is None:
+        st.info('Choose a file.  It is read and checked here; nothing is '
+                'written until you say so.')
+        return
+
+    try:
+        frame, sheets, sheet = Importer.read(uploaded)
+    except ValueError as exc:
+        st.error(str(exc))
+        return
+
+    # -- the columns, only when they need attention --------------------
+    proposed, spare = Importer.propose(frame.columns)
+    missing = proposed[proposed['Required'] & proposed['Column in file'].eq('')]
+    guessed = proposed[proposed['Matched by'].str.contains('guess')]
+    mapping = proposed
+
+    if not missing.empty or not guessed.empty:
+        with st.expander('Columns need a look', expanded=True):
+            if not missing.empty:
+                st.error('Nothing matched %s, and a row cannot be read '
+                         'without it.' % ', '.join(missing['Field']))
+            if not guessed.empty:
+                st.warning('%d column(s) matched on a partial name.'
+                           % len(guessed))
+            mapping = st.data_editor(
+                proposed, hide_index=True, width='stretch', num_rows='fixed',
+                key='import_mapping',
+                disabled=['Field', 'Required', 'Matched by',
+                          'What it is for'],
+                column_config={
+                    'Column in file': st.column_config.SelectboxColumn(
+                        'Column in file', options=[''] + list(frame.columns),
+                        width='medium'),
+                    'What it is for': st.column_config.TextColumn(
+                        'What it is for', width='large')})
+    else:
+        st.caption('%s: %d rows.  All %d columns matched by name.%s'
+                   % (uploaded.name, len(frame), len(frame.columns) - len(spare),
+                      '  Not used: %s.' % ', '.join(spare) if spare else ''))
+
+    try:
+        staged = Importer.apply_mapping(frame, mapping)
+    except ValueError as exc:
+        st.error(str(exc))
+        return
+
+    work, found, absent = Import.validate(staged, _live_operations())
+    counts = work['Verdict'].value_counts()
+    stopped = Import.blocking(work)
+    restated = work[work['Verdict'] == 'restated']
+
+    tiles = st.columns(6)
+    for tile, bucket in zip(tiles, Import.BUCKETS):
+        number = len(absent) if bucket == 'absent' else int(counts.get(bucket, 0))
+        tile.metric(bucket.title(), f'{number:,}')
+
+    if stopped:
+        st.error('%d row(s) cannot be imported.  Correct them in the table, '
+                 'or they are left out.' % stopped)
+    elif not restated.empty:
+        st.warning('%d row(s) would change a month already reported.'
+                   % len(restated))
+    else:
+        st.success('Every row reads cleanly and nothing already reported '
+                   'would move.')
+
+    # -- the one table --------------------------------------------------
+    choices = ['Needs attention', 'All rows', 'Already reported', 'New',
+               'Unchanged']
+    which = st.radio('Show', choices, horizontal=True, key='import_show',
+                     label_visibility='collapsed')
+
+    if which == 'Needs attention':
+        rows = work[work['Verdict'].isin(['rejected', 'questioned'])]
+    elif which == 'Already reported':
+        rows = restated
+    elif which == 'New':
+        rows = work[work['Verdict'] == 'new']
+    elif which == 'Unchanged':
+        rows = work[work['Verdict'] == 'unchanged']
+    else:
+        rows = work
+
+    policy = 'No, stop'
+    if not restated.empty:
+        policy = st.radio(
+            'If the file changes a month already reported',
+            list(OVERWRITE_CHOICES), horizontal=True, key='import_policy',
+            captions=list(OVERWRITE_CHOICES.values()))
+
+    capped = rows.head(500)
+    if capped.empty:
+        st.caption('No rows in this view.')
+    else:
+        view = capped[['_row', 'Verdict', 'Issue'] + IMPORT_FIELDS].copy()
+        view['Verdict'] = view['Verdict'].map(VERDICT_MARK)
+        # The held value sits beside the file's, which is the whole point of
+        # the screen: a restatement is only visible as two numbers together.
+        view.insert(view.columns.get_loc('Quantity'), 'Held now',
+                    capped['Was'].values)
+        editable = ['Overwrite'] if policy == 'Row by row' else []
+        if editable:
+            view['Overwrite'] = False
+
+        edited = st.data_editor(
+            view, hide_index=True, width='stretch', height=420,
+            num_rows='fixed', key='import_table',
+            disabled=[c for c in view.columns
+                      if c in ('_row', 'Verdict', 'Issue', 'Held now')],
+            column_config={
+                '_row': st.column_config.NumberColumn('Line', width='small',
+                                                      format='%d'),
+                'Verdict': st.column_config.TextColumn('', width='medium'),
+                'Issue': st.column_config.TextColumn('What is wrong',
+                                                     width='large'),
+                'Held now': st.column_config.NumberColumn(
+                    'Held now', format='%.6g', width='small',
+                    help='What the model holds for this row today.  Blank '
+                         'where the row is new.'),
+                'Quantity': st.column_config.TextColumn('In this file',
+                                                        width='small'),
+                'Overwrite': st.column_config.CheckboxColumn(
+                    'Overwrite', width='small'),
+            })
+        if policy == 'Row by row':
+            st.session_state['import_decisions'] = edited
+        if len(rows) > 500:
+            st.caption('Showing the first 500 of %d.' % len(rows))
+
+        if st.button('Re-check with those corrections', key='import_recheck'):
+            for column in IMPORT_FIELDS:
+                staged.loc[edited['_row'] - 2, column] = edited[column].values
+            st.session_state['import_staged'] = staged
+            st.rerun()
+
+    if not absent.empty:
+        with st.expander('%d row(s) the model holds and this file does not'
+                         % len(absent)):
+            st.caption('Left alone.  An import never deletes: a file that '
+                       'arrived short is far commoner than a line that '
+                       'genuinely stopped, and only one of those two '
+                       'mistakes is recoverable.')
+            st.dataframe(absent[['Date', 'SubActivity', 'Description',
+                                 'CostCentre', 'Quantity']].head(100),
+                         hide_index=True, width='stretch', height=200)
+
+    with st.expander('Every finding, one row each (%d)' % len(found)):
+        st.dataframe(found[['Line', 'Column', 'Severity', 'Value', 'Finding']],
+                     hide_index=True, width='stretch', height=280)
+
+    # -- write it -------------------------------------------------------
+    will_add = int(counts.get('new', 0))
+    if policy == 'Overwrite them':
+        will_change = len(restated)
+    elif policy == 'Row by row':
+        decided = st.session_state.get('import_decisions')
+        will_change = (int(decided['Overwrite'].sum())
+                       if decided is not None and 'Overwrite' in decided
+                       else 0)
+    else:
+        will_change = 0
+
+    stop = policy == 'No, stop' and not restated.empty
+    st.divider()
+    if stop:
+        st.error('%d row(s) would change a reported month and the choice is '
+                 'to stop.  Choose what to do with them above.'
+                 % len(restated))
+    else:
+        st.caption('%d new row(s) added, %d reported row(s) overwritten, '
+                   '%d left out as unreadable.  Nothing is deleted.'
+                   % (will_add, will_change, stopped))
+
+    confirm = st.checkbox('I have looked at the rows above',
+                          key='import_confirm')
+    if st.button('Import', type='primary', disabled=stop or not confirm,
+                 key='import_apply'):
+        added, changed = _apply_import(work, policy, uploaded.name)
+        st.success('%d row(s) added, %d overwritten.  Press Rebuild to bring '
+                   'it into the figures.' % (added, changed))
+        _rebuild()
+
+
+def _apply_import(work, policy, filename):
+    """Write the accepted rows into the operations file.
+
+    An import never deletes.  A row the model holds and the file does not is
+    left where it is, because a file that arrived short is far commoner than
+    a line that genuinely stopped, and one of those two mistakes can be
+    undone.
+    """
+    path = os.path.join(DATA_DIR, 'OperationsMetricsActual.csv')
+    live = _live_operations()
+    columns = list(live.columns) if not live.empty else IMPORT_FIELDS
+
+    adding = work[work['Verdict'] == 'new']
+    changed = 0
+
+    if policy == 'Overwrite them':
+        overwrite = work[work['Verdict'] == 'restated']
+    elif policy == 'Row by row':
+        decided = st.session_state.get('import_decisions')
+        keep = (set(decided.loc[decided['Overwrite'], '_row'])
+                if decided is not None and 'Overwrite' in decided else set())
+        overwrite = work[work['_row'].isin(keep)]
+    else:
+        overwrite = work.iloc[0:0]
+
+    if not overwrite.empty:
+        live = live.copy()
+        live['_key'] = Import.row_key(live)
+        replacing = dict(zip(overwrite['_key'], overwrite['Quantity']))
+        touched = live['_key'].isin(replacing)
+        live.loc[touched, 'Quantity'] = live.loc[touched, '_key'].map(replacing)
+        changed = int(touched.sum())
+        live = live.drop(columns=['_key'])
+
+    if not adding.empty:
+        fresh = adding.copy()
+        for column in columns:
+            if column not in fresh.columns:
+                fresh[column] = ''
+        live = pd.concat([live, fresh[columns]], ignore_index=True)
+
+    temporary = path + '.writing'
+    live.to_csv(temporary, index=False, encoding='utf-8')
+    os.replace(temporary, path)
+
+    _record([{'Path': 'OperationsMetricsActual.csv',
+              'From': '%d rows' % (len(live) - len(adding)),
+              'To': '%d rows' % len(live)}],
+            'OperationsMetricsActual.csv',
+            note='Imported %s: %d added, %d overwritten, "%s".'
+                 % (filename, len(adding), changed, policy))
+    return len(adding), changed
+
 # ---------------------------------------------------------------------
 # DIRECTOR
 # ---------------------------------------------------------------------
 
-PAGES = ('Verify', 'Inventory', 'Scope 1 and 2', 'Scope 3', 'Factors',
+PAGES = ('Verify', 'Import', 'Inventory', 'Scope 1 and 2', 'Scope 3',
+         'Factors',
          'Assumptions', 'Capital goods', 'Credits', 'Changes', 'History')
 
 # Pages that read figures and nothing else.  These run off the published
@@ -1893,7 +2183,9 @@ def main():
         return
 
     _, precomputed, table = _inventory()
-    if page == 'Verify':
+    if page == 'Import':
+        page_import()
+    elif page == 'Verify':
         page_verify(precomputed, table)
     elif page == 'Inventory':
         page_explore(table)
