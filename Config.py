@@ -117,6 +117,13 @@ MATERIALITY_THRESHOLD = _assumption('materiality', 'MATERIALITY_THRESHOLD')
 
 WEEKS_PER_YEAR = _assumption('periods', 'WEEKS_PER_YEAR')
 
+GRADE_TOLERANCE = _assumption('verification', 'GRADE_TOLERANCE')
+RECOVERY_TOLERANCE = _assumption('verification', 'RECOVERY_TOLERANCE')
+THROUGHPUT_TOLERANCE = _assumption('verification', 'THROUGHPUT_TOLERANCE')
+RECOVERY_PLAUSIBLE_LOW = _assumption('verification', 'RECOVERY_PLAUSIBLE_LOW')
+RECOVERY_PLAUSIBLE_HIGH = _assumption('verification',
+                                      'RECOVERY_PLAUSIBLE_HIGH')
+
 TRANSITION_SCHEDULE = {int(_year): float(_value) for _year, _value
                        in _ASSUMPTIONS['transition_schedule'].items()}
 

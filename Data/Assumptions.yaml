@@ -109,6 +109,26 @@ periods:
   WEEKS_PER_YEAR: 52.0
 
 # ------------------------------------------------------------------
+# Physical verification against the life of mine plan
+# ------------------------------------------------------------------
+# A build is checked against what the plan says this operation does before it
+# is published.  These say how far apart the two may be.  Within tolerance is
+# agreement; up to twice it is drift worth noting; beyond that the build and
+# the plan disagree and somebody looks before publishing.
+verification:
+  # Head grade and life of mine tonnage, as a proportion of the planned value
+  GRADE_TOLERANCE: 0.2
+  # Metallurgical recovery, as a proportion of the planned recovery
+  RECOVERY_TOLERANCE: 0.1
+  # Throughput against plant rating.  Only exceeding it is a fault: running
+  # below nameplate is an operating decision, running above it is not possible
+  THROUGHPUT_TOLERANCE: 0.05
+  # Outside this band a recovery figure is a timing artefact between two
+  # source series and not a metallurgical result  [per cent]
+  RECOVERY_PLAUSIBLE_LOW: 50.0
+  RECOVERY_PLAUSIBLE_HIGH: 95.0
+
+# ------------------------------------------------------------------
 # Hybrid transition schedule, Safeguard Section 11
 # ------------------------------------------------------------------
 # Proportion of the baseline set by the default industry

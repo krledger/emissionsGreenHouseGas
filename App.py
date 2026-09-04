@@ -54,7 +54,6 @@ from Tab3CarbonTax import render_carbon_tax_tab
 # documents in the About tab.
 from Tab5Query import render_query_tab
 from Tab6Gri import render_gri_tab
-from Tab7Lifecycle import render_lifecycle_tab
 from AboutPanel import render_about
 
 # PAGE CONFIG
@@ -371,13 +370,12 @@ nger_frame = precomputed.annual_fy.copy()
 # TABS — receive pre-computed data, filter and render only
 # ═══════════════════════════════════════════════════════════════════════
 
-tab1, tab2, tab3, tab4, tab6, tab7, tab9 = st.tabs([
+tab1, tab2, tab3, tab4, tab6, tab9 = st.tabs([
     "GHG Emissions",
     "Safeguard Mechanism",
     "GRI 14 Reporting",
     "Carbon Tax Analysis",
     "Data Query",
-    "Lifecycle",
     "About"
 ])
 
@@ -512,19 +510,6 @@ with tab6:
         df, precomputed, nger_frame,
         carbon_credit_price=carbon_credit_price,
         credit_escalation=credit_escalation,
-    )
-
-with tab7:
-    # Display-only view of the physical lifecycle and the wind-down rules that
-    # shape it.  Uses the full dataset, not the selected period, because the
-    # point of the tab is the whole mine life.
-    render_lifecycle_tab(
-        df,
-        start_date=DEFAULT_START_DATE,
-        end_mining_date=end_mining_date,
-        end_processing_date=end_processing_date,
-        end_rehabilitation_date=end_rehabilitation_date,
-        grid_connected_date=DEFAULT_GRID_CONNECTION_DATE,
     )
 
 with tab9:

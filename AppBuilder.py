@@ -23,6 +23,7 @@ import pandas as pd
 import streamlit as st
 
 import CalcGhgCategoryStatus as Status
+import CalcProduction as Production
 import ConfigEdit
 import ExportEmissionsTable as Publisher
 import LoaderCapital
@@ -212,9 +213,9 @@ def _options(series):
 # STATUS
 # ---------------------------------------------------------------------
 
-def page_status(precomputed, table):
-    st.subheader('Build status')
-    st.caption('The build from the current inputs, beside what is published.')
+def page_verify(precomputed, table):
+    st.subheader('Verify')
+    st.caption('Whether this build is safe to publish: that it holds together, that the physicals agree with the plan, and what has moved since the last publication.')
 
     published = Publisher.load_build_log()
     actuals_to = (DEFAULT_ACTUALS_TO_DATE.strftime('%d %b %Y')
@@ -260,6 +261,77 @@ def page_status(precomputed, table):
             st.code('\n'.join(lines), language='text')
         else:
             st.info('Nothing published yet.  Build and publish below.')
+
+    st.divider()
+    st.markdown('**The physicals, against the life of mine plan**')
+    st.caption('Emissions are a function of physicals, so a physical that is '
+               'wrong gives an emissions figure that is wrong and still looks '
+               'reasonable.  What catches that is the plan.')
+
+    checks = Production.plan_checks(precomputed.ghg_df)
+    disagreeing = checks[checks['Verdict'] == 'disagrees']
+    drifting = checks[checks['Verdict'] == 'drifting']
+    if disagreeing.empty and drifting.empty:
+        st.success(f'{len(checks)} physical checks, all agree with '
+                   f'{checks["Plan"].iloc[0]}.')
+    elif disagreeing.empty:
+        st.warning(f'{len(drifting)} of {len(checks)} physical checks are '
+                   f'drifting from the plan.  Worth a look before publishing.')
+    else:
+        st.error(f'{len(disagreeing)} of {len(checks)} physical checks '
+                 f'disagree with the plan.')
+
+    shown = checks.copy()
+    shown['Drift'] = shown['Drift'].apply(
+        lambda value: '' if value is None or pd.isna(value)
+        else f'{value:+.1%}')
+    shown['Measured'] = shown['Measured'].apply(
+        lambda value: '' if value is None or pd.isna(value)
+        else f'{value:,.3g}')
+    shown['Planned'] = shown['Planned'].apply(
+        lambda value: '' if value is None or pd.isna(value)
+        else f'{value:,.3g}')
+    st.dataframe(
+        shown[['Check', 'Measured', 'Planned', 'Unit', 'Drift', 'Verdict',
+               'Means']],
+        hide_index=True, width='stretch',
+        column_config={
+            'Check': st.column_config.TextColumn('Check', width='medium'),
+            'Measured': st.column_config.TextColumn('This build',
+                                                    width='small'),
+            'Planned': st.column_config.TextColumn('Plan', width='small'),
+            'Unit': st.column_config.TextColumn('Unit', width='small'),
+            'Drift': st.column_config.TextColumn('Apart', width='small'),
+            'Verdict': st.column_config.TextColumn('Verdict', width='small'),
+            'Means': st.column_config.TextColumn('What it means',
+                                                 width='large'),
+        })
+    st.caption(f'Plan: {checks["Plan"].iloc[0]}.  Tolerances are in '
+               'Data/Assumptions.yaml.')
+
+    with st.expander('The measures year by year', expanded=False):
+        grade = Production.head_grade(precomputed.ghg_df)
+        recovery = Production.recovery(precomputed.ghg_df)
+        intensity = Production.intensity(precomputed.ghg_df)
+        yearly = pd.DataFrame({
+            'Head grade g/t': grade.round(3),
+            'Recovery %': recovery.round(1),
+            'Scope 1 kg per t ROM': intensity.round(2),
+        })
+        yearly.index.name = 'Year'
+        st.dataframe(yearly, width='stretch')
+        st.caption('An annual recovery is poured over contained in the same '
+                   'year, and those are not the same gold: ore waits on a '
+                   'stockpile and a pour lands after the mill run that made '
+                   'it.  Read the cumulative figure above for the recovery '
+                   'and read this column for how well the two series line up.')
+
+    with st.expander('Activity streams', expanded=False):
+        st.dataframe(Production.continuity(precomputed.ghg_df),
+                     hide_index=True, width='stretch')
+        st.caption('A stream that stops part way through the mine life takes '
+                   'its emissions with it, and the total reads as an '
+                   'abatement nobody achieved.')
 
     st.divider()
     st.markdown('**Reconciliation against the calculation engines**')
@@ -1711,12 +1783,12 @@ def _lookups_tab(lookups):
 # DIRECTOR
 # ---------------------------------------------------------------------
 
-PAGES = ('Status', 'Inventory', 'Scope 1 and 2', 'Scope 3', 'Factors',
+PAGES = ('Verify', 'Inventory', 'Scope 1 and 2', 'Scope 3', 'Factors',
          'Assumptions', 'Capital goods', 'Credits', 'Changes', 'History')
 
 # Pages that read figures and nothing else.  These run off the published
 # file, which is a read rather than a projection.
-FIGURE_PAGES = ('Status', 'Inventory', 'Scope 1 and 2', 'Scope 3', 'Changes')
+FIGURE_PAGES = ('Verify', 'Inventory', 'Scope 1 and 2', 'Scope 3', 'Changes')
 
 
 def _build_controls():
@@ -1816,8 +1888,8 @@ def main():
         return
 
     _, precomputed, table = _inventory()
-    if page == 'Status':
-        page_status(precomputed, table)
+    if page == 'Verify':
+        page_verify(precomputed, table)
     elif page == 'Inventory':
         page_explore(table)
     elif page == 'Scope 1 and 2':

@@ -20,3 +20,4 @@ RetiredOn,WasAt,NowNamed,Reason
 2026-09-04,Data/Cat2RegisterReview.csv,Cat2RegisterReview.csv,"Duplicate of Scope3/Cat2RegisterReview.csv, which the loader reads in preference.  The two differ, so this one is stale."
 2026-09-04,Data/Cat2RegisterReview.csv.enc,Cat2RegisterReview.csv.enc,Encrypted copy of the stale duplicate above.
 2026-09-04,Data/Scope3Inputs.yaml,Scope3Inputs.yaml,"Duplicate of Scope3/Scope3Inputs.yaml, which the loader reads in preference.  The two differ, so this one is stale."
+2026-09-04,Tab7Lifecycle.py,Tab7Lifecycle.py,"A physical sanity check in the reporting app, built when nothing checked the data at entry.  The measures it computed are in CalcProduction and are checked against the life of mine plan on the Builder Verify page, before a figure is published rather than after a reader finds it.  The key dates and wind-down narrative move to the About panel."
