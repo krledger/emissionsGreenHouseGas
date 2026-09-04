@@ -45,7 +45,7 @@ import numpy as np
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
-from LoaderScope3 import load_scope3_reference
+from LoaderReference import load_reference
 from CalcNga import dedupe_actual_over_budget
 
 # ---------------------------------------------------------------------
@@ -134,14 +134,14 @@ def build_scope3(df, reference=None, end_date=None):
         df:        the loaded operations frame from LoaderData.load_all_data(),
                    carrying both datasets with ProductGroup, Value and the
                    Category 3 Scope3_tCO2e column already populated
-        reference: a Scope3Reference; read from disk when not supplied
+        reference: a Reference; read from disk when not supplied
         end_date:  horizon.  Rows beyond it are dropped so the Scope 3 frame
                    covers the same period as the emissions projection
 
     Returns:
         Scope3Result
     """
-    reference = reference or load_scope3_reference()
+    reference = reference or load_reference()
     config = reference.config
 
     work = df.copy()

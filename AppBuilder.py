@@ -37,7 +37,7 @@ from Config import (CREDIT_START_DATE, DECLINE_RATE_PHASE2,
                     DEFAULT_END_REHABILITATION_DATE, DEFAULT_START_DATE,
                     FSEI_ELEC, FSEI_ROM, MILESTONE_SOURCE)
 from LoaderData import load_all_data, load_smc_transactions
-from LoaderScope3 import CONFIG_PATH, load_scope3_reference
+from LoaderReference import CONFIG_PATH, load_reference
 
 st.set_page_config(page_title='Emissions Data Builder', layout='wide',
                    page_icon='⚙️')
@@ -761,7 +761,7 @@ def page_assumptions(reference):
     rows = Status.assumption_rows(reference.config)
     if rows.empty:
         st.error('No assumptions found in the configuration.  If the file '
-                 'looks empty, restore it from `Data/Scope3Inputs.yaml` or '
+                 'looks empty, restore it from `Data/ReferenceInputs.yaml` or '
                  'from the archive under `Data/Published/`.')
         return
 
@@ -1807,7 +1807,7 @@ def main():
         page_factors()
         return
 
-    reference = load_scope3_reference()
+    reference = load_reference()
     if page == 'Capital goods':
         page_capital(reference)
         return

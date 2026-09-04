@@ -15,7 +15,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
 from CalcCalendar import period_filter
-from Tab8Scope3 import render_scope3_panel
+from TabGhgCategories import render_scope3_panel
 import CalcDashboard as dash
 
 # The dashboard defines its own palette below, at SCOPE_HEX.  The constants

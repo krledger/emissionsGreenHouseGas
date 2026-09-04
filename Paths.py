@@ -14,11 +14,14 @@ import os
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(ROOT, 'Data')
-REFERENCE_DIR = os.path.join(ROOT, 'Scope3')
+REFERENCE_DIR = os.path.join(ROOT, 'Reference')
 OUT_DIR = os.path.join(ROOT, 'Out')
 DOCS_DIR = os.path.join(ROOT, 'Documentation')
 TO_DELETE_DIR = os.path.join(ROOT, '_ToDelete_')
+# The publications the factors are imported from, kept beside the data
+# they produced so a factor can always be traced back to its edition.
 NGA_SOURCE_DIR = os.path.join(DATA_DIR, 'NgaSource')
+SPEND_SOURCE_DIR = os.path.join(DATA_DIR, 'SpendBasedSource')
 
 
 def data(*parts):

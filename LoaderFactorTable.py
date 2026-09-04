@@ -27,8 +27,8 @@ import LoaderLookups as Lookups
 from Config import (CLASS_INTERNAL, CLASS_NGA, CLASS_SPEND, FACTOR_CLASSES)
 
 from Paths import ROOT as BASE_DIR
-SCOPE3_DIR = os.path.join(BASE_DIR, 'Scope3')
-FACTORS_PATH = os.path.join(SCOPE3_DIR, 'Factors.csv')
+REFERENCE_DIR = os.path.join(BASE_DIR, 'Reference')
+FACTORS_PATH = os.path.join(REFERENCE_DIR, 'Factors.csv')
 
 COLUMNS = ['FactorID', 'FactorKey', 'Class', 'Source', 'DisplaySource',
            'SourceCode',

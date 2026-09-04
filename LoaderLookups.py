@@ -32,9 +32,9 @@ import os
 import pandas as pd
 
 from Paths import ROOT as BASE_DIR
-SCOPE3_DIR = os.path.join(BASE_DIR, 'Scope3')
-LOOKUPS_PATH = os.path.join(SCOPE3_DIR, 'Lookups.csv')
-PRICE_INDEX_PATH = os.path.join(SCOPE3_DIR, 'PriceIndex.csv')
+REFERENCE_DIR = os.path.join(BASE_DIR, 'Reference')
+LOOKUPS_PATH = os.path.join(REFERENCE_DIR, 'Lookups.csv')
+PRICE_INDEX_PATH = os.path.join(REFERENCE_DIR, 'PriceIndex.csv')
 
 COLUMNS = ['ListName', 'Code', 'Label', 'Dimension', 'EmissionScale',
            'QuantityScale', 'SortOrder', 'Active', 'Notes']

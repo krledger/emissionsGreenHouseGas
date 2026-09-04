@@ -543,8 +543,8 @@ with tab9:
             ("NGER and NGA factors", "Documentation/NgerFactors.md"),
             ("Life of mine milestones", "Data/LOM.yaml"),
             ("Scope 3 parameters", "Data/ConfigScope3.yaml"),
-            ("Scope 3 factors", "Scope3/Factors.csv"),
-            ("Scope 3 items", "Scope3/Items.csv"),
+            ("Scope 3 factors", "Reference/Factors.csv"),
+            ("Scope 3 items", "Reference/Items.csv"),
         ],
         facts={
             "Milestones": MILESTONE_SOURCE,

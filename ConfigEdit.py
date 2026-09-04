@@ -1,6 +1,6 @@
 """Editing a hand-maintained configuration file without destroying it.
 
-`Scope3Inputs.yaml` is maintained by people as much as by this application.
+`ReferenceInputs.yaml` is maintained by people as much as by this application.
 It carries a hundred and eighty comment lines explaining why each assumption
 is what it is, and that explanation is the greater part of its value: a factor
 a reader cannot trace is a factor they cannot check.

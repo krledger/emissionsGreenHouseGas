@@ -11,8 +11,9 @@ ARCHITECTURE (v2):
 
 import streamlit as st
 import pandas as pd
-from CalcPrecompute import build_safeguard_projection
-from Projections import apply_smc_transactions, smc_credit_value_analysis
+from CalcSafeguard import (build_safeguard_projection,
+                           apply_smc_transactions,
+                           smc_credit_value_analysis)
 from LoaderData import load_smc_transactions
 from CalcCalendar import date_to_fy
 from CalcNga import superseded_by_actual

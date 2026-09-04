@@ -17,7 +17,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from CalcPrecompute import build_carbon_tax_projection
+from CalcCarbonTax import build_carbon_tax_projection
 from CalcCalendar import date_to_fy
 from Config import DEFAULT_GRID_CONNECTION_DATE, DEFAULT_EF2_DECLINE_RATE
 

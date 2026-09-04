@@ -26,8 +26,8 @@ import LoaderFactorTable as Factors
 import LoaderLookups as Lookups
 
 from Paths import ROOT as BASE_DIR
-SCOPE3_DIR = os.path.join(BASE_DIR, 'Scope3')
-ITEMS_PATH = os.path.join(SCOPE3_DIR, 'Items.csv')
+REFERENCE_DIR = os.path.join(BASE_DIR, 'Reference')
+ITEMS_PATH = os.path.join(REFERENCE_DIR, 'Items.csv')
 
 COLUMNS = ['ItemID', 'Category', 'Key', 'Description', 'Basis',
            'Quantity_UOM', 'Match_Key', 'FactorKey_Imported',

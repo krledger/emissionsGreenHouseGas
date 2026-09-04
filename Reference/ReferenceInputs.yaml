@@ -1,33 +1,32 @@
 # =============================================================================
-# Scope3Inputs.yaml - Scope 3 assessment parameters.
+# ReferenceInputs.yaml - parameters for the assessed categories.
 #
-# Maintained in PrepData/Scope3/ and distributed with the physicals.  No
-# downstream program holds a Scope 3 value of its own.
+# Holds every value the model cannot derive from the operations physicals: the
+# currency basis, the factor hierarchy, the parameters for categories assessed
+# off external data, and the exclusion register.
 #
-# Holds every value a consumer cannot derive from the operations physicals: the currency basis, the factor hierarchy, the
-# parameters for categories assessed off external data, and the exclusion
-# register.  Factors themselves are built into Scope3Factors.csv by
-# BuildScope3Factors.py; nothing is duplicated here.
+# Factors are not here.  They live in Reference/Factors.csv, one table across
+# all three scopes, with Reference/Items.csv holding what each factor prices.
+# Nothing is duplicated between the two.
 #
 # Method basis: Scope 3 Category Assessment Methods, Ravenswood Gold Pty Ltd.
 # Category numbering follows the GHG Protocol Corporate Value Chain
-# (Scope 3) Accounting and Reporting Standard.
+# (Scope 3) Accounting and Reporting Standard, so a category number here means
+# what that standard says it means.
 # =============================================================================
 
 meta:
   method_document: Scope3CategoryAssessmentMethods.docx
 
-  # The factor table the model reads.  Built from the registers below by
-  # UtilityScope3ToCsv.py, the same relationship NgaFactors.csv has with the
-  # National Greenhouse Account workbooks.  Rebuild it after changing any
-  # register or any factor stated in this file.
-  factor_table: Scope3Factors.csv
+  # The factor table is Reference/Factors.csv, maintained in the Builder and
+  # served against Reference/Items.csv.
+  factor_table: Factors.csv
 
   factor_registers:
-    product_groups: Scope3/ProductGroups.csv  # PrepData/Scope3/
-    epa_naics: Scope3/EpaNaicsFactorMapping.csv
-    exceptions: Scope3/ProductGroupsExceptions.csv
-    capital_factors: Scope3/Cat2FactorMap.csv   # builder only
+    product_groups: ProductGroups.csv
+    epa_naics: EpaNaicsFactorMapping.csv
+    exceptions: ProductGroupsExceptions.csv
+    capital_factors: Cat2FactorMap.csv
     capital_projects: Cat2ProjectScreen.csv
     capital_register: Cat2RegisterReview.csv
     supplier_spend: ApSpendClassification.csv

@@ -35,7 +35,7 @@ def category_status(result, reference):
 
     Args:
         result:    Scope3Result from CalcGhgCategories.build_scope3, or None.
-        reference: Scope3Reference, for the configuration and exclusions.
+        reference: Reference, for the configuration and exclusions.
 
     Returns:
         DataFrame with fifteen rows, in category order.

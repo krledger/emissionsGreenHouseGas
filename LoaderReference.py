@@ -1,5 +1,5 @@
 """
-LoaderScope3.py
+LoaderReference.py
 Reads the Scope 3 inputs distributed by PrepData.
 
 Last updated: 2026-09-02
@@ -18,7 +18,7 @@ left stale in another.
                                 registers in PrepData/Scope3/, exactly as
                                 NgaFactors.csv is built from the National
                                 Greenhouse Account workbooks
-    Data/Scope3Inputs.yaml      assessment parameters and the exclusion
+    Data/ReferenceInputs.yaml      assessment parameters and the exclusion
                                 register: the roster, the travel pattern, the
                                 waste streams, the currency basis and the
                                 projection rule
@@ -63,11 +63,11 @@ DATA_DIR = os.path.join(BASE_DIR, 'Data')
 #
 # Data/ is still searched second, so a file distributed by an older PrepData
 # run keeps working while the move settles.
-SCOPE3_DIR = os.path.join(BASE_DIR, 'Scope3')
-CONFIG_PATH = os.path.join(SCOPE3_DIR, 'Scope3Inputs.yaml')
+REFERENCE_DIR = os.path.join(BASE_DIR, 'Reference')
+CONFIG_PATH = os.path.join(REFERENCE_DIR, 'ReferenceInputs.yaml')
 
 
-def scope3_path(name):
+def reference_path(name):
     """A reference register, in the folder the reference registers live in.
 
     One place, and no fallback.  The fallback this replaced preferred the
@@ -77,7 +77,7 @@ def scope3_path(name):
     which is a question somebody answers rather than a wrong number nobody
     sees.
     """
-    return os.path.join(SCOPE3_DIR, name)
+    return os.path.join(REFERENCE_DIR, name)
 
 
 def prepdata_path(name):
@@ -116,7 +116,7 @@ def parse_factor(text):
 
 def _read_csv(relative, locate=None, **kwargs):
     """Read a register from the folder that owns it."""
-    path = (locate or scope3_path)(relative)
+    path = (locate or reference_path)(relative)
     if not os.path.exists(path):
         return None
     return pd.read_csv(path, **kwargs)
@@ -173,7 +173,7 @@ class FxTable:
         return pd.to_datetime(actual['quarter_end']).max()
 
 
-class Scope3Reference:
+class Reference:
     """Everything CalcGhgCategories.py needs, read once."""
 
     def __init__(self, config, factors, product_groups, epa_naics, exceptions,
@@ -396,7 +396,7 @@ class Scope3Reference:
         return f'{base}; factors in USD{year}; {tail}'
 
 
-def load_scope3_reference(config_path=None):
+def load_reference(config_path=None):
     """Read the parameter file and every register it names.
 
     A missing register is recorded on the returned object rather than raised,
@@ -411,12 +411,12 @@ def load_scope3_reference(config_path=None):
     except FileNotFoundError:
         config = {}
         errors.append(
-            f'Scope3Inputs.yaml not found at {config_path}.  It is distributed '
+            f'ReferenceInputs.yaml not found at {config_path}.  It is distributed '
             f'by PrepData; check Data/PrepData.txt requests it and rerun the '
             f'pipeline.')
     except yaml.YAMLError as exc:
         config = {}
-        errors.append(f'Scope3Inputs.yaml is not valid YAML: {exc}')
+        errors.append(f'ReferenceInputs.yaml is not valid YAML: {exc}')
 
     registers = (config.get('meta', {}) or {}).get('factor_registers', {}) or {}
 
@@ -424,7 +424,7 @@ def load_scope3_reference(config_path=None):
         relative = registers.get(key, default_relative)
         frame = _read_csv(relative)
         if frame is None:
-            errors.append(f'{key}: not found at {scope3_path(relative)}')
+            errors.append(f'{key}: not found at {reference_path(relative)}')
             return pd.DataFrame()
         return frame
 
@@ -486,7 +486,7 @@ def load_scope3_reference(config_path=None):
             f'total is not reliable.')
     fx = FxTable(fx_frame)
 
-    reference = Scope3Reference(
+    reference = Reference(
         config=config,
         factors=factors,
         product_groups=product_groups,

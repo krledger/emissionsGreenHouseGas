@@ -28,20 +28,20 @@ import pandas as pd
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional
 
-from Projections import (
-    build_projection, apply_smc_transactions, smc_credit_value_analysis
+from Projections import build_projection
+from CalcSafeguard import (
+    apply_smc_transactions, smc_credit_value_analysis
 )
 from LoaderData import load_smc_transactions
 from LoaderNga import NGAFactorsByYear
-from CalcNga import (
-    build_year_factor_map, build_safeguard_source_table,
-    build_safeguard_production_table
+from CalcNga import build_year_factor_map
+from CalcSafeguard import (
+    build_safeguard_source_table, build_safeguard_production_table
 )
 from CalcCalendar import date_to_fy, aggregate_by_year_type, detect_year_type
 from CalcGhg import build_ghg_frame
 from CalcGhgCategories import build_scope3, add_other_categories_to_annual
 from CalcUnits import TONNES_PER_MEGATONNE, KWH_PER_MWH
-
 
 
 @dataclass
@@ -302,76 +302,6 @@ def _aggregate_annual(monthly, year_type='FY'):
         annual['Phase'] = 'Unknown'
 
     return annual
-
-
-# ─────────────────────────────────────────────────────────────────────
-# LIGHTWEIGHT POST-COMPUTATION (sidebar-dependent, runs fast)
-# ─────────────────────────────────────────────────────────────────────
-
-def build_safeguard_projection(precomputed, year_type,
-                               credit_start_fy, carbon_credit_price,
-                               credit_escalation):
-    """Build the annual safeguard projection with SMC transactions and valuation.
-
-    Fast — operates on pre-aggregated annual data, no raw data processing.
-
-    Args:
-        precomputed: PrecomputedData
-        year_type: 'FY' or 'CY' (Safeguard always forces FY)
-        credit_start_fy: First FY credits earned
-        carbon_credit_price: Initial SMC price
-        credit_escalation: Annual escalation rate (decimal)
-
-    Returns:
-        Annual projection DataFrame with SMC values applied
-    """
-    # Safeguard always uses FY
-    annual = precomputed.annual_fy.copy()
-
-    # Apply registry transactions (issuances, sales, surrenders)
-    if not precomputed.smc_transactions.empty:
-        annual = apply_smc_transactions(annual, precomputed.smc_transactions)
-
-    # Apply credit value escalation
-    annual = smc_credit_value_analysis(
-        annual, credit_start_fy, carbon_credit_price, credit_escalation
-    )
-
-    return annual
-
-
-def build_carbon_tax_projection(annual, precomputed,
-                                tax_start_fy=None, tax_rate=None, tax_escalation=None,
-                                include_scope2=False, state='QLD',
-                                ef2_decline_rate=0.05):
-    """Build carbon tax analysis from annual data frame.
-
-    Fast — no raw data processing.  Scope 2 EF lookup uses the
-    pre-loaded NGAFactorsByYear instance.
-
-    Args:
-        annual: Annual projection DataFrame (selected by caller)
-        precomputed: PrecomputedData (for NGA factor lookup)
-        tax_start_fy: First FY tax applies
-        tax_rate: Initial rate $/tCO2-e
-        tax_escalation: Annual escalation (decimal)
-        include_scope2: Include electricity pass-through (sensitivity)
-        state: NEM state for EF2 lookup
-        ef2_decline_rate: Annual grid decarbonisation rate
-
-    Returns:
-        Annual DataFrame with tax columns
-    """
-    from Projections import carbon_tax_analysis
-
-    annual = annual.copy()
-
-    return carbon_tax_analysis(
-        annual, tax_start_fy, tax_rate, tax_escalation,
-        nga_by_year=precomputed.nga_by_year if include_scope2 else None,
-        state=state,
-        ef2_decline_rate=ef2_decline_rate
-    )
 
 
 def get_annual(precomputed, year_type=None, start_date=None):

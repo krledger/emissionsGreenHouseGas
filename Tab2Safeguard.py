@@ -13,7 +13,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from CalcPrecompute import build_safeguard_projection
+from CalcSafeguard import build_safeguard_projection
 from CalcCalendar import date_to_fy
 from Config import (
     DECLINE_RATE_PHASE1, DECLINE_PHASE1_START, DECLINE_PHASE2_END,

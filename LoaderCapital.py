@@ -40,8 +40,8 @@ __all__ = [
 ]
 
 from Paths import ROOT as BASE_DIR
-SCOPE3_DIR = os.path.join(BASE_DIR, 'Scope3')
-REGISTER_PATH = os.path.join(SCOPE3_DIR, 'CapitalGoodsRegister.csv')
+REFERENCE_DIR = os.path.join(BASE_DIR, 'Reference')
+REGISTER_PATH = os.path.join(REFERENCE_DIR, 'CapitalGoodsRegister.csv')
 
 STATUSES = ('Forecast', 'Actual', 'Cancelled')
 

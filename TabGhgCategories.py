@@ -1,5 +1,5 @@
 """
-Tab8Scope3.py
+TabGhgCategories.py
 Scope 3 composition, rendered inside the GHG emissions view.
 Last updated: 2026-09-02
 
@@ -438,7 +438,7 @@ def render_scope3_panel(result, year_type='CY', display_year=None,
                 'held for an hour, so clear the cache and rerun.  Use the '
                 'Streamlit menu, top right, then Clear cache, then R.  If it '
                 'persists, check that Data/ConfigScope3.yaml, '
-                'Data/Scope3Inputs.yaml and Data/Scope3Factors.csv are '
+                'Data/ReferenceInputs.yaml and Data/Scope3Factors.csv are '
                 'present.  Both are distributed by PrepData.')
         return
 
