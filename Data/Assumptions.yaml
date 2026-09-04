@@ -129,6 +129,25 @@ verification:
   RECOVERY_PLAUSIBLE_HIGH: 95.0
 
 # ------------------------------------------------------------------
+# Importing a file
+# ------------------------------------------------------------------
+# What makes a row worth stopping on.  Set too tight and every month is a
+# wall of warnings nobody reads; set too loose and a unit change reaches a
+# published figure.
+import_checks:
+  # A quantity this many times the line's own usual figure is questioned.
+  # Against the line's own history, not against everything, because a drum
+  # of reagent and a month of diesel were never comparable
+  IMPORT_SPIKE_MULTIPLE: 10.0
+  # Below this a multiple means nothing: three units against a usual of
+  # one tenth is a three hundred fold jump and is also nothing  [quantity]
+  IMPORT_SPIKE_MINIMUM: 1.0
+  # A row already in the model counts as restated once it moves by more than
+  # this.  Not zero, because a file round trip through a spreadsheet moves
+  # the last decimal place and that is not a restatement  [proportion]
+  IMPORT_RESTATE_TOLERANCE: 0.0001
+
+# ------------------------------------------------------------------
 # Hybrid transition schedule, Safeguard Section 11
 # ------------------------------------------------------------------
 # Proportion of the baseline set by the default industry

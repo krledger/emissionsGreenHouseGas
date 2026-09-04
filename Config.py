@@ -124,6 +124,11 @@ RECOVERY_PLAUSIBLE_LOW = _assumption('verification', 'RECOVERY_PLAUSIBLE_LOW')
 RECOVERY_PLAUSIBLE_HIGH = _assumption('verification',
                                       'RECOVERY_PLAUSIBLE_HIGH')
 
+IMPORT_SPIKE_MULTIPLE = _assumption('import_checks', 'IMPORT_SPIKE_MULTIPLE')
+IMPORT_SPIKE_MINIMUM = _assumption('import_checks', 'IMPORT_SPIKE_MINIMUM')
+IMPORT_RESTATE_TOLERANCE = _assumption('import_checks',
+                                       'IMPORT_RESTATE_TOLERANCE')
+
 TRANSITION_SCHEDULE = {int(_year): float(_value) for _year, _value
                        in _ASSUMPTIONS['transition_schedule'].items()}
 

@@ -1,0 +1,22 @@
+Kind,What
+planted fault,Quantity is not a number: thousands separator
+planted fault,Quantity is blank
+planted fault,Activity is blank
+planted fault,Date is unreadable
+planted fault,Unit is not one the model knows
+planted fault,Activity is not in the vocabulary
+planted fault,"Negative quantity, which is a credit note or a sign error"
+planted fault,Quantity is fifty times the same line last month
+planted fault,"Unit changed from kL to L, so the number is a thousand times larger and means the same thing"
+planted fault,Department is not one the model knows
+planted fault,Cost centre is blank
+planted fault,"Product group is not in the register, so nothing prices it"
+planted fault,Exact duplicate of another row in this file
+planted fault,Exact duplicate of another row in this file
+planted fault,A product group that is genuinely new and needs a factor
+restated July,Diesel quantity raised 18 per cent in a month already reported (41.2779 -> 48.7079)
+restated July,Electricity lowered 8 per cent in a month already reported (10721553.0 -> 9863828.76)
+restated July,"Cost centre moved on a reported row, which moves the department total (Grade Control -> Operations Administration)"
+restated July,A row reported last time is absent from this file (Diesel / DIESEL FUEL BULK -> absent)
+ordinary,"1111 August rows, July repeated with quantities up 4 per cent"
+ordinary,1107 July rows unchanged
