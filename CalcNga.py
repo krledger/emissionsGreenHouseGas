@@ -1,5 +1,5 @@
 """
-CalcEmissions.py
+CalcNga.py
 Emissions calculation functions for Ravenswood Gold
 Last updated: 2026-02-10
 

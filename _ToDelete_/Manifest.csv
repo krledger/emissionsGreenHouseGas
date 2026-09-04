@@ -13,3 +13,10 @@ RetiredOn,WasAt,NowNamed,Reason
 2026-09-03,Scope3/Cat4Comparison.csv,Cat4Comparison.csv,A working comparison of Category 4 methods.  Nothing read it.
 2026-09-03,DataLoading.log,DataLoading.log,A 1.3 MB run log left in the repository root.
 2026-09-03,national-greenhouse-accounts-factors-2026.xlsx,national-greenhouse-accounts-factors-2026.xlsx,Byte identical duplicate of NationalGreenhouseAccountFactors2026.xlsx.
+2026-09-04,Data/ApSpendClassification.csv,ApSpendClassification.csv,"Duplicate of Scope3/ApSpendClassification.csv, which the loader reads in preference.  Identical content, but two copies of a register is one too many."
+2026-09-04,Data/ApSpendClassification.csv.enc,ApSpendClassification.csv.enc,Encrypted copy of the duplicate above.
+2026-09-04,Data/Cat2ProjectScreen.csv,Cat2ProjectScreen.csv,"Duplicate of Scope3/Cat2ProjectScreen.csv, which the loader reads in preference.  The two differ, so this one is stale."
+2026-09-04,Data/Cat2ProjectScreen.csv.enc,Cat2ProjectScreen.csv.enc,Encrypted copy of the stale duplicate above.
+2026-09-04,Data/Cat2RegisterReview.csv,Cat2RegisterReview.csv,"Duplicate of Scope3/Cat2RegisterReview.csv, which the loader reads in preference.  The two differ, so this one is stale."
+2026-09-04,Data/Cat2RegisterReview.csv.enc,Cat2RegisterReview.csv.enc,Encrypted copy of the stale duplicate above.
+2026-09-04,Data/Scope3Inputs.yaml,Scope3Inputs.yaml,"Duplicate of Scope3/Scope3Inputs.yaml, which the loader reads in preference.  The two differ, so this one is stale."

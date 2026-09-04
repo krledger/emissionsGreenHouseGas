@@ -12,7 +12,7 @@ factor and the source it came from.
                           denominators every intensity is read against
 
 This module calculates nothing.  Every figure in the table has already been
-computed by CalcEmissions or CalcScope3; what happens here is a projection of
+computed by CalcNga or CalcGhgCategories; what happens here is a projection of
 those results into one shape, so there is one emissions source of truth and
 not one per view.  If a number in this table disagrees with the engine that
 produced it, this module is wrong.
@@ -30,7 +30,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from CalcEmissions import resolve_factor_key
+from CalcNga import resolve_factor_key
 from CalcUnits import KG_PER_TONNE_CO2E
 from Config import (FACTOR_SET_NGA, GHG_EXPLOSIVES_EF_T_CO2_PER_T,
                     GHG_EXPLOSIVES_SOURCE, canonical_factor_source,

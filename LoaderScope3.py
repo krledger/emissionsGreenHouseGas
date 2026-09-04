@@ -35,7 +35,7 @@ The registers carry a factor and its unit in one field, for example
 "0.974 kg/USD" or "2.12 t/t".  parse_factor() splits them so the number and
 the unit stay together and neither is guessed.  "In-code (NGA)" is not a
 number; it marks a group whose emissions are computed from NGA factors in
-CalcEmissions.py and must not be charged again on spend.
+CalcNga.py and must not be charged again on spend.
 """
 
 import os
@@ -68,10 +68,25 @@ CONFIG_PATH = os.path.join(SCOPE3_DIR, 'Scope3Inputs.yaml')
 
 
 def scope3_path(name):
-    """Locate an emissions-owned Scope 3 input, preferring the owned folder."""
-    owned = os.path.join(SCOPE3_DIR, name)
-    if os.path.exists(owned):
-        return owned
+    """A reference register, in the folder the reference registers live in.
+
+    One place, and no fallback.  The fallback this replaced preferred the
+    reference folder and quietly accepted a copy under Data, which meant two
+    copies of the same register could drift apart with nothing to say which
+    one the model was reading.  A missing register is now a missing file,
+    which is a question somebody answers rather than a wrong number nobody
+    sees.
+    """
+    return os.path.join(SCOPE3_DIR, name)
+
+
+def prepdata_path(name):
+    """An input PrepData supplies, which lands in Data.
+
+    The exchange rate table is not a register somebody maintains here; it
+    arrives with the operational data and belongs beside it.  Naming the two
+    folders separately is what stops one file being looked for in both.
+    """
     return os.path.join(DATA_DIR, name)
 
 # Marks a product group computed from NGA factors elsewhere in the model.
@@ -99,8 +114,9 @@ def parse_factor(text):
     return float(match.group(1)), match.group(2).strip() or None
 
 
-def _read_csv(relative, **kwargs):
-    path = scope3_path(relative)
+def _read_csv(relative, locate=None, **kwargs):
+    """Read a register from the folder that owns it."""
+    path = (locate or scope3_path)(relative)
     if not os.path.exists(path):
         return None
     return pd.read_csv(path, **kwargs)
@@ -158,7 +174,7 @@ class FxTable:
 
 
 class Scope3Reference:
-    """Everything CalcScope3.py needs, read once."""
+    """Everything CalcGhgCategories.py needs, read once."""
 
     def __init__(self, config, factors, product_groups, epa_naics, exceptions,
                  capital_factors, capital_projects, capital_register,
@@ -312,7 +328,7 @@ class Scope3Reference:
                 'Excluded': code in excluded or basis == 'in-code',
                 'ExcludeReason': excluded.get(
                     code,
-                    'Computed from NGA factors in CalcEmissions.py'
+                    'Computed from NGA factors in CalcNga.py'
                     if basis == 'in-code' else None),
             })
 
@@ -408,7 +424,7 @@ def load_scope3_reference(config_path=None):
         relative = registers.get(key, default_relative)
         frame = _read_csv(relative)
         if frame is None:
-            errors.append(f'{key}: not found at Data/{relative}')
+            errors.append(f'{key}: not found at {scope3_path(relative)}')
             return pd.DataFrame()
         return frame
 
@@ -456,10 +472,18 @@ def load_scope3_reference(config_path=None):
     exceptions = pd.DataFrame()
     capital_factors = pd.DataFrame()
 
+    # The exchange rate table comes from PrepData with the operational data,
+    # so it is read from Data and not from the reference folder.  Without it
+    # every spend based factor is converted at whatever the fallback rate is,
+    # which is a difference of tens of thousands of tonnes and no warning on
+    # the face of the result.
     fx_relative = (config.get('meta', {}) or {}).get('reference_fx', 'ReferenceFx.csv')
-    fx_frame = _read_csv(fx_relative)
+    fx_frame = _read_csv(fx_relative, locate=prepdata_path)
     if fx_frame is None:
-        errors.append(f'reference_fx: not found at Data/{fx_relative}')
+        errors.append(
+            f'reference_fx: {fx_relative} was not found in Data.  Spend based '
+            f'factors are converted at the fallback rate and the Scope 3 '
+            f'total is not reliable.')
     fx = FxTable(fx_frame)
 
     reference = Scope3Reference(

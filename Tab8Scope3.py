@@ -5,9 +5,9 @@ Last updated: 2026-09-02
 
 ARCHITECTURE:
     Display only, per the file conventions.  Every figure here is produced by
-    the view aggregations in CalcScope3.py and arrives as a frame; this module
+    the view aggregations in CalcGhgCategories.py and arrives as a frame; this module
     filters nothing, sums nothing and derives no share.  It formats and it
-    plots.  CalcGhg.py is untouched: Scope 3 maths lives in CalcScope3.py.
+    plots.  CalcGhg.py is untouched: Scope 3 maths lives in CalcGhgCategories.py.
 
     There is no Scope 3 tab.  Scope 3 is one line of the inventory and is
     reported as one figure on the GHG view; this panel sits under it, closed,
@@ -29,11 +29,11 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from CalcScope3 import (
+from CalcGhgCategories import (
     CATEGORY_NAMES,
     annual_frame,
+    category_headline,
     category_totals,
-    headline,
     implied_intensity_table,
     method_register,
     outstanding_table,
@@ -116,7 +116,7 @@ def _layout(figure, title, ylab, height=420):
 def _render_headline(result, year_type, display_year, period_label):
     st.subheader('Scope 3 position')
 
-    summary = headline(result, year_type, display_year)
+    summary = category_headline(result, year_type, display_year)
     if summary is None:
         st.info(f'No Scope 3 data for {period_label}.')
         return

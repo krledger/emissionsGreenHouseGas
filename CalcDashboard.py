@@ -25,7 +25,7 @@ import numpy as np
 import pandas as pd
 
 from CalcUnits import TONNES_PER_MEGATONNE, KG_PER_TONNE
-from CalcEmissions import dedupe_actual_over_budget as _dedupe
+from CalcNga import dedupe_actual_over_budget as _dedupe
 from Config import (DEFAULT_ACTUALS_TO_DATE, DEFAULT_FORECAST_FROM_DATE,
                     DEFAULT_GRID_CONNECTION_DATE,
                     DEFAULT_END_MINING_DATE, DEFAULT_END_PROCESSING_DATE,

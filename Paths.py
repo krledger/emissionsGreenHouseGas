@@ -17,7 +17,7 @@ DATA_DIR = os.path.join(ROOT, 'Data')
 REFERENCE_DIR = os.path.join(ROOT, 'Scope3')
 OUT_DIR = os.path.join(ROOT, 'Out')
 DOCS_DIR = os.path.join(ROOT, 'Documentation')
-SUPERSEDED_DIR = os.path.join(ROOT, 'Superseded')
+TO_DELETE_DIR = os.path.join(ROOT, '_ToDelete_')
 NGA_SOURCE_DIR = os.path.join(DATA_DIR, 'NgaSource')
 
 

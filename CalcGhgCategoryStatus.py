@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from CalcScope3 import CATEGORY_NAMES
+from CalcGhgCategories import CATEGORY_NAMES
 
 __all__ = ['CATEGORY_STATUSES', 'category_status', 'assumption_rows']
 
@@ -34,7 +34,7 @@ def category_status(result, reference):
     """One row per category: position, basis, tonnes and what is outstanding.
 
     Args:
-        result:    Scope3Result from CalcScope3.build_scope3, or None.
+        result:    Scope3Result from CalcGhgCategories.build_scope3, or None.
         reference: Scope3Reference, for the configuration and exclusions.
 
     Returns:
@@ -176,20 +176,3 @@ def assumption_rows(config):
                 pass
     return pd.DataFrame(rows)
 
-
-def save_config(*_args, **_kwargs):
-    """Removed.  Use ConfigEdit.set_values.
-
-    This used to serialise the parsed configuration back over the file.  That
-    destroys every comment in it, and the comments are the greater part of the
-    file: they carry why each assumption is what it is.  It also truncated the
-    file before serialising, so a value the dumper could not represent - a
-    numpy scalar out of a data editor, for one - emptied the file and wrote
-    nothing back.
-
-    `ConfigEdit.set_values` changes the line carrying the value and leaves the
-    rest of the file byte for byte as it was.
-    """
-    raise NotImplementedError(
-        'Use ConfigEdit.set_values, which edits the line rather than '
-        'rewriting the document.')

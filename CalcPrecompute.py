@@ -33,13 +33,13 @@ from Projections import (
 )
 from LoaderData import load_smc_transactions
 from LoaderNga import NGAFactorsByYear
-from CalcEmissions import (
+from CalcNga import (
     build_year_factor_map, build_safeguard_source_table,
     build_safeguard_production_table
 )
 from CalcCalendar import date_to_fy, aggregate_by_year_type, detect_year_type
 from CalcGhg import build_ghg_frame
-from CalcScope3 import build_scope3, add_other_categories_to_annual
+from CalcGhgCategories import build_scope3, add_other_categories_to_annual
 from CalcUnits import TONNES_PER_MEGATONNE, KWH_PER_MWH
 
 
@@ -79,7 +79,7 @@ class PrecomputedData:
     ghg_annual_fy: pd.DataFrame = field(default_factory=pd.DataFrame)
     ghg_annual_cy: pd.DataFrame = field(default_factory=pd.DataFrame)
 
-    # --- Scope 3, all fifteen categories (Scope3Result from CalcScope3) ---
+    # --- Scope 3, all fifteen categories (Scope3Result from CalcGhgCategories) ---
     # Every GHG Protocol category except 3, which is already on the frames
     # above.  Deliberately separate: Scope 3 sits outside the Safeguard
     # baseline and the NGER position, so no tab reading those fields sees it.

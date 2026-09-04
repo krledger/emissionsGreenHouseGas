@@ -43,7 +43,7 @@ from Config import (
 )
 from CalcCalendar import date_to_fy, series_to_fy, fy_to_date_range
 from LoaderNga import NGAFactorsByYear
-from CalcEmissions import (build_year_factor_map, apply_emissions_to_df,
+from CalcNga import (build_year_factor_map, apply_emissions_to_df,
                            merge_key_column, superseded_by_actual)
 from CalcUnits import KWH_PER_MWH
 
@@ -150,7 +150,7 @@ def build_projection(df, dataset='Actual',
 def recalculate_emissions(data, nga_by_year):
     """Recalculate emissions from adjusted quantities.
 
-    Uses shared build_year_factor_map + apply_emissions_to_df from CalcEmissions.py
+    Uses shared build_year_factor_map + apply_emissions_to_df from CalcNga.py
     to ensure identical calculation logic between actuals and budget.
     """
     result = data.copy()

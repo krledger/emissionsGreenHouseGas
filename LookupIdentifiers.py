@@ -7,7 +7,7 @@ The OperationsMetrics CSVs were restructured to remove embedded NGA/GRI
 references.  This lookup restores the derived columns needed by downstream
 code:
 
-    NGAFuel     — NGA factor key for CalcEmissions.py
+    NGAFuel     — NGA factor key for CalcNga.py
     CommonName  — Normalised grouping key for GRI 14 export
     RowType     — Classification: fuel, electricity, production, consumption, revenue
 
@@ -46,7 +46,7 @@ import pandas as pd
 # =====================================================================
 # Each entry: (Activity, SubActivity) → dict of derived columns.
 #
-# NGAFuel: Must match a key in CalcEmissions.build_year_factor_map().
+# NGAFuel: Must match a key in CalcNga.build_year_factor_map().
 #          Empty string means no emission factor applies (production,
 #          consumable, or electricity already accounted via fuel).
 #
@@ -431,7 +431,7 @@ IDENTIFIER_LOOKUP = {
 #
 # Neither carries an NGA emission factor.  Stores lines are Category 1
 # purchased goods, priced rather than measured, and are assessed on spend by
-# product group in CalcScope3.py.  Headcount is a driver, in FTE, and produces
+# product group in CalcGhgCategories.py.  Headcount is a driver, in FTE, and produces
 # no emission of its own; it is the basis for the Category 7 commuting
 # estimate.
 

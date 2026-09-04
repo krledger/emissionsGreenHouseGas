@@ -1,5 +1,5 @@
 """
-CalcScope3.py
+CalcGhgCategories.py
 Scope 3 emissions across the fifteen GHG Protocol categories.
 
 Last updated: 2026-09-02
@@ -14,7 +14,7 @@ Regulatory and method basis:
 
 Boundary
 --------
-Category 3 is computed at transaction level in CalcEmissions.py and carried on
+Category 3 is computed at transaction level in CalcNga.py and carried on
 the Scope3_tCO2e column.  That column feeds the Safeguard baseline and the
 NGER position, so nothing here writes to it.  Every other category is produced
 on its own frame, and only the total GHG view adds the two together.
@@ -46,7 +46,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
 from LoaderScope3 import load_scope3_reference
-from CalcEmissions import dedupe_actual_over_budget
+from CalcNga import dedupe_actual_over_budget
 
 # ---------------------------------------------------------------------
 # CATEGORY REGISTER
@@ -1290,7 +1290,7 @@ def period_detail(result, year_type, year):
     return result.detail[result.detail[year_column(year_type)] == year]
 
 
-def headline(result, year_type, year):
+def category_headline(result, year_type, year):
     """Totals for one reporting year: upstream, downstream, total, Cat 3 share."""
     annual = annual_frame(result, year_type)
     if annual.empty:

@@ -15,7 +15,7 @@ from CalcPrecompute import build_safeguard_projection
 from Projections import apply_smc_transactions, smc_credit_value_analysis
 from LoaderData import load_smc_transactions
 from CalcCalendar import date_to_fy
-from CalcEmissions import superseded_by_actual
+from CalcNga import superseded_by_actual
 from Config import DEFAULT_GRID_CONNECTION_DATE, CREDIT_START_DATE
 import os
 

@@ -1074,7 +1074,7 @@ _METHODOLOGY = {
     'scope1_site':        'Single facility.  Site total = facility total.',
     'scope2_total':       'Location-based: Grid kWh x NGA Scope 2 EF for QLD (kgCO2-e/kWh) / 1000.',
     'scope2_site':        'Single facility.  Location-based method, QLD grid factor.',
-    'scope3_total':       'Gross Scope 3, all fifteen GHG Protocol categories: Category 3 from NGA indirect factors and grid transmission and distribution losses, plus the other fourteen from CalcScope3.  See Documentation/Scope3Method.md.',
+    'scope3_total':       'Gross Scope 3, all fifteen GHG Protocol categories: Category 3 from NGA indirect factors and grid transmission and distribution losses, plus the other fourteen from CalcGhgCategories.  See Documentation/Scope3Method.md.',
     'scope3_categories':  'Count of the fifteen categories carrying a figure for the period.  Every category is considered; those reporting nil are stated with their reason in Documentation/Scope3Method.md.',
     'scope1_biogenic':    'Biogenic CO2 is reported separately and is not included in gross Scope 1.  The facility has no material biogenic source, so the figure is nil, stated rather than omitted.',
     'ei_scope1_rom':      'Scope 1 tCO2-e / ROM ore tonnes.  Operational control boundary.',

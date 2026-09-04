@@ -22,7 +22,7 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
-import CalcScope3Status as Status
+import CalcGhgCategoryStatus as Status
 import ConfigEdit
 import ExportEmissionsTable as Publisher
 import LoaderCapital

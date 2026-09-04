@@ -9,7 +9,7 @@ PRINCIPLES:
 - Enrich with NGAFuel/CommonName/RowType via LookupIdentifiers.py
 - Construct MatchKey from SubActivity for cross-dataset merging
 - Aggregate to monthly level by Description/Department/CostCentre
-- Calculate emissions using CalcEmissions.py
+- Calculate emissions using CalcNga.py
 - Return ONE enriched DataFrame
 - STRICT VALIDATION: bad dates, non-numeric quantities raise errors
   The source file must be correct — loader does not silently fix data
@@ -18,7 +18,7 @@ New CSV schema (2026-03 restructure):
     Activity, SubActivity, Description, Identifier columns replace
     the old embedded NGAFuel/CommonName/RowType columns.
     LookupIdentifiers.py maps (Activity, SubActivity) back to the
-    derived columns needed by CalcEmissions and GRI export.
+    derived columns needed by CalcNga and GRI export.
 
 Identifier field:
     Budget CSV:  Budget|SubActivity|CostCentre  (structured composite key)
@@ -39,7 +39,7 @@ ProductGroup and Value (2026-08 PrepData change):
     on operations report and legacy rows, and the budget CSV does not carry
     either column at all.  The loader creates them where absent so the two
     frames concatenate, and carries them through aggregation, which is what
-    makes spend-based Scope 3 possible in CalcScope3.py.
+    makes spend-based Scope 3 possible in CalcGhgCategories.py.
 
 Output columns:
     Year, Month, FY, DataSet, Activity, SubActivity, Description,
@@ -58,7 +58,7 @@ from Config import (NGER_FY_START_MONTH, DIESEL_TRANSPORT_COSTCENTRES,
 from CalcUnits import canonical as canonical_uom
 from LookupIdentifiers import enrich_with_lookup
 from LoaderNga import NGAFactorsByYear
-from CalcEmissions import (
+from CalcNga import (
     build_year_factor_map,
     apply_emissions_to_df
 )
@@ -297,7 +297,7 @@ def load_all_data(actual_path=None,
         raise
 
     # 6. CALCULATE EMISSIONS
-    # Uses shared factor builder and emission applicator from CalcEmissions.py
+    # Uses shared factor builder and emission applicator from CalcNga.py
     # This ensures LoaderData (actuals) and Projections (budget/forecast) use identical logic.
     print(f'\nCalculating emissions...')
 

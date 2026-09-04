@@ -51,7 +51,7 @@ def build_ghg_frame(nger_df):
     the input is not modified.
 
     Args:
-        nger_df: DataFrame from LoaderData / CalcEmissions pipeline.
+        nger_df: DataFrame from LoaderData / CalcNga pipeline.
                  Must contain columns: CommonName, Quantity, Scope1_tCO2e,
                  NGAFuel, UOM.
 

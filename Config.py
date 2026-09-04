@@ -175,7 +175,7 @@ DIESEL_TRANSPORT_NGAFUEL = 'Diesel oil-Cars and light commercial vehicles'
 # =============================================================================
 # The OperationsMetrics CSVs now use Activity/SubActivity instead of embedded
 # Description keys.  These constants replace the old CostCentre/Description
-# matching patterns used in Projections.py and CalcEmissions.py.
+# matching patterns used in Projections.py and CalcNga.py.
 
 # ROM ore identification: SubActivity == 'Ore ROM' replaces CostCentre == 'ROM'
 ROM_SUBACTIVITY = 'Ore ROM'
