@@ -24,7 +24,9 @@ import os
 import pandas as pd
 
 import LoaderLookups as Lookups
-from Config import (CLASS_INTERNAL, CLASS_NGA, CLASS_SPEND, FACTOR_CLASSES)
+from Config import (CLASS_INTERNAL, CLASS_NGA, CLASS_SPEND,
+                    CLASS_INDUSTRY, FACTOR_CLASSES,
+                    EDITABLE_CLASSES)
 
 from Paths import ROOT as BASE_DIR
 REFERENCE_DIR = os.path.join(BASE_DIR, 'Reference')
@@ -186,3 +188,13 @@ def summary(frame=None):
             .agg(Identities=('FactorKey', 'nunique'),
                  Releases=('FactorID', 'size')).reset_index()
             .sort_values(['Class', 'Source']))
+
+
+def editable(frame):
+    """Which rows a person may change.
+
+    One rule, in one place, so a screen cannot decide differently from a
+    saver.  A factor is editable where the number is this company's own
+    research and stands on no authoritative source, and nowhere else.
+    """
+    return frame['Class'].isin(EDITABLE_CLASSES)

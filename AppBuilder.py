@@ -1477,10 +1477,12 @@ def _factors_tab(factors, items, lookups):
         shown = shown[haystack.str.contains(term, case=False, na=False,
                                             regex=False)]
 
-    editable = shown['Class'] == FactorTable.CLASS_INTERNAL
+    editable = FactorTable.editable(shown)
     st.caption(f'{len(shown):,} of {len(factors):,} releases.  '
-               f'{int(editable.sum())} are Internal and editable here; the '
-               'rest are used as published.')
+               f'{int(editable.sum())} stand on our own research and may be '
+               'edited here.  The rest are published figures, or derived from '
+               'one by a published conversion, and are used as published: we '
+               'set neither the factor, nor the price index, nor the rate.')
 
     st.markdown('**Used as published**')
     fixed = shown[~editable]
@@ -1493,7 +1495,7 @@ def _factors_tab(factors, items, lookups):
     st.markdown('**Maintained here**')
     own = shown[editable]
     if own.empty:
-        st.caption('No Internal factors in this filter.')
+        st.caption('Nothing in this filter is ours to edit.')
     else:
         edited = _maintain(
             own[FACTOR_VIEW], key='internal_factors', height=260,
@@ -1573,10 +1575,13 @@ def _add_factor(factors, lookups):
     looks published and is not.
     """
     with st.expander('Add a factor'):
-        st.caption('An Internal factor is this company\'s own: a physical '
-                   'factor standing in for a spend proxy, a supplier figure, '
-                   'a converted band.  It needs a source, because a number '
-                   'without one cannot be disclosed.')
+        st.caption('Only our own research is added here: a figure this '
+                   'company derived and stands behind, resting on no '
+                   'authoritative source.  A published factor arrives by '
+                   'import carrying its publication\'s own identity, and a '
+                   'conversion of one is still that publication\'s.  It '
+                   'still needs a source, because a number without one '
+                   'cannot be disclosed.')
         with st.form('add_factor'):
             top = st.columns(3)
             source = top[0].text_input(

@@ -409,10 +409,22 @@ def factor_region(source, stated=''):
     return _REGION_BY_SET.get(factor_set(source), REGION_UNSTATED)
 
 
+# Class says which publication governs a factor, and that decides whether it
+# may be edited.  A factor derived from a publication by a published
+# conversion is still that publication's: we choose neither the factor, nor
+# the price index, nor the exchange rate, so there is nothing here to defend
+# a different value with.  Only our own research is ours to change.
 CLASS_INTERNAL = 'Internal'
+CLASS_INDUSTRY = 'Industry'
 CLASS_NGA = 'NGA'
 CLASS_SPEND = 'Spend-based'
-FACTOR_CLASSES = (CLASS_INTERNAL, CLASS_NGA, CLASS_SPEND)
+FACTOR_CLASSES = (CLASS_NGA, CLASS_SPEND, CLASS_INDUSTRY,
+                  CLASS_INTERNAL)
+
+# The only class a person may edit.  Everything else is used as
+# published, and shown greyed rather than hidden, because a locked
+# figure somebody can still read is what makes the lock credible.
+EDITABLE_CLASSES = (CLASS_INTERNAL,)
 
 _SPEND_SETS = (FACTOR_SET_EPA, FACTOR_SET_EPA_MARGIN)
 
