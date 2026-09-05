@@ -31,6 +31,10 @@ EXPECTED = [
     ('Source', False, 'The system it came from.'),
     ('Identifier', False, 'The source system reference.'),
     ('ProductGroup', False, 'What points the row at a factor.'),
+    ('TransactionType', False,
+     'What the source system calls this movement: an issue, a return, a '
+     'cycle count adjustment.  Optional, and where it is present a negative '
+     'stops being a question.'),
     ('Value', False, 'Spend in dollars, where the row carries any.'),
     ('Mass_kg', False, 'Mass, where the row carries any.'),
 ]
@@ -54,6 +58,9 @@ SYNONYMS = {
     'identifier': 'Identifier', 'id': 'Identifier', 'ref': 'Identifier',
     'materialnumber': 'Identifier',
     'productgroup': 'ProductGroup', 'group': 'ProductGroup',
+    'transactiontype': 'TransactionType', 'trantype': 'TransactionType',
+    'movementtype': 'TransactionType', 'txntype': 'TransactionType',
+    'documenttype': 'TransactionType', 'postingtype': 'TransactionType',
     'value': 'Value', 'spend': 'Value', 'cost': 'Value', 'aud': 'Value',
     'masskg': 'Mass_kg', 'mass': 'Mass_kg', 'weight': 'Mass_kg',
 }
@@ -160,3 +167,48 @@ def apply_mapping(frame, mapping):
 def template():
     """An empty file in the shape the import expects, to hand out."""
     return pd.DataFrame(columns=[field for field, _, _ in EXPECTED])
+
+
+# The shapes a month arrives in.  A monthly file has no day in it, so
+# Aug-2026 is what the source means and 1/8/2026 is only how this model
+# stores it.  Day first everywhere, because that is what the operations file
+# uses and 3/8/2026 has to mean August.
+MONTH_FORMATS = ('%b-%Y', '%b %Y', '%B-%Y', '%B %Y', '%Y-%m', '%m-%Y',
+                 '%b-%y', '%Y%m')
+
+
+def read_dates(series):
+    """Dates as timestamps, whatever sensible shape they arrived in.
+
+    Returns the parsed dates and the format that read them, so a screen can
+    say how it understood the column rather than leaving somebody to guess
+    whether 3/8 was March or August.
+    """
+    text = series.fillna('').astype(str).str.strip()
+    parsed = pd.to_datetime(text, dayfirst=True, errors='coerce',
+                            format='mixed')
+    if parsed.notna().all():
+        return parsed, 'day first'
+
+    # Whichever month format reads the most of what is left wins, rather
+    # than the first one that reads anything: a column of Aug-2026 should not
+    # be claimed by a pattern that happens to match one row of it.
+    best, best_read, best_name = parsed, parsed.notna().sum(), 'day first'
+    for pattern in MONTH_FORMATS:
+        attempt = pd.to_datetime(text, format=pattern, errors='coerce')
+        read = attempt.notna().sum()
+        if read > best_read:
+            best, best_read, best_name = attempt, read, pattern
+    if best_name == 'day first':
+        return parsed, 'day first'
+    return best.fillna(parsed), 'month only (%s)' % best_name
+
+
+def as_model_dates(series):
+    """A date column in the shape the operations file stores.
+
+    A month with no day becomes the first of that month, which is what every
+    row in the operations file already is.
+    """
+    parsed, how = read_dates(series)
+    return parsed.dt.strftime('%-d/%-m/%Y').where(parsed.notna(), ''), how

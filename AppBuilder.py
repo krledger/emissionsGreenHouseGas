@@ -1820,7 +1820,7 @@ ROW_TINT = {'rejected': 'background-color: #FDEDEC',
 
 IMPORT_FIELDS = ['Date', 'Activity', 'SubActivity', 'Description',
                  'Department', 'CostCentre', 'UOM', 'Quantity',
-                 'ProductGroup', 'Value']
+                 'ProductGroup', 'Value', 'Source', 'TransactionType']
 
 SHOWN = ['Line', 'Verdict', 'What is wrong', 'Held now'] + IMPORT_FIELDS
 
@@ -1982,7 +1982,9 @@ def page_import():
                                                       format='%d'),
                 'Verdict': st.column_config.TextColumn('', width='small'),
                 'What is wrong': st.column_config.TextColumn(
-                    'What is wrong', width='large'),
+                    'What is wrong', width='large',
+                    help='The first finding.  Select the row to read every '
+                         'finding against it in full.'),
                 'Held now': st.column_config.NumberColumn(
                     'Held now', format='%.6g', width='small',
                     help='What the model holds for this row today.'),
@@ -1992,7 +1994,7 @@ def page_import():
         if len(rows) > 500:
             st.caption('Showing the first 500 of %d.' % len(rows))
 
-        _fix_panel(selection, view, capped)
+        _fix_panel(selection, view, capped, found)
 
     if not absent.empty:
         with st.expander('%d row(s) the model holds and this file does not'
@@ -2060,102 +2062,99 @@ def page_import():
         _rebuild()
 
 
-def _fix_panel(selection, view, capped):
-    """Correct the selected cell, or the same field across selected rows.
+def _fix_panel(selection, view, capped, found):
+    """The selected row, whole, with everything known against it.
 
-    A panel rather than an editable cell, because the things worth knowing
-    while making the correction, what is wrong, what the model holds and what
-    the file says, do not fit inside one.
+    One panel for both ways in.  A clicked cell says which field to point at;
+    a selected row says nothing more than which row.  Either way the whole
+    line is shown, because the fault named in one column is often corrected
+    in another and nobody can tell which without the rest of the row.
     """
     state = getattr(selection, 'selection', None) or {}
     cells = list(getattr(state, 'cells', None) or state.get('cells') or [])
     picked = list(getattr(state, 'rows', None) or state.get('rows') or [])
     fixes = _corrections()
 
+    position, pointed = None, None
     if cells:
-        position, column = cells[0]
-        if column not in IMPORT_FIELDS:
-            st.caption('That column is not part of the file.  Click a cell in '
-                       'one of the data columns to change it.')
-            return
-        line = int(view.at[position, 'Line'])
-        with st.form('fix_cell'):
-            st.markdown('**Line %d, %s**' % (line, column))
-            trouble = str(view.at[position, 'What is wrong'])
-            if trouble:
-                st.caption(trouble)
-            replacement = st.text_input(
-                'Value', value=str(view.at[position, column]),
-                key='fix_value')
-            left, right = st.columns(2)
-            if left.form_submit_button('Apply', type='primary'):
-                fixes[(line, column)] = replacement
-                st.rerun()
-            if right.form_submit_button('Undo this correction'):
-                fixes.pop((line, column), None)
-                st.rerun()
-        return
-
-    # One row: the whole row, every field, in a form.  Which is how a person
-    # actually fixes a line, because the fault named in one column is often
-    # corrected in another: a quantity that reads wrong because the unit is.
-    if len(picked) == 1:
+        position, pointed = cells[0][0], cells[0][1]
+    elif len(picked) == 1:
         position = picked[0]
-        line = int(view.at[position, 'Line'])
-        wrong = {column for column, _ in
-                 _fields_at_fault(view.at[position, 'What is wrong'])}
-        with st.form('fix_row'):
-            st.markdown('**Line %d**' % line)
-            trouble = str(view.at[position, 'What is wrong'])
-            if trouble:
-                st.caption(trouble)
-            held = view.at[position, 'Held now']
-            if pd.notna(held):
-                st.caption('The model holds %s for this row today.'
-                           % f'{held:,.6g}')
-            entered = {}
-            for block in range(0, len(IMPORT_FIELDS), 3):
-                columns = st.columns(3)
-                for slot, column in zip(columns,
-                                        IMPORT_FIELDS[block:block + 3]):
-                    entered[column] = slot.text_input(
-                        column, value=str(view.at[position, column]),
-                        key='row_%s' % column)
-            left, right = st.columns(2)
-            if left.form_submit_button('Apply to this row', type='primary'):
-                for column, value in entered.items():
-                    if value != str(view.at[position, column]):
-                        fixes[(line, column)] = value
-                st.rerun()
-            if right.form_submit_button('Undo corrections on this row'):
-                for column in IMPORT_FIELDS:
-                    fixes.pop((line, column), None)
-                st.rerun()
+
+    if position is not None:
+        _row_form(position, pointed, view, capped, found, fixes)
         return
 
     if picked:
-        lines = [int(view.at[position, 'Line']) for position in picked]
-        with st.form('fix_rows'):
-            st.markdown('**%d rows selected**' % len(lines))
-            st.caption('Set one field to the same value on all of them.  The '
-                       'ordinary case is a handful of rows sharing one fault.')
-            column = st.selectbox('Field', IMPORT_FIELDS, key='bulk_field')
-            replacement = st.text_input('Value for all of them',
-                                        key='bulk_value')
-            left, right = st.columns(2)
-            if left.form_submit_button('Apply to all', type='primary'):
-                for line in lines:
-                    fixes[(line, column)] = replacement
-                st.rerun()
-            if right.form_submit_button('Undo on these rows'):
-                for line in lines:
-                    fixes.pop((line, column), None)
-                st.rerun()
+        _bulk_form(picked, view, fixes)
         return
 
-    st.caption('Select a row to open it for editing, click a coloured '
-               'cell to change just that one, or select several rows to '
-               'set the same field on all of them.')
+    st.caption('Select a row, or click any cell in it, to see the whole line '
+               'and everything known against it.')
+
+
+def _row_form(position, pointed, view, capped, found, fixes):
+    """One line: what is wrong with it, what the model holds, every field."""
+    line = int(view.at[position, 'Line'])
+    verdict = str(capped.iloc[position]['Verdict'])
+
+    against = found[found['Line'] == line] if not found.empty else found
+    if len(against):
+        for _, finding in against.iterrows():
+            speak = {'rejected': st.error, 'questioned': st.warning,
+                     'restated': st.info}.get(finding['Severity'], st.info)
+            speak('**%s**  %s' % (finding['Column'], finding['Finding']))
+    else:
+        st.success('Nothing is wrong with this row.  It is %s.' % verdict)
+
+    held = view.at[position, 'Held now']
+    if pd.notna(held):
+        st.caption('The model holds %s for this row today, and this file says '
+                   '%s.' % (f'{held:,.6g}', view.at[position, 'Quantity']))
+    if pointed and pointed in IMPORT_FIELDS:
+        st.caption('You clicked %s.  The whole row is below, because the '
+                   'column at fault is not always the column to change.'
+                   % pointed)
+
+    with st.form('fix_row_%d' % line):
+        st.markdown('**Line %d**' % line)
+        entered = {}
+        for block in range(0, len(IMPORT_FIELDS), 3):
+            columns = st.columns(3)
+            for slot, column in zip(columns, IMPORT_FIELDS[block:block + 3]):
+                entered[column] = slot.text_input(
+                    column, value=str(view.at[position, column]),
+                    key='row_%d_%s' % (line, column))
+        left, right = st.columns(2)
+        if left.form_submit_button('Apply to this row', type='primary'):
+            for column, value in entered.items():
+                if value != str(view.at[position, column]):
+                    fixes[(line, column)] = value
+            st.rerun()
+        if right.form_submit_button('Undo corrections on this row'):
+            for column in IMPORT_FIELDS:
+                fixes.pop((line, column), None)
+            st.rerun()
+
+
+def _bulk_form(picked, view, fixes):
+    """One field, the same value, across every selected row."""
+    lines = [int(view.at[position, 'Line']) for position in picked]
+    with st.form('fix_rows'):
+        st.markdown('**%d rows selected**' % len(lines))
+        st.caption('Set one field to the same value on all of them.  Select a '
+                   'single row instead to see that line in full.')
+        column = st.selectbox('Field', IMPORT_FIELDS, key='bulk_field')
+        replacement = st.text_input('Value for all of them', key='bulk_value')
+        left, right = st.columns(2)
+        if left.form_submit_button('Apply to all', type='primary'):
+            for line in lines:
+                fixes[(line, column)] = replacement
+            st.rerun()
+        if right.form_submit_button('Undo on these rows'):
+            for line in lines:
+                fixes.pop((line, column), None)
+            st.rerun()
 
 
 def _fields_at_fault(trouble):

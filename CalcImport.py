@@ -32,6 +32,7 @@ person can act on.  "Invalid" is not a finding.
 import numpy as np
 import pandas as pd
 
+import LoaderImport
 import LoaderLookups as Lookups
 from Config import (IMPORT_SPIKE_MULTIPLE, IMPORT_SPIKE_MINIMUM,
                     IMPORT_RESTATE_TOLERANCE)
@@ -48,6 +49,13 @@ IDENTITY = ('Date', 'Activity', 'SubActivity', 'Description', 'Department',
 MANDATORY = ('Date', 'Activity', 'SubActivity', 'UOM', 'Quantity')
 
 BUCKETS = ('rejected', 'questioned', 'restated', 'absent', 'new', 'unchanged')
+
+# What a source system calls a movement that is not consumption.  A negative
+# declared as one of these is not a question: it is a stock movement doing
+# exactly what it says.  Matched loosely because every system words it
+# differently and none of them will change to suit this model.
+ADJUSTMENT_WORDS = (r'adjust|return|reversal|credit|cycle\s*count|'
+                    r'stocktake|write[\s-]?(off|back)|correction')
 
 
 def _text(series):
@@ -104,11 +112,18 @@ def validate(staged, live=None, lookups=None):
             })
 
     # -- can it be read at all -----------------------------------------
-    dates = pd.to_datetime(work['Date'], dayfirst=True, errors='coerce')
+    # A monthly file may carry no day at all.  Aug-2026 is a perfectly clear
+    # month and refusing it because it is not 1/8/2026 would be pedantry.
+    dates, how = LoaderImport.read_dates(work['Date'])
     note(dates.isna(), 'Date', 'rejected',
-         'The date cannot be read.  Dates in this file are day first, as '
-         '1/8/2026.')
+         'The date cannot be read.  A day, as 1/8/2026, or a month, as '
+         'Aug-2026, are both understood.')
     work['_date'] = dates
+    work['_date_read_as'] = how
+    # Stored the way the operations file stores it, so a month with no day
+    # becomes the first of that month like every row already there.
+    written = dates.dt.strftime('%-d/%-m/%Y')
+    work['Date'] = written.where(dates.notna(), work['Date'])
 
     for column in MANDATORY:
         if column in ('Date', 'Quantity'):
@@ -150,6 +165,66 @@ def validate(staged, live=None, lookups=None):
          'No cost centre, so this emission has nowhere to sit in the '
          'departmental view.')
 
+    # Which system a row came from.  Three feed this model and a fourth
+    # would be a pipeline change nobody mentioned, not a row to wave through.
+    if 'Source' in work.columns and live is not None \
+            and 'Source' in live.columns:
+        systems = set(_text(live['Source']))
+        stated = _text(work['Source'])
+        note(stated.eq(''), 'Source', 'questioned',
+             'No source system, so there is nothing to trace this row back '
+             'to.')
+        note(stated.ne('') & ~stated.isin(systems), 'Source', 'questioned',
+             'Not one of the systems this model reads (%s).  Either a new '
+             'feed or a spelling.' % ', '.join(sorted(systems)))
+
+    # A row whose description says it is a total.  Two quite different
+    # things wear that word.  INV03 uses "Total Other" for a residual
+    # bucket: whatever in a sub-activity was not itemised, carrying its own
+    # OTHER| identifier and its own quantity.  A spreadsheet uses it for a
+    # sum of the rows above, and importing that alongside those rows counts
+    # everything twice.
+    #
+    # They are told apart by arithmetic rather than by the word.  If the
+    # total equals the sum of its neighbours it is the second kind.
+    aggregate = _text(work['Description']).str.contains(
+        'total', case=False, na=False)
+
+    if aggregate.any():
+        grouping = ['Date', 'Activity', 'SubActivity', 'CostCentre', 'UOM']
+        held = [column for column in grouping if column in work.columns]
+        if held:
+            parts = (work[~aggregate].groupby(held)['_quantity']
+                     .agg(['sum', 'size']))
+            for position in work.index[aggregate]:
+                key = tuple(work.at[position, column] for column in held)
+                if key not in parts.index:
+                    continue
+                beside, how_many = parts.loc[key, 'sum'], parts.loc[key, 'size']
+                stated = quantity[position]
+                if not beside or pd.isna(stated) or how_many < 2:
+                    continue
+                if abs(stated - beside) <= abs(beside) * 0.02:
+                    findings.append({
+                        'Line': int(work.at[position, '_row']),
+                        'Column': 'Quantity', 'Severity': 'questioned',
+                        'Finding': 'This row says Total and its quantity '
+                                   'equals the sum of the %d other rows '
+                                   'beside it (%s).  If it is a spreadsheet '
+                                   'total, importing it counts them all '
+                                   'twice.' % (how_many, f'{beside:,.6g}'),
+                        'Value': f'{stated:,.6g}',
+                        '_key': work.at[position, '_key'],
+                    })
+
+    # Fuel in a bucket is priced without anybody being able to say what was
+    # burned.  Right where the sub-activity is right, and untraceable either
+    # way, which is worth knowing rather than discovering during an audit.
+    burned = aggregate & _text(work['Activity']).eq('Combustion')
+    note(burned, 'Description', 'questioned',
+         'An aggregate line, and it is fuel, so it is priced without saying '
+         'what was burned.  Nothing here can check it against an invoice.')
+
     units = set(Lookups.values('Unit', lookups, active_only=False))
     if live is not None and 'UOM' in live.columns:
         units |= set(_text(live['UOM']))
@@ -185,10 +260,32 @@ def validate(staged, live=None, lookups=None):
                          .groupby(history['_k']).min().lt(0))
         work['_k2'] = work['_k']
         first_negative = negative & ~work['_k'].map(ever_negative).fillna(False)
-        note(first_negative, 'Quantity', 'questioned',
-             'A negative quantity on a line that has never carried one.  A '
-             'credit note is fine and a sign error is not, and they look the '
-             'same from here.')
+        # Every negative in the operations history comes from INV03 and most
+        # are Stores, with the value negative alongside the quantity: a stock
+        # return or a cycle count, which is ordinary and nets out in the
+        # month.  Saying so means the reader knows what they are confirming.
+        values = pd.to_numeric(work.get('Value'), errors='coerce') \
+            if 'Value' in work.columns else pd.Series(index=work.index,
+                                                      dtype=float)
+        # Where the file says what the movement was, that settles it.  A
+        # declared adjustment is not a question, and asking about one every
+        # month is how a warning stops being read.
+        declared = (_text(work['TransactionType'])
+                    if 'TransactionType' in work.columns
+                    else pd.Series('', index=work.index))
+        adjustment = declared.str.contains(
+            ADJUSTMENT_WORDS, case=False, na=False, regex=True)
+
+        returned = first_negative & values.lt(0) & ~adjustment
+        odd = first_negative & ~values.lt(0) & ~adjustment
+        note(returned, 'Quantity', 'questioned',
+             'A negative quantity on a line that has never carried one.  The '
+             'value is negative too, so this looks like a stock return or a '
+             'cycle count, and the file does not say which.')
+        note(odd, 'Quantity', 'questioned',
+             'A negative quantity on a line that has never carried one, and '
+             'the value is not negative with it.  A return credits both, so '
+             'one of the two is wrong.')
         spike = (quantity.abs() > usual.abs() * IMPORT_SPIKE_MULTIPLE) & \
                 (quantity.abs() > IMPORT_SPIKE_MINIMUM) & usual.notna() & \
                 (usual.abs() > 0)
@@ -242,17 +339,45 @@ def validate(staged, live=None, lookups=None):
              'Not a product group the register carries, so no factor prices '
              'this row and it will count as physicals only.')
 
-    # -- the same line twice in one file --------------------------------
+    # -- the same line more than once in one file ------------------------
+    # Two different problems wear the same shape.  Where the repeats agree on
+    # the quantity it is a duplicate and importing them all counts the line
+    # more than once.  Where they disagree the file is contradicting itself,
+    # and nothing here can say which figure is meant, which is the worse of
+    # the two and was being described in the words of the milder one.
     twice = work['_key'].duplicated(keep=False) & work['_key'].ne('')
     for key, group in work[twice].groupby('_key'):
-        lines = ', '.join(str(int(v)) for v in group['_row'])
-        for position in group.index:
+        ordered = group.sort_values('_row')
+        first = int(ordered.iloc[0]['_row'])
+        others = [int(v) for v in ordered['_row'][1:]]
+        values = [str(v).strip() for v in ordered['Quantity']]
+        agree = len(set(values)) == 1
+
+        for position in ordered.index:
+            line = int(work.at[position, '_row'])
+            if agree:
+                if line == first:
+                    what = ('Repeated on line%s %s of this file.  This is the '
+                            'first of them and the one that imports; the '
+                            'others are left out.'
+                            % ('' if len(others) == 1 else 's',
+                               ', '.join(str(v) for v in others)))
+                else:
+                    what = ('The same line as line %d, same quantity.  '
+                            'Importing both would count it twice.' % first)
+            else:
+                shown = ' and '.join(
+                    '%s on line %d' % (value, int(row))
+                    for value, row in zip(values, ordered['_row']))
+                what = ('This file gives this one line two different '
+                        'quantities: %s.  Nothing here can say which is '
+                        'meant.' % shown)
             findings.append({
-                'Line': int(work.at[position, '_row']),
-                'Column': 'Description', 'Severity': 'questioned',
-                'Finding': 'The same line appears on lines %s of this file.  '
-                           'Importing both counts it twice.' % lines,
-                'Value': str(work.at[position, 'Description'])[:60],
+                'Line': line,
+                'Column': 'Quantity' if not agree else 'Description',
+                'Severity': 'questioned',
+                'Finding': what,
+                'Value': str(work.at[position, 'Quantity'])[:60],
                 '_key': key,
             })
 
@@ -314,6 +439,13 @@ def validate(staged, live=None, lookups=None):
                     '_key': row['_key'],
                 })
 
+    # What the comparison against the model concluded, before any finding
+    # rewrites it below.  The suppression at the end needs this and not the
+    # rewritten value: an unchanged row carrying an old negative becomes
+    # 'questioned' in the loop below and then no longer looks unchanged to
+    # the thing meant to leave it alone.
+    work['Standing'] = work['Verdict']
+
     # -- the verdict per row, worst finding wins ------------------------
     found = pd.DataFrame(findings) if findings else pd.DataFrame(
         columns=['Line', 'Column', 'Severity', 'Finding', 'Value', '_key'])
@@ -332,10 +464,21 @@ def validate(staged, live=None, lookups=None):
     # are genuinely arriving.  Rejections still stand: a row that cannot be
     # read cannot be waved through on the grounds of being familiar.
     if not found.empty:
-        settled_rows = set(work.loc[work['Verdict'] == 'unchanged', '_row'])
+        settled_rows = set(work.loc[work['Standing'] == 'unchanged', '_row'])
         found = found[~((found['Line'].isin(settled_rows))
                         & (found['Severity'] == 'questioned'))]
         found = found.reset_index(drop=True)
+
+        work['Verdict'] = work['Standing']
+        order = {'rejected': 0, 'questioned': 1, 'restated': 2}
+        if not found.empty:
+            ranked = (found[found['Severity'].isin(order)]
+                      .assign(_rank=lambda f: f['Severity'].map(order))
+                      .sort_values('_rank').groupby('Line').first())
+            for line, row in ranked.iterrows():
+                position = work.index[work['_row'] == line]
+                if len(position):
+                    work.loc[position, 'Verdict'] = row['Severity']
 
     work['Findings'] = work['_row'].map(
         found.groupby('Line').size()).fillna(0).astype(int)
@@ -349,9 +492,14 @@ def validate(staged, live=None, lookups=None):
     else:
         work['Field'] = ''
 
+    # One short line for the table to show in a column.  The panel lists
+    # every finding in full, so running them together here only produced a
+    # sentence that got cut off in the middle.
     work['Issue'] = work['_row'].map(
-        found.sort_values('Severity').groupby('Line')['Finding']
-        .apply(lambda values: '  '.join(values))).fillna('')
+        found.sort_values('Severity').groupby('Line')['Finding'].first()
+    ).fillna('')
+    work['Issues'] = work['_row'].map(
+        found.groupby('Line').size()).fillna(0).astype(int)
 
     return work, found, absent
 
