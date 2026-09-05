@@ -253,13 +253,6 @@ def validate(staged, live=None, lookups=None):
                       + _text(work['CostCentre']))
         usual = work['_k'].map(typical)
 
-        # A negative on a line that has carried one before is a credit note
-        # and needs no comment.  On a line that never has, it is either a new
-        # kind of transaction or a sign error.
-        ever_negative = (pd.to_numeric(history['Quantity'], errors='coerce')
-                         .groupby(history['_k']).min().lt(0))
-        work['_k2'] = work['_k']
-        first_negative = negative & ~work['_k'].map(ever_negative).fillna(False)
         # Every negative in the operations history comes from INV03 and most
         # are Stores, with the value negative alongside the quantity: a stock
         # return or a cycle count, which is ordinary and nets out in the
@@ -267,25 +260,26 @@ def validate(staged, live=None, lookups=None):
         values = pd.to_numeric(work.get('Value'), errors='coerce') \
             if 'Value' in work.columns else pd.Series(index=work.index,
                                                       dtype=float)
-        # Where the file says what the movement was, that settles it.  A
-        # declared adjustment is not a question, and asking about one every
-        # month is how a warning stops being read.
+        # A negative quantity is not questioned.  PrepData has already
+        # settled it: ImportInventory keeps only Component Used and Stock
+        # Adjustment, reads INV03's sign convention from the data, and nets
+        # returns off rather than taking abs().  What reaches here is a month
+        # whose returns to store exceeded its issues, which is an inventory
+        # movement and not a fault.
+        #
+        # The one case left is a row that contradicts itself.  A return
+        # credits the value along with the quantity, so a negative quantity
+        # beside a value that is not negative is one or the other being
+        # wrong, and nothing upstream has resolved which.
         declared = (_text(work['TransactionType'])
                     if 'TransactionType' in work.columns
                     else pd.Series('', index=work.index))
         adjustment = declared.str.contains(
             ADJUSTMENT_WORDS, case=False, na=False, regex=True)
-
-        returned = first_negative & values.lt(0) & ~adjustment
-        odd = first_negative & ~values.lt(0) & ~adjustment
-        note(returned, 'Quantity', 'questioned',
-             'A negative quantity on a line that has never carried one.  The '
-             'value is negative too, so this looks like a stock return or a '
-             'cycle count, and the file does not say which.')
-        note(odd, 'Quantity', 'questioned',
-             'A negative quantity on a line that has never carried one, and '
-             'the value is not negative with it.  A return credits both, so '
-             'one of the two is wrong.')
+        note(negative & ~values.lt(0) & values.notna() & ~adjustment,
+             'Quantity', 'questioned',
+             'A negative quantity, and the value beside it is not negative.  '
+             'A return credits both, so one of the two is wrong.')
         spike = (quantity.abs() > usual.abs() * IMPORT_SPIKE_MULTIPLE) & \
                 (quantity.abs() > IMPORT_SPIKE_MINIMUM) & usual.notna() & \
                 (usual.abs() > 0)
