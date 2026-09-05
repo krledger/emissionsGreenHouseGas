@@ -1787,12 +1787,13 @@ def _lookups_tab(lookups):
 
 
 
+
 # ---------------------------------------------------------------------
 # IMPORT
 # ---------------------------------------------------------------------
-# One table.  A file arrives, every row is placed against what the model
-# already holds, and the table shows whichever rows you ask for.  Nothing is
-# written until the button at the bottom, and the button says what it will do.
+# One table.  Every row of the file, checked against what the model holds,
+# with the cell at fault coloured and clickable.  Nothing is written until
+# the button at the bottom, and the button says what it will do.
 
 OVERWRITE_CHOICES = {
     'No, stop': 'Nothing is imported while a reported month would move.  '
@@ -1802,44 +1803,26 @@ OVERWRITE_CHOICES = {
                    'not.',
     'Overwrite them': 'Reported months take the file\'s values.  Right when '
                       'you know why the source changed.',
-    'Row by row': 'Tick the ones to overwrite in the table.',
+    'Row by row': 'Tick the ones to overwrite.',
 }
 
-VERDICT_MARK = {'rejected': '✕  cannot import', 'questioned': '⚠  look at it',
-                'restated': '↻  already reported', 'new': '✓  new',
-                'unchanged': '·  unchanged'}
+VERDICT_MARK = {'rejected': '✕', 'questioned': '⚠', 'restated': '↻',
+                'new': '✓', 'unchanged': '·'}
 
-# The tint each verdict carries.  Applied to the read-only columns down the
-# left of the row, because Streamlit styles a data editor's non-editable
-# columns only and the cell somebody has to fix is editable by definition.
-VERDICT_TINT = {
-    'rejected': 'background-color: #F8D7DA; color: #6E1F26',
-    'questioned': 'background-color: #FFF3CD; color: #6B5200',
-    'restated': 'background-color: #D6E4F5; color: #1B3A5C',
-    'new': 'background-color: #E7F4EA; color: #14532D',
-    'unchanged': '',
-}
-
-# The columns the tint is allowed to reach.  Every one of these is disabled
-# in the editor below; adding a column here without disabling it there means
-# the colour silently does not appear.
-TINTED = ['Verdict', 'Line', 'Field', 'What is wrong', 'Held now']
-
-
-def _tint(frame):
-    """Colour the left of each row by how bad it is."""
-    verdicts = frame['Verdict'].map(
-        {mark: name for name, mark in VERDICT_MARK.items()})
-    colours = verdicts.map(VERDICT_TINT).fillna('')
-    styles = pd.DataFrame('', index=frame.index, columns=frame.columns)
-    for column in TINTED:
-        if column in styles.columns:
-            styles[column] = colours
-    return styles
+# The cell at fault, and a lighter wash across the rest of its row so the eye
+# finds the row first and the cell second.
+CELL_TINT = {'rejected': 'background-color: #F1948A; color: #4A1109',
+             'questioned': 'background-color: #F7DC6F; color: #4A3B00',
+             'restated': 'background-color: #A9CCE3; color: #0E2A3E'}
+ROW_TINT = {'rejected': 'background-color: #FDEDEC',
+            'questioned': 'background-color: #FEF9E7',
+            'restated': 'background-color: #EAF2F8'}
 
 IMPORT_FIELDS = ['Date', 'Activity', 'SubActivity', 'Description',
                  'Department', 'CostCentre', 'UOM', 'Quantity',
                  'ProductGroup', 'Value']
+
+SHOWN = ['Line', 'Verdict', 'What is wrong', 'Held now'] + IMPORT_FIELDS
 
 
 def _live_operations():
@@ -1850,10 +1833,15 @@ def _live_operations():
     return pd.read_csv(path, dtype=str)
 
 
+def _corrections():
+    return st.session_state.setdefault('import_corrections', {})
+
+
 def page_import():
     st.subheader('Import')
-    st.caption('Every row of the file, placed against what the model already '
-               'holds.  Nothing is written until the button at the bottom.')
+    st.caption('Every row of the file, against what the model already holds.  '
+               'Click a coloured cell to fix it.  Nothing is written until '
+               'the button at the bottom.')
 
     top = st.columns([3, 1])
     uploaded = top[0].file_uploader(
@@ -1867,6 +1855,7 @@ def page_import():
     if uploaded is None:
         st.info('Choose a file.  It is read and checked here; nothing is '
                 'written until you say so.')
+        st.session_state.pop('import_corrections', None)
         return
 
     try:
@@ -1880,29 +1869,22 @@ def page_import():
     missing = proposed[proposed['Required'] & proposed['Column in file'].eq('')]
     guessed = proposed[proposed['Matched by'].str.contains('guess')]
     mapping = proposed
-
     if not missing.empty or not guessed.empty:
         with st.expander('Columns need a look', expanded=True):
             if not missing.empty:
                 st.error('Nothing matched %s, and a row cannot be read '
                          'without it.' % ', '.join(missing['Field']))
-            if not guessed.empty:
-                st.warning('%d column(s) matched on a partial name.'
-                           % len(guessed))
             mapping = st.data_editor(
                 proposed, hide_index=True, width='stretch', num_rows='fixed',
                 key='import_mapping',
-                disabled=['Field', 'Required', 'Matched by',
-                          'What it is for'],
-                column_config={
-                    'Column in file': st.column_config.SelectboxColumn(
-                        'Column in file', options=[''] + list(frame.columns),
-                        width='medium'),
-                    'What it is for': st.column_config.TextColumn(
-                        'What it is for', width='large')})
+                disabled=['Field', 'Required', 'Matched by', 'What it is for'],
+                column_config={'Column in file':
+                               st.column_config.SelectboxColumn(
+                                   'Column in file',
+                                   options=[''] + list(frame.columns))})
     else:
-        st.caption('%s: %d rows.  All %d columns matched by name.%s'
-                   % (uploaded.name, len(frame), len(frame.columns) - len(spare),
+        st.caption('%s: %d rows.  All columns matched by name.%s'
+                   % (uploaded.name, len(frame),
                       '  Not used: %s.' % ', '.join(spare) if spare else ''))
 
     try:
@@ -1910,6 +1892,13 @@ def page_import():
     except ValueError as exc:
         st.error(str(exc))
         return
+
+    # Corrections are applied before the check, so the table recolours the
+    # moment one is made rather than at some later confirmation step.
+    fixes = _corrections()
+    for (line, column), value in fixes.items():
+        if column in staged.columns and 0 <= line - 2 < len(staged):
+            staged.iat[line - 2, staged.columns.get_loc(column)] = value
 
     work, found, absent = Import.validate(staged, _live_operations())
     counts = work['Verdict'].value_counts()
@@ -1921,9 +1910,13 @@ def page_import():
         number = len(absent) if bucket == 'absent' else int(counts.get(bucket, 0))
         tile.metric(bucket.title(), f'{number:,}')
 
+    if fixes:
+        st.caption('%d correction(s) applied on this screen.  They are not in '
+                   'the file, and not written anywhere, until you import.'
+                   % len(fixes))
     if stopped:
-        st.error('%d row(s) cannot be imported.  Correct them in the table, '
-                 'or they are left out.' % stopped)
+        st.error('%d row(s) cannot be imported.  Click a red cell to fix it, '
+                 'or leave them and they are left out.' % stopped)
     elif not restated.empty:
         st.warning('%d row(s) would change a month already reported.'
                    % len(restated))
@@ -1936,7 +1929,6 @@ def page_import():
                'Unchanged']
     which = st.radio('Show', choices, horizontal=True, key='import_show',
                      label_visibility='collapsed')
-
     if which == 'Needs attention':
         rows = work[work['Verdict'].isin(['rejected', 'questioned'])]
     elif which == 'Already reported':
@@ -1948,61 +1940,59 @@ def page_import():
     else:
         rows = work
 
-    policy = 'No, stop'
-    if not restated.empty:
-        policy = st.radio(
-            'If the file changes a month already reported',
-            list(OVERWRITE_CHOICES), horizontal=True, key='import_policy',
-            captions=list(OVERWRITE_CHOICES.values()))
-
-    capped = rows.head(500)
+    capped = rows.head(500).reset_index(drop=True)
     if capped.empty:
         st.caption('No rows in this view.')
+        selection = None
     else:
-        view = capped[['_row', 'Verdict', 'Field', 'Issue']
-                      + IMPORT_FIELDS].copy()
-        view['Verdict'] = view['Verdict'].map(VERDICT_MARK)
+        view = capped[['_row', 'Verdict', 'Issue'] + IMPORT_FIELDS].copy()
+        view.insert(3, 'Held now', capped['Was'].values)
         view = view.rename(columns={'_row': 'Line', 'Issue': 'What is wrong'})
-        # The held value sits beside the file's, which is the whole point of
-        # the screen: a restatement is only visible as two numbers together.
-        view.insert(view.columns.get_loc('Quantity'), 'Held now',
-                    capped['Was'].values)
-        editable = ['Overwrite'] if policy == 'Row by row' else []
-        if editable:
-            view['Overwrite'] = False
+        view['Verdict'] = view['Verdict'].map(VERDICT_MARK)
 
-        edited = st.data_editor(
-            view.style.apply(_tint, axis=None), hide_index=True,
-            width='stretch', height=420, num_rows='fixed', key='import_table',
-            disabled=TINTED,
+        # Which cell is at fault, per row, from the findings themselves.
+        at_fault = {}
+        if not found.empty:
+            for _, finding in found.iterrows():
+                at_fault.setdefault(int(finding['Line']), []).append(
+                    (finding['Column'], finding['Severity']))
+
+        verdicts = dict(zip(capped['_row'], capped['Verdict']))
+
+        def paint(frame):
+            styles = pd.DataFrame('', index=frame.index, columns=frame.columns)
+            for position, line in enumerate(view['Line']):
+                verdict = verdicts.get(line, '')
+                wash = ROW_TINT.get(verdict, '')
+                if wash:
+                    styles.iloc[position] = wash
+                for column, severity in at_fault.get(int(line), []):
+                    if column in styles.columns:
+                        styles.iloc[position,
+                                    styles.columns.get_loc(column)] = \
+                            CELL_TINT.get(severity, '')
+            return styles
+
+        selection = st.dataframe(
+            view.style.apply(paint, axis=None), hide_index=True,
+            width='stretch', height=420, key='import_table',
+            on_select='rerun', selection_mode=['multi-row', 'single-cell'],
             column_config={
                 'Line': st.column_config.NumberColumn('Line', width='small',
                                                       format='%d'),
-                'Verdict': st.column_config.TextColumn('', width='medium'),
-                'Field': st.column_config.TextColumn(
-                    'Field', width='small',
-                    help='Which cell to click.  Blank where the row is fine.'),
+                'Verdict': st.column_config.TextColumn('', width='small'),
                 'What is wrong': st.column_config.TextColumn(
                     'What is wrong', width='large'),
                 'Held now': st.column_config.NumberColumn(
                     'Held now', format='%.6g', width='small',
-                    help='What the model holds for this row today.  Blank '
-                         'where the row is new.'),
+                    help='What the model holds for this row today.'),
                 'Quantity': st.column_config.TextColumn('In this file',
                                                         width='small'),
-                'Overwrite': st.column_config.CheckboxColumn(
-                    'Overwrite', width='small'),
             })
-        if policy == 'Row by row':
-            st.session_state['import_decisions'] = edited
         if len(rows) > 500:
             st.caption('Showing the first 500 of %d.' % len(rows))
 
-        if st.button('Re-check with those corrections', key='import_recheck'):
-            for column in IMPORT_FIELDS:
-                staged.loc[edited['Line'] - 2, column] = edited[column].values
-            st.session_state['import_staged'] = staged
-            st.rerun()
+        _fix_panel(selection, view, capped)
 
     if not absent.empty:
         with st.expander('%d row(s) the model holds and this file does not'
@@ -2010,24 +2000,42 @@ def page_import():
             st.caption('Left alone.  An import never deletes: a file that '
                        'arrived short is far commoner than a line that '
                        'genuinely stopped, and only one of those two '
-                       'mistakes is recoverable.')
+                       'mistakes can be undone.')
             st.dataframe(absent[['Date', 'SubActivity', 'Description',
                                  'CostCentre', 'Quantity']].head(100),
                          hide_index=True, width='stretch', height=200)
 
-    with st.expander('Every finding, one row each (%d)' % len(found)):
-        st.dataframe(found[['Line', 'Column', 'Severity', 'Value', 'Finding']],
-                     hide_index=True, width='stretch', height=280)
+    # -- the reported months, and writing it ---------------------------
+    policy = 'No, stop'
+    if not restated.empty:
+        policy = st.radio(
+            'If the file changes a month already reported',
+            list(OVERWRITE_CHOICES), horizontal=True, key='import_policy',
+            captions=list(OVERWRITE_CHOICES.values()))
+        if policy == 'Row by row':
+            side = restated[['_row', 'Date', 'SubActivity', 'Description']].copy()
+            side['Held now'] = restated['Was'].values
+            side['In this file'] = restated['_quantity'].values
+            side['Overwrite'] = False
+            decided = st.data_editor(
+                side, hide_index=True, width='stretch', num_rows='fixed',
+                key='import_decide',
+                disabled=[c for c in side.columns if c != 'Overwrite'],
+                column_config={
+                    '_row': st.column_config.NumberColumn('Line', format='%d'),
+                    'Held now': st.column_config.NumberColumn(
+                        'Held now', format='%.6g'),
+                    'In this file': st.column_config.NumberColumn(
+                        'In this file', format='%.6g')})
+            st.session_state['import_decisions'] = decided
 
-    # -- write it -------------------------------------------------------
     will_add = int(counts.get('new', 0))
     if policy == 'Overwrite them':
         will_change = len(restated)
     elif policy == 'Row by row':
         decided = st.session_state.get('import_decisions')
         will_change = (int(decided['Overwrite'].sum())
-                       if decided is not None and 'Overwrite' in decided
-                       else 0)
+                       if decided is not None and 'Overwrite' in decided else 0)
     else:
         will_change = 0
 
@@ -2035,8 +2043,7 @@ def page_import():
     st.divider()
     if stop:
         st.error('%d row(s) would change a reported month and the choice is '
-                 'to stop.  Choose what to do with them above.'
-                 % len(restated))
+                 'to stop.  Choose what to do with them above.' % len(restated))
     else:
         st.caption('%d new row(s) added, %d reported row(s) overwritten, '
                    '%d left out as unreadable.  Nothing is deleted.'
@@ -2047,9 +2054,114 @@ def page_import():
     if st.button('Import', type='primary', disabled=stop or not confirm,
                  key='import_apply'):
         added, changed = _apply_import(work, policy, uploaded.name)
+        st.session_state.pop('import_corrections', None)
         st.success('%d row(s) added, %d overwritten.  Press Rebuild to bring '
                    'it into the figures.' % (added, changed))
         _rebuild()
+
+
+def _fix_panel(selection, view, capped):
+    """Correct the selected cell, or the same field across selected rows.
+
+    A panel rather than an editable cell, because the things worth knowing
+    while making the correction, what is wrong, what the model holds and what
+    the file says, do not fit inside one.
+    """
+    state = getattr(selection, 'selection', None) or {}
+    cells = list(getattr(state, 'cells', None) or state.get('cells') or [])
+    picked = list(getattr(state, 'rows', None) or state.get('rows') or [])
+    fixes = _corrections()
+
+    if cells:
+        position, column = cells[0]
+        if column not in IMPORT_FIELDS:
+            st.caption('That column is not part of the file.  Click a cell in '
+                       'one of the data columns to change it.')
+            return
+        line = int(view.at[position, 'Line'])
+        with st.form('fix_cell'):
+            st.markdown('**Line %d, %s**' % (line, column))
+            trouble = str(view.at[position, 'What is wrong'])
+            if trouble:
+                st.caption(trouble)
+            replacement = st.text_input(
+                'Value', value=str(view.at[position, column]),
+                key='fix_value')
+            left, right = st.columns(2)
+            if left.form_submit_button('Apply', type='primary'):
+                fixes[(line, column)] = replacement
+                st.rerun()
+            if right.form_submit_button('Undo this correction'):
+                fixes.pop((line, column), None)
+                st.rerun()
+        return
+
+    # One row: the whole row, every field, in a form.  Which is how a person
+    # actually fixes a line, because the fault named in one column is often
+    # corrected in another: a quantity that reads wrong because the unit is.
+    if len(picked) == 1:
+        position = picked[0]
+        line = int(view.at[position, 'Line'])
+        wrong = {column for column, _ in
+                 _fields_at_fault(view.at[position, 'What is wrong'])}
+        with st.form('fix_row'):
+            st.markdown('**Line %d**' % line)
+            trouble = str(view.at[position, 'What is wrong'])
+            if trouble:
+                st.caption(trouble)
+            held = view.at[position, 'Held now']
+            if pd.notna(held):
+                st.caption('The model holds %s for this row today.'
+                           % f'{held:,.6g}')
+            entered = {}
+            for block in range(0, len(IMPORT_FIELDS), 3):
+                columns = st.columns(3)
+                for slot, column in zip(columns,
+                                        IMPORT_FIELDS[block:block + 3]):
+                    entered[column] = slot.text_input(
+                        column, value=str(view.at[position, column]),
+                        key='row_%s' % column)
+            left, right = st.columns(2)
+            if left.form_submit_button('Apply to this row', type='primary'):
+                for column, value in entered.items():
+                    if value != str(view.at[position, column]):
+                        fixes[(line, column)] = value
+                st.rerun()
+            if right.form_submit_button('Undo corrections on this row'):
+                for column in IMPORT_FIELDS:
+                    fixes.pop((line, column), None)
+                st.rerun()
+        return
+
+    if picked:
+        lines = [int(view.at[position, 'Line']) for position in picked]
+        with st.form('fix_rows'):
+            st.markdown('**%d rows selected**' % len(lines))
+            st.caption('Set one field to the same value on all of them.  The '
+                       'ordinary case is a handful of rows sharing one fault.')
+            column = st.selectbox('Field', IMPORT_FIELDS, key='bulk_field')
+            replacement = st.text_input('Value for all of them',
+                                        key='bulk_value')
+            left, right = st.columns(2)
+            if left.form_submit_button('Apply to all', type='primary'):
+                for line in lines:
+                    fixes[(line, column)] = replacement
+                st.rerun()
+            if right.form_submit_button('Undo on these rows'):
+                for line in lines:
+                    fixes.pop((line, column), None)
+                st.rerun()
+        return
+
+    st.caption('Select a row to open it for editing, click a coloured '
+               'cell to change just that one, or select several rows to '
+               'set the same field on all of them.')
+
+
+def _fields_at_fault(trouble):
+    """The field names a finding sentence refers to, best effort."""
+    return [(field, True) for field in IMPORT_FIELDS
+            if field.lower() in str(trouble).lower()]
 
 
 def _apply_import(work, policy, filename):
@@ -2071,7 +2183,7 @@ def _apply_import(work, policy, filename):
         overwrite = work[work['Verdict'] == 'restated']
     elif policy == 'Row by row':
         decided = st.session_state.get('import_decisions')
-        keep = (set(decided.loc[decided['Overwrite'], 'Line'])
+        keep = (set(decided.loc[decided['Overwrite'], '_row'])
                 if decided is not None and 'Overwrite' in decided else set())
         overwrite = work[work['_row'].isin(keep)]
     else:
