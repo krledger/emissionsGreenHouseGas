@@ -35,7 +35,11 @@ import pandas as pd
 import LoaderImport
 import LoaderLookups as Lookups
 from Config import (IMPORT_SPIKE_MULTIPLE, IMPORT_SPIKE_MINIMUM,
-                    IMPORT_RESTATE_TOLERANCE)
+                    IMPORT_RESTATE_TOLERANCE, IMPORT_COST_BAND,
+                    IMPORT_PARTIAL_MONTH_DAYS, IMPORT_SIZE_BAND,
+                    IMPORT_ACTIVITY_BAND, IMPORT_ACTIVITY_ROWS,
+                    IMPORT_COST_SPREAD, IMPORT_COST_HISTORY,
+                    IMPORT_SPIKE_SPREAD)
 
 # What makes a row the same row between one file and the next.  Verified
 # unique across the whole operations history: thirteen thousand rows, no
@@ -55,7 +59,7 @@ BUCKETS = ('rejected', 'questioned', 'restated', 'absent', 'new', 'unchanged')
 # exactly what it says.  Matched loosely because every system words it
 # differently and none of them will change to suit this model.
 ADJUSTMENT_WORDS = (r'adjust|return|reversal|credit|cycle\s*count|'
-                    r'stocktake|write[\s-]?(off|back)|correction')
+                    r'stocktake|write[\s-]?(?:off|back)|correction')
 
 
 def _text(series):
@@ -194,36 +198,61 @@ def validate(staged, live=None, lookups=None):
         grouping = ['Date', 'Activity', 'SubActivity', 'CostCentre', 'UOM']
         held = [column for column in grouping if column in work.columns]
         if held:
-            parts = (work[~aggregate].groupby(held)['_quantity']
-                     .agg(['sum', 'size']))
+            rest = work[~aggregate].copy()
+            rest['_v'] = (pd.to_numeric(rest['Value'], errors='coerce')
+                          if 'Value' in rest.columns else float('nan'))
+            parts = rest.groupby(held).agg(
+                _sum=('_quantity', 'sum'), _rows=('_quantity', 'size'),
+                _spend=('_v', 'sum'))
+            spend = (pd.to_numeric(work['Value'], errors='coerce')
+                     if 'Value' in work.columns
+                     else pd.Series(float('nan'), index=work.index))
+
             for position in work.index[aggregate]:
                 key = tuple(work.at[position, column] for column in held)
                 if key not in parts.index:
                     continue
-                beside, how_many = parts.loc[key, 'sum'], parts.loc[key, 'size']
+                beside = parts.loc[key, '_sum']
+                how_many = parts.loc[key, '_rows']
+                paid = parts.loc[key, '_spend']
                 stated = quantity[position]
-                if not beside or pd.isna(stated) or how_many < 2:
-                    continue
-                if abs(stated - beside) <= abs(beside) * 0.02:
-                    findings.append({
-                        'Line': int(work.at[position, '_row']),
-                        'Column': 'Quantity', 'Severity': 'questioned',
-                        'Finding': 'This row says Total and its quantity '
-                                   'equals the sum of the %d other rows '
-                                   'beside it (%s).  If it is a spreadsheet '
-                                   'total, importing it counts them all '
-                                   'twice.' % (how_many, f'{beside:,.6g}'),
-                        'Value': f'{stated:,.6g}',
-                        '_key': work.at[position, '_key'],
-                    })
 
-    # Fuel in a bucket is priced without anybody being able to say what was
-    # burned.  Right where the sub-activity is right, and untraceable either
-    # way, which is worth knowing rather than discovering during an audit.
-    burned = aggregate & _text(work['Activity']).eq('Combustion')
-    note(burned, 'Description', 'questioned',
-         'An aggregate line, and it is fuel, so it is priced without saying '
-         'what was burned.  Nothing here can check it against an invoice.')
+                # Three neighbours at least.  Two of anything sum to
+                # something, and in a file that raises every quantity by the
+                # same four per cent a great many pairs sum to the same
+                # number, so a bucket carrying it looks like their total.
+                if not beside or pd.isna(stated) or how_many < 3:
+                    continue
+                if abs(stated - beside) > abs(beside) * 0.02:
+                    continue
+
+                # And it has to add up in the money as well.  A real
+                # spreadsheet total sums every column it has; a bucket that
+                # matches on quantity alone matched by accident.
+                mine = spend[position]
+                if pd.notna(paid) and pd.notna(mine) and paid:
+                    if abs(mine - paid) > abs(paid) * 0.02:
+                        continue
+
+                findings.append({
+                    'Line': int(work.at[position, '_row']),
+                    'Column': 'Quantity', 'Severity': 'questioned',
+                    'Finding': 'This row says Total and it equals the sum of '
+                               'the %d other rows beside it, in quantity '
+                               '(%s) and in value.  If it is a spreadsheet '
+                               'total, importing it counts them all twice.'
+                               % (how_many, f'{beside:,.6g}'),
+                    'Value': f'{stated:,.6g}',
+                    '_key': work.at[position, '_key'],
+                })
+
+    # Fuel arriving in a bucket is priced without anybody being able to say
+    # what was burned, which is worth knowing rather than discovering during
+    # an audit.  It is also true of seven lines every single month, because
+    # that is how the source system sends greases, gases and lubricants, so
+    # it is a standing fact about the data and not news about this file.
+    # `file_checks` states it once.  Seven questions a month would only
+    # teach somebody to scroll past them.
 
     units = set(Lookups.values('Unit', lookups, active_only=False))
     if live is not None and 'UOM' in live.columns:
@@ -280,9 +309,17 @@ def validate(staged, live=None, lookups=None):
              'Quantity', 'questioned',
              'A negative quantity, and the value beside it is not negative.  '
              'A return credits both, so one of the two is wrong.')
+        # Only on a line steady enough to have a usual.  Without this the
+        # consolidated buckets fill the screen: Total Other in Consumables
+        # carries three one month and thirteen hundred the next, because it
+        # is a residual and not an item, and saying so every month is how a
+        # warning stops being read.
+        steady = _settled(pd.to_numeric(history['Quantity'], errors='coerce'),
+                          history['_k'], spread=IMPORT_SPIKE_SPREAD)
         spike = (quantity.abs() > usual.abs() * IMPORT_SPIKE_MULTIPLE) & \
                 (quantity.abs() > IMPORT_SPIKE_MINIMUM) & usual.notna() & \
-                (usual.abs() > 0)
+                (usual.abs() > 0) & \
+                work['_k'].map(steady).astype('boolean').fillna(False)
         for position in work.index[spike]:
             findings.append({
                 'Line': int(work.at[position, '_row']),
@@ -317,6 +354,121 @@ def validate(staged, live=None, lookups=None):
                            'file says %s.'
                            % (was[position], work.at[position, 'UOM']),
                 'Value': str(work.at[position, 'UOM']),
+                '_key': work.at[position, '_key'],
+            })
+
+    # -- the row's own particulars ---------------------------------------
+    # The grid a row's electricity came from.  State picks the Scope 2
+    # factor, so a blank or unknown one is a wrong number with nothing else
+    # about the row to give it away.
+    if 'State' in work.columns and live is not None and 'State' in live.columns:
+        states = {s for s in set(_text(live['State'])) if s}
+        stated = _text(work['State'])
+        note(stated.eq(''), 'State', 'questioned',
+             'No state, and the state decides which grid factor prices this '
+             'row.')
+        if states:
+            note(stated.ne('') & ~stated.isin(states), 'State', 'questioned',
+                 'Not a state this model has seen (%s).'
+                 % ', '.join(sorted(states)))
+
+    # Nothing to trace the row back to.
+    for column, why in (
+            ('Description', 'No description, so nothing says what this is.'),
+            ('Identifier', 'No identifier, so nothing ties this row to the '
+                           'system it came from.')):
+        if column in work.columns:
+            note(_text(work[column]).eq(''), column, 'questioned', why)
+
+    # A quantity of nothing beside a value of nothing is an empty movement,
+    # and importing nothing does nothing, so it is not worth anybody's time.
+    # Dollars with no quantity are the shape that matters: spend enters the
+    # model and no physical factor can price it.
+    if 'Value' in work.columns:
+        paid = pd.to_numeric(work['Value'], errors='coerce')
+        note(quantity.eq(0) & paid.notna() & paid.ne(0), 'Quantity',
+             'questioned',
+             'The quantity is zero and the row still carries a value, so the '
+             'spend arrives with nothing to price it against.')
+    else:
+        note(quantity.eq(0), 'Quantity', 'questioned',
+             'The quantity is zero, so this row adds nothing.')
+
+    # The same item in two units, in one file.  Only where the model has
+    # only ever recorded that item in one unit, which is the same test the
+    # unit-change check uses and for the same reason: a consumable bought by
+    # the Each, the Box and the Roll is all three, and saying so every month
+    # is how a warning stops being read.
+    #
+    # It also excludes the consolidated buckets without having to name them.
+    # OTHER|GENC|Stores|Consumables - General is a residual for a whole
+    # sub-activity and carries eleven units because that is what a bucket
+    # is, so it has never had one unit and never qualifies.
+    if 'Identifier' in work.columns and live is not None \
+            and not live.empty and 'Identifier' in live.columns:
+        named = _text(work['Identifier'])
+        settled_unit = (pd.DataFrame({'_i': _text(live['Identifier']),
+                                      '_u': _text(live['UOM'])})
+                        .loc[lambda f: f['_i'].ne('')]
+                        .groupby('_i')['_u'].agg(['nunique', 'first']))
+        settled_unit = settled_unit[settled_unit['nunique'].eq(1)]['first']
+
+        here = (pd.DataFrame({'_i': named, '_u': _text(work['UOM'])})
+                .loc[named.ne('')])
+        several = set(here.groupby('_i')['_u'].nunique().loc[lambda s: s > 1]
+                      .index) & set(settled_unit.index)
+        for position in work.index[named.isin(several)]:
+            item, always = named[position], settled_unit[named[position]]
+            mine = _text(work['UOM'])[position]
+            if mine == always:
+                continue
+            findings.append({
+                'Line': int(work.at[position, '_row']),
+                'Column': 'UOM', 'Severity': 'questioned',
+                'Finding': 'This item has only ever been recorded in %s and '
+                           'this file has it in both %s and %s.  One of them '
+                           'is wrong and the quantities do not compare.'
+                           % (always, always, mine),
+                'Value': str(work.at[position, 'UOM']),
+                '_key': work.at[position, '_key'],
+            })
+
+    # What a line has cost before.  A box counted as an each, or an each
+    # counted as a box, moves the unit cost by the pack size and leaves the
+    # quantity looking perfectly ordinary.
+    if live is not None and not live.empty and 'Value' in work.columns \
+            and 'Value' in live.columns:
+        spend = pd.to_numeric(work['Value'], errors='coerce')
+        past = live.copy()
+        past['_ck'] = (_text(past['SubActivity']) + '|'
+                       + _text(past['Description']) + '|' + _text(past['UOM']))
+        past_q = pd.to_numeric(past['Quantity'], errors='coerce')
+        past_v = pd.to_numeric(past['Value'], errors='coerce')
+        usable = past_q.abs().gt(0) & past_v.abs().gt(0)
+        was_cost = (past_v[usable].abs() / past_q[usable].abs())
+        typical_cost = was_cost.groupby(past.loc[usable, '_ck']).median()
+        settled = _settled(was_cost, past.loc[usable, '_ck'])
+
+        here = (_text(work['SubActivity']) + '|' + _text(work['Description'])
+                + '|' + _text(work['UOM']))
+        mine = spend.abs() / quantity.abs()
+        expected = here.map(typical_cost)
+        adrift = (expected.notna() & mine.notna() & expected.gt(0)
+                  & quantity.abs().gt(0)
+                  & here.map(settled).astype('boolean').fillna(False)
+                  & ((mine > expected * IMPORT_COST_BAND)
+                     | (mine < expected / IMPORT_COST_BAND)))
+        for position in work.index[adrift]:
+            findings.append({
+                'Line': int(work.at[position, '_row']),
+                'Column': 'Value', 'Severity': 'questioned',
+                'Finding': 'This line has cost about %s per %s before and '
+                           'this row is %s.  A pack size counted the wrong '
+                           'way looks exactly like this.'
+                           % (f'{expected[position]:,.4g}',
+                              work.at[position, 'UOM'],
+                              f'{mine[position]:,.4g}'),
+                'Value': str(work.at[position, 'Value'])[:40],
                 '_key': work.at[position, '_key'],
             })
 
@@ -521,3 +673,196 @@ MEANING = {
 def blocking(work):
     """Whether anything stops the import outright."""
     return int((work['Verdict'] == 'rejected').sum())
+
+
+def _settled(values, keys, spread=None, minimum=None):
+    """Which lines have a history steady enough for a band to test.
+
+    A band says "this is five times what it usually is".  That only means
+    something where the line has a usual.  A consolidated bucket does not:
+    `Total Other` is whatever mix of bearings, bolts and gloves fell into it
+    that month, so both its quantity and its cost per Each move by a factor
+    of tens between one month and the next, by construction and not by
+    fault.  Testing one against a band produces a finding every month and
+    tells nobody anything.
+
+    Measured rather than named, as the ratio of the ninetieth to the tenth
+    percentile, over enough rows to be a pattern.  A real item sits near
+    one.  A bucket fails on its own evidence and no rule has to know that
+    buckets exist.
+
+    Returns a boolean series indexed by key, for `.map`.
+    """
+    spread = IMPORT_COST_SPREAD if spread is None else spread
+    minimum = IMPORT_COST_HISTORY if minimum is None else minimum
+    grouped = values.abs().groupby(keys)
+    low, high = grouped.quantile(0.1), grouped.quantile(0.9)
+    ratio = high / low.where(low.gt(0))
+    return grouped.size().ge(minimum) & ratio.notna() & ratio.le(spread)
+
+
+def _readable(number):
+    """A quantity written the way somebody would say it.
+
+    Scientific notation is correct and unreadable.  A reader deciding
+    whether 557 million kilowatt hours is a month or a decimal slip should
+    not first have to work out what 5.57e+08 is.
+    """
+    if number is None or pd.isna(number):
+        return '-'
+    size = abs(number)
+    if size >= 1e9:
+        return f'{number / 1e9:,.2f} billion'
+    if size >= 1e6:
+        return f'{number / 1e6:,.2f} million'
+    if size >= 1000:
+        return f'{number:,.0f}'
+    if size >= 1:
+        return f'{number:,.1f}'
+    return f'{number:,.4g}'
+
+
+def file_checks(work, live=None):
+    """What is odd about the file, rather than about any row in it.
+
+    A file can pass every row check and still be the wrong file.  These are
+    the questions somebody would ask on being handed one: which months is
+    this, is it all there, is it the usual size, and has any of it been
+    loaded already.
+
+    Takes the frame `validate` returned, so the dates have already been read.
+    Returns one row per finding: Check, Severity, Detail.
+    """
+    found = []
+
+    def say(severity, what, detail=''):
+        found.append({'Check': what, 'Severity': severity, 'Detail': detail})
+
+    dates = work['_date'] if '_date' in work.columns else None
+    if dates is None or dates.isna().all():
+        say('rejected', 'No readable dates',
+            'Nothing in this file carries a date this model can read, so '
+            'there is no period to import into.')
+        return pd.DataFrame(found)
+
+    period = dates.dt.to_period('M')
+    months = sorted(period.dropna().unique())
+    say('note', 'Months covered',
+        '%s, %s rows.' % (', '.join(str(m) for m in months), f'{len(work):,}'))
+
+    # A month is a month.  A file stopping on the fifteenth imports a month
+    # that reads as a fall in emissions and is really a fall in data.
+    #
+    # Only where the file carries days at all.  A monthly file dates every
+    # row the first of the month, and calling that thirty days short would
+    # be a warning on every file this model has ever read.
+    for month in months:
+        within = dates[period == month].dropna()
+        if within.dt.day.nunique() < 2:
+            continue
+        short = (month.end_time.normalize() - within.max()).days
+        if short >= IMPORT_PARTIAL_MONTH_DAYS:
+            say('questioned', 'Part month only',
+                '%s runs to the %s, %d days short of the month end.  '
+                'Imported as it stands, that month reads as a fall in '
+                'emissions and is really a fall in data.'
+                % (month, within.max().strftime('%d'), short))
+
+    # Fuel that arrives as a bucket.  Stated rather than asked: it is how
+    # the source system sends greases, gases and lubricants, it is true
+    # every month, and what a reader needs is the size of it.
+    if {'Activity', 'Description'} <= set(work.columns):
+        bucketed = (_text(work['Description']).str.contains('total', case=False,
+                                                            na=False)
+                    & _text(work['Activity']).eq('Combustion'))
+        if bucketed.any():
+            rows = work[bucketed]
+            spread = ', '.join(
+                '%s %s' % (_readable(part), unit) for unit, part in
+                pd.to_numeric(rows['Quantity'], errors='coerce')
+                .groupby(_text(rows['UOM'])).sum().items())
+            say('note', 'Fuel in buckets',
+                '%d fuel lines arrive as totals (%s), priced without saying '
+                'what was burned.  Nothing here can check them against an '
+                'invoice.' % (len(rows), spread))
+
+    if live is None or live.empty:
+        return pd.DataFrame(found)
+
+    held = live.copy()
+    held['_d'] = pd.to_datetime(held['Date'], dayfirst=True, errors='coerce')
+    held_months = held['_d'].dt.to_period('M')
+
+    # A month the model already holds in full is usually a file sent twice.
+    for month in months:
+        already = int((held_months == month).sum())
+        if already:
+            say('questioned', 'Month already loaded',
+                '%s already has %s rows in the model.  Either this is a '
+                'resend, or it is a correction and the restated rows below '
+                'are what changed.' % (month, f'{already:,}'))
+
+    # The usual size of a month, from the model's own history.  A file a
+    # third the normal size is worth stopping on before reading a row of it.
+    by_month = held_months.value_counts()
+    earlier = by_month[by_month.index < min(months)].sort_index().tail(6)
+    if len(earlier) >= 3:
+        usual = float(earlier.median())
+        for month in months:
+            arriving = int((period == month).sum())
+            if usual > 0 and (arriving < usual / IMPORT_SIZE_BAND
+                              or arriving > usual * IMPORT_SIZE_BAND):
+                say('questioned', 'Unusual size',
+                    '%s brings %s rows where the last %d months ran about '
+                    '%s.  A file this far off the usual size is worth opening '
+                    'before it is imported.'
+                    % (month, f'{arriving:,}', len(earlier), f'{usual:,.0f}'))
+
+    # What the file does to the physicals.  Not tonnes: the tonnage lands
+    # after a rebuild and the Verify page states it.  This is the earlier
+    # question, whether the quantities themselves look like a normal month.
+    #
+    # By activity and unit together, because an activity summed across its
+    # units adds tonnes of explosive to cubic metres of rock and the answer
+    # means nothing.  Against the median of that pairing's own monthly
+    # totals, in the months before this file, so a resend is not compared
+    # against itself.  And only where the pairing carries enough rows a
+    # month to be worth comparing: five Cylinders against two is arithmetic,
+    # not a finding.
+    if 'Activity' in work.columns and 'Activity' in live.columns \
+            and 'UOM' in work.columns and 'UOM' in live.columns:
+        held['_q'] = pd.to_numeric(held['Quantity'], errors='coerce')
+        earlier_rows = held[held_months < min(months)]
+        if not earlier_rows.empty:
+            by = ['Activity', 'UOM']
+            totals = earlier_rows.groupby(
+                by + [earlier_rows['_d'].dt.to_period('M')])['_q'].sum()
+            usual = totals.groupby(level=[0, 1]).median()
+            spans = totals.groupby(level=[0, 1]).size()
+            density = earlier_rows.groupby(by).size() / spans
+
+            work['_q'] = pd.to_numeric(work['Quantity'], errors='coerce')
+            arriving = work.groupby(by + [period])['_q'].sum()
+
+            drifted = []
+            for key, value in arriving.items():
+                pairing = key[:2]
+                expected = usual.get(pairing)
+                if expected is None or pd.isna(expected) or expected == 0:
+                    continue
+                if spans.get(pairing, 0) < 3 \
+                        or density.get(pairing, 0) < IMPORT_ACTIVITY_ROWS:
+                    continue
+                drift = (value - expected) / abs(expected)
+                if abs(drift) >= IMPORT_ACTIVITY_BAND:
+                    drifted.append((abs(drift), key, expected, value, drift))
+
+            for _, key, expected, value, drift in sorted(drifted,
+                                                         reverse=True):
+                say('questioned', 'Quantity out of line',
+                    '%s in %s, %s: %s against a usual month of %s, %+.0f%%.  '
+                    'A decimal, a unit read the wrong way, or a real month.'
+                    % (key[0], key[1], key[2], _readable(value),
+                       _readable(expected), drift * 100))
+
+    return pd.DataFrame(found)

@@ -128,6 +128,15 @@ IMPORT_SPIKE_MULTIPLE = _assumption('import_checks', 'IMPORT_SPIKE_MULTIPLE')
 IMPORT_SPIKE_MINIMUM = _assumption('import_checks', 'IMPORT_SPIKE_MINIMUM')
 IMPORT_RESTATE_TOLERANCE = _assumption('import_checks',
                                        'IMPORT_RESTATE_TOLERANCE')
+IMPORT_COST_BAND = _assumption('import_checks', 'IMPORT_COST_BAND')
+IMPORT_COST_SPREAD = _assumption('import_checks', 'IMPORT_COST_SPREAD')
+IMPORT_COST_HISTORY = _assumption('import_checks', 'IMPORT_COST_HISTORY')
+IMPORT_SPIKE_SPREAD = _assumption('import_checks', 'IMPORT_SPIKE_SPREAD')
+IMPORT_PARTIAL_MONTH_DAYS = _assumption('import_checks',
+                                        'IMPORT_PARTIAL_MONTH_DAYS')
+IMPORT_SIZE_BAND = _assumption('import_checks', 'IMPORT_SIZE_BAND')
+IMPORT_ACTIVITY_BAND = _assumption('import_checks', 'IMPORT_ACTIVITY_BAND')
+IMPORT_ACTIVITY_ROWS = _assumption('import_checks', 'IMPORT_ACTIVITY_ROWS')
 
 TRANSITION_SCHEDULE = {int(_year): float(_value) for _year, _value
                        in _ASSUMPTIONS['transition_schedule'].items()}

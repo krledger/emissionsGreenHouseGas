@@ -142,10 +142,41 @@ import_checks:
   # Below this a multiple means nothing: three units against a usual of
   # one tenth is a three hundred fold jump and is also nothing  [quantity]
   IMPORT_SPIKE_MINIMUM: 1.0
+  # And only on a line whose own quantity is steady enough to have a usual,
+  # by the same ninetieth-to-tenth-percentile measure the cost band uses.
+  # Wider than the cost band because a month's consumption moves more than
+  # a month's prices do
+  IMPORT_SPIKE_SPREAD: 5.0
   # A row already in the model counts as restated once it moves by more than
   # this.  Not zero, because a file round trip through a spreadsheet moves
   # the last decimal place and that is not a restatement  [proportion]
   IMPORT_RESTATE_TOLERANCE: 0.0001
+  # A unit cost this many times away from what the line has cost before.
+  # A pack size counted the wrong way is the usual cause and moves the cost
+  # by the pack size, so the band is wide enough not to fire on a price rise
+  IMPORT_COST_BAND: 5.0
+  # And only on a line whose own cost is settled.  Measured as the ratio of
+  # its ninetieth to its tenth percentile cost: a real item sits near one, a
+  # consolidated bucket sits in the tens because it has no unit cost at all,
+  # only whatever mix fell into it that month
+  IMPORT_COST_SPREAD: 3.0
+  # Over at least this many priced rows, below which the percentiles above
+  # are describing three numbers and not a pattern
+  IMPORT_COST_HISTORY: 6
+  # A month whose last row is this many days before the month end is a part
+  # month, and imports as a fall in emissions that is really a fall in data
+  IMPORT_PARTIAL_MONTH_DAYS: 5
+  # A month this many times larger or smaller than the recent median row
+  # count is worth opening before importing
+  IMPORT_SIZE_BAND: 2.0
+  # An activity and unit whose monthly total moves this far against its own
+  # usual month is reported.  A decimal slip or a unit read the wrong way
+  # moves a total by a multiple, so the band is set where those show and
+  # ordinary operating variation does not  [proportion, 1.0 = double or half]
+  IMPORT_ACTIVITY_BAND: 1.0
+  # And only where that activity and unit carries at least this many rows a
+  # month.  Five Cylinders against two is arithmetic, not a finding
+  IMPORT_ACTIVITY_ROWS: 5
 
 # ------------------------------------------------------------------
 # Hybrid transition schedule, Safeguard Section 11
