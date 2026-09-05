@@ -1,23 +1,34 @@
-# Requirements for Ravenswood Gold Safeguard Mechanism Model
-# Last updated: 2026-02-03
+# Ravenswood Gold emissions model
+#
+# Verified against Python 3.14.7 with the versions below, September 2026.
+# Pinned rather than floated: a factor table and a reported figure should not
+# move because a dependency did, and an assessor asking what produced a
+# published number deserves an answer that includes what it ran on.
+#
+# Every entry here is imported by a live module.  Nothing is listed against a
+# future intention.
 
-# Core
-streamlit>=1.28.0
-pandas>=2.0.0
-numpy>=1.24.0
+# The app
+streamlit==1.63.0
 
-# Charting - UPDATED TO PLOTLY
-plotly>=5.18.0
+# The engine
+pandas==3.0.5
+numpy==2.5.2
+python-dateutil==2.9.0
+PyYAML==6.0.3
 
-# Data handling
-openpyxl>=3.1.0  # For Excel file reading
-PyYAML>=6.0      # LOM.yaml milestones and the Scope 3 parameter file
-python-dateutil>=2.8.2
-cryptography>=42.0.0  # For decrypting .enc data files
+# Charting
+plotly==7.0.0
 
-# Document generation
-python-docx>=1.1.0
+# Reading the operations file where it arrives as a workbook, through
+# pandas.ExcelFile.  Not imported by name, and required all the same.
+openpyxl==3.1.5
 
-# Image export for package downloads
-kaleido>=0.2.1  # For Plotly chart to PNG/JPG export
+# Colouring cells in the import table, through pandas.Styler.  Ships with
+# Streamlit and is named here because the import screen depends on it
+# directly, and a dependency that arrives by luck is one that leaves the same
+# way.
+Jinja2==3.1.6
 
+# Decrypting the distributed operations data
+cryptography==50.0.1
