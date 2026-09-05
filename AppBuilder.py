@@ -1809,6 +1809,34 @@ VERDICT_MARK = {'rejected': '✕  cannot import', 'questioned': '⚠  look at it
                 'restated': '↻  already reported', 'new': '✓  new',
                 'unchanged': '·  unchanged'}
 
+# The tint each verdict carries.  Applied to the read-only columns down the
+# left of the row, because Streamlit styles a data editor's non-editable
+# columns only and the cell somebody has to fix is editable by definition.
+VERDICT_TINT = {
+    'rejected': 'background-color: #F8D7DA; color: #6E1F26',
+    'questioned': 'background-color: #FFF3CD; color: #6B5200',
+    'restated': 'background-color: #D6E4F5; color: #1B3A5C',
+    'new': 'background-color: #E7F4EA; color: #14532D',
+    'unchanged': '',
+}
+
+# The columns the tint is allowed to reach.  Every one of these is disabled
+# in the editor below; adding a column here without disabling it there means
+# the colour silently does not appear.
+TINTED = ['Verdict', 'Line', 'Field', 'What is wrong', 'Held now']
+
+
+def _tint(frame):
+    """Colour the left of each row by how bad it is."""
+    verdicts = frame['Verdict'].map(
+        {mark: name for name, mark in VERDICT_MARK.items()})
+    colours = verdicts.map(VERDICT_TINT).fillna('')
+    styles = pd.DataFrame('', index=frame.index, columns=frame.columns)
+    for column in TINTED:
+        if column in styles.columns:
+            styles[column] = colours
+    return styles
+
 IMPORT_FIELDS = ['Date', 'Activity', 'SubActivity', 'Description',
                  'Department', 'CostCentre', 'UOM', 'Quantity',
                  'ProductGroup', 'Value']
@@ -1931,8 +1959,10 @@ def page_import():
     if capped.empty:
         st.caption('No rows in this view.')
     else:
-        view = capped[['_row', 'Verdict', 'Issue'] + IMPORT_FIELDS].copy()
+        view = capped[['_row', 'Verdict', 'Field', 'Issue']
+                      + IMPORT_FIELDS].copy()
         view['Verdict'] = view['Verdict'].map(VERDICT_MARK)
+        view = view.rename(columns={'_row': 'Line', 'Issue': 'What is wrong'})
         # The held value sits beside the file's, which is the whole point of
         # the screen: a restatement is only visible as two numbers together.
         view.insert(view.columns.get_loc('Quantity'), 'Held now',
@@ -1942,16 +1972,18 @@ def page_import():
             view['Overwrite'] = False
 
         edited = st.data_editor(
-            view, hide_index=True, width='stretch', height=420,
-            num_rows='fixed', key='import_table',
-            disabled=[c for c in view.columns
-                      if c in ('_row', 'Verdict', 'Issue', 'Held now')],
+            view.style.apply(_tint, axis=None), hide_index=True,
+            width='stretch', height=420, num_rows='fixed', key='import_table',
+            disabled=TINTED,
             column_config={
-                '_row': st.column_config.NumberColumn('Line', width='small',
+                'Line': st.column_config.NumberColumn('Line', width='small',
                                                       format='%d'),
                 'Verdict': st.column_config.TextColumn('', width='medium'),
-                'Issue': st.column_config.TextColumn('What is wrong',
-                                                     width='large'),
+                'Field': st.column_config.TextColumn(
+                    'Field', width='small',
+                    help='Which cell to click.  Blank where the row is fine.'),
+                'What is wrong': st.column_config.TextColumn(
+                    'What is wrong', width='large'),
                 'Held now': st.column_config.NumberColumn(
                     'Held now', format='%.6g', width='small',
                     help='What the model holds for this row today.  Blank '
@@ -1968,7 +2000,7 @@ def page_import():
 
         if st.button('Re-check with those corrections', key='import_recheck'):
             for column in IMPORT_FIELDS:
-                staged.loc[edited['_row'] - 2, column] = edited[column].values
+                staged.loc[edited['Line'] - 2, column] = edited[column].values
             st.session_state['import_staged'] = staged
             st.rerun()
 
@@ -2039,7 +2071,7 @@ def _apply_import(work, policy, filename):
         overwrite = work[work['Verdict'] == 'restated']
     elif policy == 'Row by row':
         decided = st.session_state.get('import_decisions')
-        keep = (set(decided.loc[decided['Overwrite'], '_row'])
+        keep = (set(decided.loc[decided['Overwrite'], 'Line'])
                 if decided is not None and 'Overwrite' in decided else set())
         overwrite = work[work['_row'].isin(keep)]
     else:

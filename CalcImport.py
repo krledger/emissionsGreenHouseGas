@@ -339,6 +339,16 @@ def validate(staged, live=None, lookups=None):
 
     work['Findings'] = work['_row'].map(
         found.groupby('Line').size()).fillna(0).astype(int)
+    # Which cell to click.  The worst finding decides, and where a row has
+    # several in different columns they are named together, because sending
+    # somebody to one cell when two are wrong wastes the trip.
+    if not found.empty:
+        by_row = found.groupby('Line')['Column'].apply(
+            lambda values: ', '.join(dict.fromkeys(values)))
+        work['Field'] = work['_row'].map(by_row).fillna('')
+    else:
+        work['Field'] = ''
+
     work['Issue'] = work['_row'].map(
         found.sort_values('Severity').groupby('Line')['Finding']
         .apply(lambda values: '  '.join(values))).fillna('')
