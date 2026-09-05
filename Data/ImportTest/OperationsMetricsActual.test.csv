@@ -2235,3 +2235,7 @@ Date,Activity,SubActivity,Description,Department,CostCentre,State,UOM,Quantity,S
 1/8/2026,Combustion,Diesel,DIESEL FUEL BULK,Commercial & Administration,Operations Administration,QLD,kL,0.4722,INV03,103206,FUEL,778.8,
 1/8/2026,Combustion,Diesel,DIESEL FUEL BULK,Commercial & Administration,Operations Administration,QLD,kL,0.4722,INV03,103206,FUEL,778.8,
 1/8/2026,Reagent,Flocculant XR9,FLOCCULANT XR9 BULK,Mining Geology,Grade Control,QLD,t,18.0,INV03,103206,FLOC,96000.00,
+1/8/2026,Combustion,Diesel,DIESEL FUEL BULK,Commercial & Administration,Light Vehicles,,kL,12.5,INV03,TEST-STATE-BLANK,FUEL,20612.5,
+1/8/2026,Combustion,Diesel,DIESEL FUEL BULK,Commercial & Administration,Light Vehicles,Australia,kL,11.0,INV03,TEST-STATE-UNKNOWN,FUEL,18139.0,
+1/8/2026,Combustion,Diesel,DIESEL FUEL BULK,Commercial & Administration,Light Vehicles,QLD,kL,30.0,INV03,TEST-PACK-SIZE,FUEL,989400.00,
+1/8/2026,Combustion,Diesel,,Commercial & Administration,Light Vehicles,QLD,kL,9.0,INV03,TEST-NO-DESCRIPTION,FUEL,14841.0,

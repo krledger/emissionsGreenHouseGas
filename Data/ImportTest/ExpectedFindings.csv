@@ -14,6 +14,10 @@ planted fault,"Product group is not in the register, so nothing prices it"
 planted fault,Exact duplicate of another row in this file
 planted fault,Exact duplicate of another row in this file
 planted fault,A product group that is genuinely new and needs a factor
+planted fault,"State is blank, and the state picks the grid factor"
+planted fault,State is not one the model knows
+planted fault,"Unit cost is twenty times what this line has always cost, which is a pack size counted the wrong way"
+planted fault,Description is blank
 restated July,Diesel quantity raised 18 per cent in a month already reported (41.2779 -> 48.7079)
 restated July,Electricity lowered 8 per cent in a month already reported (10721553.0 -> 9863828.76)
 restated July,"Cost centre moved on a reported row, which moves the department total (Grade Control -> Operations Administration)"

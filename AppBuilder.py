@@ -1900,10 +1900,28 @@ def page_import():
         if column in staged.columns and 0 <= line - 2 < len(staged):
             staged.iat[line - 2, staged.columns.get_loc(column)] = value
 
-    work, found, absent = Import.validate(staged, _live_operations())
+    live = _live_operations()
+    work, found, absent = Import.validate(staged, live)
     counts = work['Verdict'].value_counts()
     stopped = Import.blocking(work)
     restated = work[work['Verdict'] == 'restated']
+
+    # -- what kind of file is this --------------------------------------
+    # Asked before the rows, because a file can pass every row check and
+    # still be last month's sent again, or half a month, or four thousand
+    # rows where eleven hundred was normal.
+    about = Import.file_checks(work, live)
+    if not about.empty:
+        for _, item in about[about['Severity'] == 'rejected'].iterrows():
+            st.error('%s.  %s' % (item['Check'], item['Detail']))
+        asked = about[about['Severity'] == 'questioned']
+        if not asked.empty:
+            st.warning('\n\n'.join(
+                '**%s.**  %s' % (item['Check'], item['Detail'])
+                for _, item in asked.iterrows()))
+        stated = about[about['Severity'] == 'note']
+        for _, item in stated.iterrows():
+            st.caption('%s: %s' % (item['Check'], item['Detail']))
 
     tiles = st.columns(6)
     for tile, bucket in zip(tiles, Import.BUCKETS):

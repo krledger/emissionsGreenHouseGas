@@ -14,11 +14,10 @@ import os
 import shutil
 import sys
 
-BASE = os.path.expanduser('~/mnt/EmissionsGreenHouseGas')
-os.chdir(BASE)
+import Paths
 
-LIVE = 'Data/OperationsMetricsActual.csv'
-BACKUP = 'Data/ImportTest/OperationsMetricsActual.original.csv'
+LIVE = Paths.data('OperationsMetricsActual.csv')
+BACKUP = Paths.data('ImportTest', 'OperationsMetricsActual.original.csv')
 
 
 def digest(path):

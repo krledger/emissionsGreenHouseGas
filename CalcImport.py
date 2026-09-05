@@ -241,8 +241,8 @@ def validate(staged, live=None, lookups=None):
                                'the %d other rows beside it, in quantity '
                                '(%s) and in value.  If it is a spreadsheet '
                                'total, importing it counts them all twice.'
-                               % (how_many, f'{beside:,.6g}'),
-                    'Value': f'{stated:,.6g}',
+                               % (how_many, _readable(beside)),
+                    'Value': _readable(stated),
                     '_key': work.at[position, '_key'],
                 })
 
@@ -327,8 +327,8 @@ def validate(staged, live=None, lookups=None):
                 'Finding': 'About %.0f times what this line usually carries '
                            '(%s).  A spike, a unit change, or a real month.'
                            % (abs(quantity[position] / usual[position]),
-                              f'{usual[position]:,.4g}'),
-                'Value': f'{quantity[position]:,.4g}',
+                              _readable(usual[position])),
+                'Value': _readable(quantity[position]),
                 '_key': work.at[position, '_key'],
             })
 
@@ -465,9 +465,9 @@ def validate(staged, live=None, lookups=None):
                 'Finding': 'This line has cost about %s per %s before and '
                            'this row is %s.  A pack size counted the wrong '
                            'way looks exactly like this.'
-                           % (f'{expected[position]:,.4g}',
+                           % (_readable(expected[position]),
                               work.at[position, 'UOM'],
-                              f'{mine[position]:,.4g}'),
+                              _readable(mine[position])),
                 'Value': str(work.at[position, 'Value'])[:40],
                 '_key': work.at[position, '_key'],
             })
@@ -554,10 +554,10 @@ def validate(staged, live=None, lookups=None):
                 'Finding': 'This row is already in the model at %s and this '
                            'file says %s, a change of %+.1f per cent in a '
                            'period already reported.'
-                           % (f'{before:,.4g}', f'{after:,.4g}',
+                           % (_readable(before), _readable(after),
                               (after - before) / before * 100.0
                               if before else float('nan')),
-                'Value': f'{after:,.4g}',
+                'Value': _readable(after),
                 '_key': work.at[position, '_key'],
             })
 
