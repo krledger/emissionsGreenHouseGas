@@ -29,7 +29,9 @@ from CalcUnits import (GRAMS_PER_TROY_OUNCE, TONNES_PER_KILOTONNE,
 from Config import (NGER_FY_START_MONTH, GRADE_TOLERANCE,
                     RECOVERY_TOLERANCE,
                     THROUGHPUT_TOLERANCE, RECOVERY_PLAUSIBLE_LOW,
-                    RECOVERY_PLAUSIBLE_HIGH)
+                    RECOVERY_PLAUSIBLE_HIGH,
+                    POWER_INTENSITY_TOLERANCE,
+                    PROCESS_POWER_SUBACTIVITIES)
 from LoaderLom import LOM
 
 
@@ -88,6 +90,19 @@ def crushed_tonnes(frame):
 def milling(frame):
     return ((frame['Activity'] == 'Milling')
             & (frame['SubActivity'] == 'Ore Milled'))
+
+
+def process_power(frame):
+    """Electricity drawn by the plant, whichever supply it came from.
+
+    Grid Power and Site Power are the same draw from two sources, and the
+    plan swaps one for the other at grid connection, so a check on how much
+    the plant used has to read both.  Camp, warehouse and water delivery are
+    site services and do not move with the mill.
+    """
+    return ((frame['Activity'] == 'Electricity')
+            & frame['SubActivity'].astype(str).isin(
+                PROCESS_POWER_SUBACTIVITIES))
 
 
 def contained_gold(frame):
@@ -415,6 +430,43 @@ def plan_checks(frame, year_type='CY'):
         'Means': 'Everything the model mines, against the reserve the plan '
                  'is built on.'})
 
+
+    # Two measures against each other, rather than against the plan.
+    #
+    # Every other check here compares one series to what the plan says it
+    # should be, and a forecast can satisfy all of them and still be
+    # internally inconsistent: diesel winding down with the fleet while
+    # electricity holds flat is two individually plausible series whose
+    # ratio is not.  A plant does not double its specific energy
+    # consumption, so a year well away from the rest of the series is a
+    # forecast that stopped reading the mill.
+    #
+    # This reports and changes nothing.  The quantity is written upstream
+    # and is read here as it arrives.
+    power = annual(dated, process_power, year_type)
+    together = pd.concat([power.rename('kWh'), milled.rename('t')], axis=1)
+    together = together.dropna()
+    together = together[together['t'] > 0]
+    if len(together) >= 3:
+        rate = together['kWh'] / together['t']
+        settled = float(rate.median())
+        apart = (rate - settled).abs() / settled
+        adrift = apart[apart > POWER_INTENSITY_TOLERANCE].sort_values()
+        worst = rate.loc[adrift.index[-1]] if len(adrift) else settled
+        rows.append({
+            'Check': 'Power against tonnes milled',
+            'Measured': round(float(worst), 1),
+            'Planned': round(settled, 1), 'Unit': 'kWh per t',
+            'Drift': _band(worst, settled, POWER_INTENSITY_TOLERANCE),
+            'Tolerance': POWER_INTENSITY_TOLERANCE,
+            'Verdict': 'agrees' if adrift.empty else 'disagrees',
+            'Means': ('Every year draws power in step with what it milled.'
+                      if adrift.empty else
+                      'Out of step in %s.  A plant does not change its '
+                      'energy per tonne by this much, so the power for '
+                      'those years is not following the mill, and the '
+                      'Scope 2 that rests on it is wrong.'
+                      % ', '.join(str(int(y)) for y in adrift.index))})
 
     # A stream that runs for a different span than the ore it belongs to.
     spans = continuity(dated, year_type)

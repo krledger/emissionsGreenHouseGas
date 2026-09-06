@@ -120,6 +120,16 @@ WEEKS_PER_YEAR = _assumption('periods', 'WEEKS_PER_YEAR')
 GRADE_TOLERANCE = _assumption('verification', 'GRADE_TOLERANCE')
 RECOVERY_TOLERANCE = _assumption('verification', 'RECOVERY_TOLERANCE')
 THROUGHPUT_TOLERANCE = _assumption('verification', 'THROUGHPUT_TOLERANCE')
+POWER_INTENSITY_TOLERANCE = _assumption(
+    'verification', 'POWER_INTENSITY_TOLERANCE')
+
+# The sub-activities that are plant load rather than site services.
+# Grid Power and Site Power are the same draw from two supplies, and
+# the plan swaps one for the other at grid connection, so a question
+# about what the plant used has to read both.  Residential, Warehouse
+# and Water Delivery are camp and services and do not move with the
+# mill.
+PROCESS_POWER_SUBACTIVITIES = ('Grid Power', 'Site Power')
 RECOVERY_PLAUSIBLE_LOW = _assumption('verification', 'RECOVERY_PLAUSIBLE_LOW')
 RECOVERY_PLAUSIBLE_HIGH = _assumption('verification',
                                       'RECOVERY_PLAUSIBLE_HIGH')

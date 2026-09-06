@@ -123,6 +123,11 @@ verification:
   # Throughput against plant rating.  Only exceeding it is a fault: running
   # below nameplate is an operating decision, running above it is not possible
   THROUGHPUT_TOLERANCE: 0.05
+  # A year whose electricity per tonne milled sits this far from the rest of
+  # the series is reported.  Wide on purpose: the check is looking for a
+  # forecast that stopped following the mill, which moves the ratio by a
+  # multiple, and not for ordinary variation in a plant's energy use
+  POWER_INTENSITY_TOLERANCE: 0.25
   # Outside this band a recovery figure is a timing artefact between two
   # source series and not a metallurgical result  [per cent]
   RECOVERY_PLAUSIBLE_LOW: 50.0
