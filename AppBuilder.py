@@ -1807,7 +1807,7 @@ OVERWRITE_CHOICES = {
 }
 
 VERDICT_MARK = {'rejected': '✕', 'questioned': '⚠', 'restated': '↻',
-                'new': '✓', 'unchanged': '·'}
+                'new': '✓', 'unchanged': '·', 'left out': '⊘'}
 
 # The cell at fault, and a lighter wash across the rest of its row so the eye
 # finds the row first and the cell second.
@@ -1816,7 +1816,10 @@ CELL_TINT = {'rejected': 'background-color: #F1948A; color: #4A1109',
              'restated': 'background-color: #A9CCE3; color: #0E2A3E'}
 ROW_TINT = {'rejected': 'background-color: #FDEDEC',
             'questioned': 'background-color: #FEF9E7',
-            'restated': 'background-color: #EAF2F8'}
+            'restated': 'background-color: #EAF2F8',
+            # Grey and struck through: still legible, plainly not going in.
+            'left out': 'background-color: #EEEEEE; color: #7B7B7B; '
+                        'text-decoration: line-through'}
 
 IMPORT_FIELDS = ['Date', 'Activity', 'SubActivity', 'Description',
                  'Department', 'CostCentre', 'UOM', 'Quantity',
@@ -1835,6 +1838,16 @@ def _live_operations():
 
 def _corrections():
     return st.session_state.setdefault('import_corrections', {})
+
+
+def _left_out():
+    """Line numbers set aside for this import.
+
+    Held in the session rather than written into the data, so a correction
+    that happens to make a row acceptable does not quietly reinstate it.
+    Leaving a row out is deliberate, and so is putting it back.
+    """
+    return st.session_state.setdefault('import_left_out', set())
 
 
 def page_import():
@@ -1856,6 +1869,7 @@ def page_import():
         st.info('Choose a file.  It is read and checked here; nothing is '
                 'written until you say so.')
         st.session_state.pop('import_corrections', None)
+        st.session_state.pop('import_left_out', None)
         return
 
     try:
@@ -1902,8 +1916,15 @@ def page_import():
 
     live = _live_operations()
     work, found, absent = Import.validate(staged, live)
+
+    # Rows set aside by hand.  After the check, so every finding against one
+    # is still there to read, and before the counts, so a row left out stops
+    # blocking the import and stops being counted as arriving.
+    work = Import.leave_out(work, _left_out())
+
     counts = work['Verdict'].value_counts()
     stopped = Import.blocking(work)
+    aside = int(counts.get('left out', 0))
     restated = work[work['Verdict'] == 'restated']
 
     # -- what kind of file is this --------------------------------------
@@ -1923,15 +1944,20 @@ def page_import():
         for _, item in stated.iterrows():
             st.caption('%s: %s' % (item['Check'], item['Detail']))
 
-    tiles = st.columns(6)
+    tiles = st.columns(len(Import.BUCKETS))
     for tile, bucket in zip(tiles, Import.BUCKETS):
         number = len(absent) if bucket == 'absent' else int(counts.get(bucket, 0))
-        tile.metric(bucket.title(), f'{number:,}')
+        tile.metric(bucket.title(), f'{number:,}',
+                    help=Import.MEANING.get(bucket))
 
     if fixes:
         st.caption('%d correction(s) applied on this screen.  They are not in '
                    'the file, and not written anywhere, until you import.'
                    % len(fixes))
+    if aside:
+        st.caption('%d row(s) set aside.  They stay in the file you uploaded '
+                   'and are simply not written.  Select one and put it back '
+                   'to change your mind.' % aside)
     if stopped:
         st.error('%d row(s) cannot be imported.  Click a red cell to fix it, '
                  'or leave them and they are left out.' % stopped)
@@ -1944,7 +1970,7 @@ def page_import():
 
     # -- the one table --------------------------------------------------
     choices = ['Needs attention', 'All rows', 'Already reported', 'New',
-               'Unchanged']
+               'Unchanged', 'Left out']
     which = st.radio('Show', choices, horizontal=True, key='import_show',
                      label_visibility='collapsed')
     if which == 'Needs attention':
@@ -1955,6 +1981,8 @@ def page_import():
         rows = work[work['Verdict'] == 'new']
     elif which == 'Unchanged':
         rows = work[work['Verdict'] == 'unchanged']
+    elif which == 'Left out':
+        rows = work[work['Verdict'] == 'left out']
     else:
         rows = work
 
@@ -2066,8 +2094,9 @@ def page_import():
                  'to stop.  Choose what to do with them above.' % len(restated))
     else:
         st.caption('%d new row(s) added, %d reported row(s) overwritten, '
-                   '%d left out as unreadable.  Nothing is deleted.'
-                   % (will_add, will_change, stopped))
+                   '%d refused as unreadable, %d set aside by hand.  Nothing '
+                   'is deleted and the file you uploaded is unchanged.'
+                   % (will_add, will_change, stopped, aside))
 
     confirm = st.checkbox('I have looked at the rows above',
                           key='import_confirm')
@@ -2075,6 +2104,7 @@ def page_import():
                  key='import_apply'):
         added, changed = _apply_import(work, policy, uploaded.name)
         st.session_state.pop('import_corrections', None)
+        st.session_state.pop('import_left_out', None)
         st.success('%d row(s) added, %d overwritten.  Press Rebuild to bring '
                    'it into the figures.' % (added, changed))
         _rebuild()
@@ -2092,6 +2122,7 @@ def _fix_panel(selection, view, capped, found):
     cells = list(getattr(state, 'cells', None) or state.get('cells') or [])
     picked = list(getattr(state, 'rows', None) or state.get('rows') or [])
     fixes = _corrections()
+    aside = _left_out()
 
     position, pointed = None, None
     if cells:
@@ -2100,21 +2131,26 @@ def _fix_panel(selection, view, capped, found):
         position = picked[0]
 
     if position is not None:
-        _row_form(position, pointed, view, capped, found, fixes)
+        _row_form(position, pointed, view, capped, found, fixes, aside)
         return
 
     if picked:
-        _bulk_form(picked, view, fixes)
+        _bulk_form(picked, view, fixes, aside)
         return
 
     st.caption('Select a row, or click any cell in it, to see the whole line '
                'and everything known against it.')
 
 
-def _row_form(position, pointed, view, capped, found, fixes):
+def _row_form(position, pointed, view, capped, found, fixes, aside):
     """One line: what is wrong with it, what the model holds, every field."""
     line = int(view.at[position, 'Line'])
     verdict = str(capped.iloc[position]['Verdict'])
+    is_aside = line in aside
+
+    if is_aside:
+        st.info('This row is set aside and will not be written.  It is still '
+                'in the file you uploaded; nothing has been deleted.')
 
     against = found[found['Line'] == line] if not found.empty else found
     if len(against):
@@ -2143,11 +2179,19 @@ def _row_form(position, pointed, view, capped, found, fixes):
                 entered[column] = slot.text_input(
                     column, value=str(view.at[position, column]),
                     key='row_%d_%s' % (line, column))
-        left, right = st.columns(2)
-        if left.form_submit_button('Apply to this row', type='primary'):
+        left, middle, right = st.columns(3)
+        if left.form_submit_button('Apply to this row', type='primary',
+                                   disabled=is_aside):
             for column, value in entered.items():
                 if value != str(view.at[position, column]):
                     fixes[(line, column)] = value
+            st.rerun()
+        # Not a delete.  The row stays in the uploaded file and is simply
+        # not written, which is the answer for a row that reads perfectly
+        # well and still should not go in.
+        if middle.form_submit_button(
+                'Put this row back' if is_aside else 'Leave this row out'):
+            aside.discard(line) if is_aside else aside.add(line)
             st.rerun()
         if right.form_submit_button('Undo corrections on this row'):
             for column in IMPORT_FIELDS:
@@ -2155,19 +2199,30 @@ def _row_form(position, pointed, view, capped, found, fixes):
             st.rerun()
 
 
-def _bulk_form(picked, view, fixes):
+def _bulk_form(picked, view, fixes, aside):
     """One field, the same value, across every selected row."""
     lines = [int(view.at[position, 'Line']) for position in picked]
+    held = [line for line in lines if line in aside]
     with st.form('fix_rows'):
         st.markdown('**%d rows selected**' % len(lines))
+        if held:
+            st.caption('%d of them are already set aside.' % len(held))
         st.caption('Set one field to the same value on all of them.  Select a '
                    'single row instead to see that line in full.')
         column = st.selectbox('Field', IMPORT_FIELDS, key='bulk_field')
         replacement = st.text_input('Value for all of them', key='bulk_value')
-        left, right = st.columns(2)
+        left, middle, right = st.columns(3)
         if left.form_submit_button('Apply to all', type='primary'):
             for line in lines:
                 fixes[(line, column)] = replacement
+            st.rerun()
+        if middle.form_submit_button(
+                'Put them back' if len(held) == len(lines)
+                else 'Leave them out'):
+            if len(held) == len(lines):
+                aside.difference_update(lines)
+            else:
+                aside.update(lines)
             st.rerun()
         if right.form_submit_button('Undo on these rows'):
             for line in lines:
@@ -2188,6 +2243,11 @@ def _apply_import(work, policy, filename):
     left where it is, because a file that arrived short is far commoner than
     a line that genuinely stopped, and one of those two mistakes can be
     undone.
+
+    Rows set aside on the screen carry the verdict `left out`, which is
+    neither `new` nor `restated`, so they fall out of both selections below
+    without a rule of their own.  The uploaded file is never written to at
+    all, whatever was set aside in it.
     """
     path = os.path.join(DATA_DIR, 'OperationsMetricsActual.csv')
     live = _live_operations()

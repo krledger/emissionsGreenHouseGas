@@ -52,7 +52,8 @@ IDENTITY = ('Date', 'Activity', 'SubActivity', 'Description', 'Department',
 # Columns a row cannot be imported without.
 MANDATORY = ('Date', 'Activity', 'SubActivity', 'UOM', 'Quantity')
 
-BUCKETS = ('rejected', 'questioned', 'restated', 'absent', 'new', 'unchanged')
+BUCKETS = ('rejected', 'questioned', 'restated', 'absent', 'new',
+           'unchanged', 'left out')
 
 # What a source system calls a movement that is not consumption.  A negative
 # declared as one of these is not a question: it is a stock movement doing
@@ -667,12 +668,36 @@ MEANING = {
     'absent': 'Held by the model for these months, and not in this file.',
     'new': 'Not in the model.  This is the ordinary case.',
     'unchanged': 'Already in the model, identical.  Nothing happens.',
+    'left out': 'Set aside by hand.  Read, checked, and not written.',
 }
 
 
 def blocking(work):
     """Whether anything stops the import outright."""
     return int((work['Verdict'] == 'rejected').sum())
+
+
+def leave_out(work, lines):
+    """Set rows aside: read, checked, and not written.
+
+    For the row that is not wrong and still should not go in.  A duplicate
+    the source system sent twice, a spreadsheet total, a line somebody has
+    already said to ignore this month: correcting one of those into
+    something harmless is worse than leaving it out, because the model then
+    holds a number nobody meant.
+
+    Nothing is deleted.  The uploaded file is untouched, the row is still in
+    it, and uploading it again offers the row again.  This is a decision
+    about one import and it is undone by dropping the line from `lines`.
+
+    Every finding and every correction against the row is kept, so the
+    reason it was set aside is still readable beside it.
+    """
+    if not lines:
+        return work
+    aside = work.copy()
+    aside.loc[aside['_row'].isin(set(lines)), 'Verdict'] = 'left out'
+    return aside
 
 
 def _settled(values, keys, spread=None, minimum=None):
