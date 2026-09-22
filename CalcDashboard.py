@@ -30,7 +30,7 @@ from Config import (DEFAULT_ACTUALS_TO_DATE, DEFAULT_FORECAST_FROM_DATE,
                     DEFAULT_GRID_CONNECTION_DATE,
                     DEFAULT_END_MINING_DATE, DEFAULT_END_PROCESSING_DATE,
                     DEFAULT_END_REHABILITATION_DATE,
-                    MATERIALITY_THRESHOLD)
+                    MATERIALITY_THRESHOLD, CHART_MINIMUM_SHARE)
 
 SCOPE_COLUMNS = ('Scope1', 'Scope2', 'Scope3')
 
@@ -380,9 +380,12 @@ def breakdown(df, period_label, dataset=None, departments=None,
         grouped = frame.groupby(keys, observed=True)[
             ['Scope1', 'Scope2', 'Scope3']].sum().reset_index()
         grouped['Total'] = grouped[['Scope1', 'Scope2', 'Scope3']].sum(axis=1)
-        grouped = grouped[grouped['Total'].abs() > 0.05]
+        # The share is of the whole period total.  Lines below the chart
+        # minimum are then left off: they are clutter on a chart, and the
+        # total they belong to is unchanged by not drawing them.
         grand = float(grouped['Total'].sum())
         grouped['Share'] = grouped['Total'] / grand * 100.0 if grand else 0.0
+        grouped = grouped[grouped['Share'].abs() >= CHART_MINIMUM_SHARE * 100.0]
         if 'CostCentre' not in grouped.columns:
             grouped['CostCentre'] = ''
         return grouped[columns].sort_values('Total', ascending=False).reset_index(drop=True)
@@ -437,8 +440,12 @@ def dashboard_payload(df, precomputed, annual, period_label,
                    if getattr(precomputed, 'scope3', None) is not None else None)
 
     cards = headline(annual, period_label) or {}
-    trend = monthly_by_scope(precomputed.monthly, period_label, scope3_monthly)
-    measures = intensity(precomputed.monthly, period_label, scope3_monthly)
+    # The GHG monthly projection, never the NGER one: the monthly series and
+    # the intensities must carry the same Scope 1 as the cards beside them,
+    # which includes explosives.
+    ghg_monthly = precomputed.ghg_monthly
+    trend = monthly_by_scope(ghg_monthly, period_label, scope3_monthly)
+    measures = intensity(ghg_monthly, period_label, scope3_monthly)
     department_totals, centre_totals = breakdown(
         df, period_label, departments=departments,
         scopes=scopes, scope3_rows=scope3_rows)

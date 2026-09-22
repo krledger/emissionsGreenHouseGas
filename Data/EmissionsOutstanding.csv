@@ -1,13 +1,6 @@
 Category,Item,Detail,Severity
-1,Product group EXPL carries no factor,"$6,185 of recorded expenditure has no factor for this category in the product group register.",
-1,No fitted rate: Reagent / Sodium Hypochlorite,"172 budget months carry a quantity but no dollar per unit rate, so nothing is projected.",
-1,No fitted rate: Stores / Belts,"172 budget months carry a quantity but no dollar per unit rate, so nothing is projected.",
-2,29 approved capital projects carry no value,"Cat2ProjectScreen.csv records the NAICS class and the intensity for each, but the approved value is not in the tracker, so no emission is recognised for them.",
-4,Product group MTRE carries no factor,"$297,539 of recorded expenditure has no factor for this category in the product group register.",
-5,Waste stream 'General waste to landfill' has no volume,Volumes come from the waste contractor and are not held in the model.  The stream is carried at nil until they are supplied.,
-5,Waste stream 'Prescribed and hazardous waste' has no volume,Volumes come from the waste contractor and are not held in the model.  The stream is carried at nil until they are supplied.,
-5,Waste stream 'Recycled metals' has no volume,Volumes come from the waste contractor and are not held in the model.  The stream is carried at nil until they are supplied.,
-10,Refining intensity not supplied,"Gold mass is in the model; the refiner intensity per kilogram is not, so nothing is charged.",
+4,Product group MTRE carries no factor,"$376,990 of recorded expenditure has no factor for this category in the product group register.",
+4,Product group EL01 carries no factor,"$38,799 of recorded expenditure has no factor for this category in the product group register.",
 2,CAP0023 Atlas Copco CPS 450-14,Outstanding: no commissioning date,Warning
 2,CAP0024 Kubota SQ3300B-AU-B,Outstanding: no commissioning date,Warning
 2,CAP0025 Denyo DB-0391KV,Outstanding: no commissioning date,Warning

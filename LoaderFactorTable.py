@@ -167,17 +167,6 @@ def unsourced(frame=None):
     return frame[named.eq('') | (named.eq('Company') & ~own)]
 
 
-def unit_mismatch(frame=None, lookups=None):
-    """Factors whose unit is not in the Unit lookup.
-
-    A unit the lookup does not know cannot be checked against an item, so it
-    is a gap rather than a value.
-    """
-    frame = load() if frame is None else frame
-    known = set(Lookups.values('Unit', lookups, active_only=False))
-    return frame[~frame['Unit'].isin(known)]
-
-
 def summary(frame=None):
     """One line per class and source: how many, and how many identities."""
     frame = load() if frame is None else frame

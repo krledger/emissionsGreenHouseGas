@@ -15,6 +15,7 @@ Run it beside the reporting application:
     streamlit run AppBuilder.py --server.port 8502
 """
 
+import gzip
 import io
 import os
 from datetime import datetime
@@ -23,9 +24,8 @@ import pandas as pd
 import streamlit as st
 
 import CalcGhgCategoryStatus as Status
+import Screen
 import CalcProduction as Production
-import CalcImport as Import
-import LoaderImport as Importer
 import ConfigEdit
 import ExportEmissionsTable as Publisher
 import LoaderCapital
@@ -33,6 +33,9 @@ import LoaderFactorTable as FactorTable
 import LoaderItems as Items
 import LoaderLookups as Lookups
 from CalcEmissionsTable import build_emissions_table, reconcile
+from CalcNga import unit_gaps
+from CalcGhgCategories import unpriced_spend
+import LoaderUnits
 from CalcPrecompute import precompute_all
 from Config import (CREDIT_START_DATE, DECLINE_RATE_PHASE2,
                     DEFAULT_ACTUALS_TO_DATE, DEFAULT_END_MINING_DATE,
@@ -45,31 +48,37 @@ from LoaderReference import CONFIG_PATH, load_reference
 st.set_page_config(page_title='Emissions Data Builder', layout='wide',
                    page_icon='⚙️')
 
+import Paths
 from Paths import DATA_DIR
 SMC_PATH = os.path.join(DATA_DIR, 'SmcTransactions.csv')
 
-TRACKED_INPUTS = [
-    os.path.join(DATA_DIR, name) for name in (
-        'OperationsMetricsActual.csv', 'OperationsMetricsBudget.csv',
-        'NgaFactors.csv', 'ReferenceFx.csv', 'LOM.yaml')
-] + [CONFIG_PATH, LoaderCapital.REGISTER_PATH,
-     FactorTable.FACTORS_PATH, Items.ITEMS_PATH, Lookups.LOOKUPS_PATH]
+# What PrepData supplies, read where PrepData writes it (see Paths), then
+# what this program owns.
+PREPDATA_INPUTS = [Paths.source(key) for key in
+                   ('actual', 'forecast', 'lom', 'fx')]
+TRACKED_INPUTS = PREPDATA_INPUTS + [
+    os.path.join(DATA_DIR, 'NgaFactors.csv'),
+    CONFIG_PATH, LoaderCapital.REGISTER_PATH,
+    FactorTable.FACTORS_PATH, Items.ITEMS_PATH, Lookups.LOOKUPS_PATH]
 
 
 # ---------------------------------------------------------------------
 # DATA
 # ---------------------------------------------------------------------
-# Cached so a page change does not rebuild the inventory.  The cache is
-# cleared explicitly when an assumption or a register changes, because that
-# is exactly when the answer should change and not before.
+# Cached on the inputs themselves, so the build on screen is always the build
+# of the files as they stand: made at launch, made again the moment a file
+# changes, and read from the cache by every page and every click in between.
+# One of each is kept.  Keyed on a counter instead, every Rebuild added a
+# whole inventory to memory and none was ever let go, which is how a session
+# ran out of it.
 
-@st.cache_data(show_spinner='Loading operational data...')
-def _load(passphrase=None):
-    return load_all_data(passphrase=passphrase)
+@st.cache_data(show_spinner='Loading operational data...', max_entries=1)
+def _load(stamp):
+    return load_all_data()
 
 
-@st.cache_resource(show_spinner='Calculating inventory...')
-def _precompute(_df, token):
+@st.cache_resource(show_spinner='Calculating inventory...', max_entries=1)
+def _precompute(_df, stamp):
     return precompute_all(
         _df, fsei_rom=FSEI_ROM, fsei_elec=FSEI_ELEC,
         start_date=DEFAULT_START_DATE,
@@ -82,57 +91,27 @@ def _precompute(_df, token):
 
 
 def _stamp():
-    """Fingerprint of the emissions-owned inputs."""
+    """Fingerprint of every input, PrepData's included.
+
+    A PrepData run rewrites its outputs, and that is an input moving like any
+    other: the build on screen is marked stale and says so, and the new data
+    comes in with the next page drawn.
+    """
     parts = []
-    for path in (CONFIG_PATH, LoaderCapital.REGISTER_PATH,
-                 FactorTable.FACTORS_PATH, Items.ITEMS_PATH,
-                 Lookups.LOOKUPS_PATH):
+    for path in TRACKED_INPUTS:
         parts.append(str(os.path.getmtime(path))
                      if os.path.exists(path) else '-')
     return '|'.join(parts)
 
 
-# The build is held against a token, not against the inputs.  An edit does
-# not silently move the figures somebody is reading: it marks the build stale
-# and says so, and the build changes when Rebuild is pressed and at no other
-# time.  Half a minute of projection is not something to spend on a
-# keystroke, and a figure that changes underneath a reader is worse than an
-# old one that says it is old.
-
-def _token():
-    return st.session_state.get('build_token', 0)
-
-
-def _stale():
-    """Whether the inputs have moved since the build on screen was made."""
-    built = st.session_state.get('built_stamp')
-    return built is not None and built != _stamp()
-
-
 def _rebuild():
-    """Mark the build stale.  Called wherever an input is saved.
+    """Withdraw what was reviewed.  Called wherever an input is saved.
 
-    It does not rebuild.  The saved figure is on disk and will be picked up
-    by the next build; until then the screen keeps showing the build it was
-    showing, and the sidebar says so.
+    The saved file changes the inputs, and the next page drawn builds from
+    it.  Until then nothing that was checked of the last build may be
+    published as if it were this one.
     """
-    for key in ('pending_ok', 'pending_outstanding', 'pending_assumptions',
-                'confirm_publish'):
-        st.session_state.pop(key, None)
-
-
-def _force_rebuild():
-    """Rebuild now.  The only thing that changes what is on screen."""
-    _load.clear()
-    _precompute.clear()
-    _build.clear()
-    _published.clear()
-    st.session_state['build_token'] = _token() + 1
-    st.session_state['built_stamp'] = _stamp()
-    # The baseline is not touched.  A rebuild is how an edit reaches the
-    # figures, so it is the thing this session's comparison is measuring.
-    for key in ('pending_ok', 'pending_outstanding', 'pending_assumptions',
-                'confirm_publish'):
+    for key in ('gate', 'confirm_publish'):
         st.session_state.pop(key, None)
 
 
@@ -153,8 +132,8 @@ def _published_stamp():
 # of the wait, paid again for every click that only wanted to group what it
 # had already produced.  Cached against the build token, so it is computed
 # once and every page after that reads it.
-@st.cache_resource(show_spinner='Building the inventory...')
-def _build(_precomputed, token):
+@st.cache_resource(show_spinner='Building the inventory...', max_entries=1)
+def _build(_precomputed, stamp):
     return build_emissions_table(_precomputed, _precomputed.ghg_df)
 
 
@@ -180,14 +159,17 @@ def _baseline_summary(build_id):
 
 
 def _inventory():
-    """The build on screen.  Made once, then read by every page."""
-    token = _token()
-    frame = _load()
-    precomputed = _precompute(frame, token)
-    table = _build(precomputed, token)
-    # Recorded at the first build of a session, so a later edit can be
-    # compared against it and reported as stale rather than applied.
-    st.session_state.setdefault('built_stamp', _stamp())
+    """The build on screen: the build of the files as they stand."""
+    stamp = _stamp()
+    frame = _load(stamp)
+    precomputed = _precompute(frame, stamp)
+    table = _build(precomputed, stamp)
+    if st.session_state.get('built_stamp') != stamp:
+        # A new build.  What was checked of the last one does not stand.
+        for key in ('gate', 'confirm_publish'):
+            st.session_state.pop(key, None)
+        st.session_state['built_stamp'] = stamp
+        st.session_state['built_at'] = datetime.now()
     # The build this session opened on.  Everything after it is this
     # session's doing, which is a different question from what has
     # accumulated since the last publication.
@@ -195,6 +177,64 @@ def _inventory():
         st.session_state['session_baseline'] = _summarise(table)
         st.session_state['session_opened'] = datetime.now()
     return frame, precomputed, table
+
+
+def _gate():
+    """Whether this build may be published, and what publishing writes.
+
+    Worked out from the build itself, once for each build, so Publish is
+    offered the moment a build passes, on whatever page is open.  It used to
+    wait for somebody to open Changes, and the sidebar is drawn before the
+    page, so even then it stayed grey until the next click.
+
+    Two things block: a table that does not reconcile to the engines, and a
+    source line in a unit its factor cannot take.  Everything else is known
+    and written with the build as outstanding.
+    """
+    _, precomputed, table = _inventory()
+    stamp = st.session_state.get('built_stamp')
+    held = st.session_state.get('gate')
+    if held is not None and held.get('stamp') == stamp:
+        return held
+    reference = load_reference()
+    checks = pd.concat([reconcile(table, precomputed, 'CY'),
+                        reconcile(table, precomputed, 'FY')])
+    failures = checks[~checks['Within']]
+    gaps = unit_gaps(precomputed.ghg_df)
+    status = Status.category_status(precomputed.scope3, reference)
+    outstanding = pd.DataFrame(
+        getattr(precomputed.scope3, 'outstanding', None) or [])
+    capital_issues = LoaderCapital.register_issues(LoaderCapital.load_register())
+    if not capital_issues.empty:
+        outstanding = pd.concat([outstanding, capital_issues],
+                                ignore_index=True)
+    assumptions = pd.concat([Status.assumption_rows(reference.config),
+                             Status.mapping_rows(reference.config)],
+                            ignore_index=True)
+    emissions = table.loc[table['RowKind'] == 'Emission', 'Emissions_tCO2e']
+    blocked = []
+    if not failures.empty:
+        blocked.append(f'{len(failures)} reconciliation check(s) fail')
+    if not gaps.empty:
+        blocked.append(f'{len(gaps):,} source line(s) carry a unit their '
+                       f'factor cannot take')
+    gate = {
+        'stamp': stamp,
+        'ok': not blocked,
+        'blocked': blocked,
+        'failures': failures,
+        'gaps': gaps,
+        'status': status,
+        'outstanding': outstanding,
+        'assumptions': assumptions,
+        'total': float(emissions.sum()),
+        'says': '%s outstanding, %s without a figure.' % (
+            _plain(len(outstanding), 'item'),
+            _plain(int((status['Status'] == 'Outstanding').sum()),
+                   'category')),
+    }
+    st.session_state['gate'] = gate
+    return gate
 
 
 def _options(series):
@@ -215,6 +255,104 @@ def _options(series):
 # STATUS
 # ---------------------------------------------------------------------
 
+def _unit_gap_panel(precomputed):
+    """Critical: lines carrying an NGA source in a unit nothing converts.
+
+    Each is a line with a quantity and no emission, so the total is short by
+    it.  Shown first because it blocks publication, and shown by source line
+    because the fix is a conversion in PrepData for that item.
+    """
+    gaps = unit_gaps(precomputed.ghg_df)
+    if gaps.empty:
+        st.success('Every line carrying an NGA source is in a unit its '
+                   'factor can take.')
+        return
+    held = gaps.groupby('DataSet', observed=True).agg(
+        Lines=('Rows', 'size'), Rows=('Rows', 'sum'),
+        Value=('Value_AUD', 'sum'))
+    said = '; '.join(f'{name} {int(r.Lines):,} lines, {int(r.Rows):,} '
+                     f'rows, ${r.Value:,.0f}' for name, r in held.iterrows())
+    st.error(f'Critical: {len(gaps):,} source lines carry a unit their '
+             f'emission factor cannot take, so they are not priced and the '
+             f'build is short by them.  {said}.  Publishing is blocked until '
+             f'each has a conversion in the PrepData conversions register and '
+             f'the data is sent again.')
+    shown = gaps.copy()
+    shown['From'] = Screen.months(shown['From'])
+    shown['To'] = Screen.months(shown['To'])
+    Screen.table(shown, key='unit_gaps', height=320, column_config={
+        'Quantity': st.column_config.NumberColumn(format='%,.2f'),
+        'Value_AUD': st.column_config.NumberColumn(format='$%,.0f'),
+    })
+
+
+def _corrections_panel(precomputed):
+    """The unit corrections in force and whether this build applied them."""
+    status = LoaderUnits.corrections_status(precomputed.ghg_df)
+    if status.empty:
+        return
+    applied = status[status['Applied'] == 'Yes']
+    if applied.empty:
+        st.success(f'{len(status)} unit correction(s) in force and none '
+                   f'applied: the rows they name are in line with the rest '
+                   f'of their stream.  The source has been put right; the '
+                   f'corrections can be taken out of the settings.')
+    else:
+        st.warning(f'{len(applied)} of {len(status)} unit correction(s) '
+                   f'applied.  Rows recorded under the wrong unit heading are '
+                   f'read in the unit they are really in.  The source file is '
+                   f'not changed; put it right there and the correction stops '
+                   f'applying by itself.')
+    Screen.table(status, key='unit_corrections', height=160, column_config={
+        'Quantity now': st.column_config.NumberColumn(format='%,.1f'),
+        'Why': st.column_config.TextColumn('Why', width='large')})
+
+
+def _carried_panel(precomputed):
+    """Counted lines this build carried into their unit itself.
+
+    Two kinds, told apart because only one needs a person.  A size PrepData
+    already holds in its conversions register is right by definition, and
+    PrepData carries it upstream on its next run: a note, not a task.  A size
+    read from the item description is this build's reading and is worth a
+    look: a warning, with the items listed.
+    """
+    carried = LoaderUnits.conversions_applied(precomputed.ghg_df)
+    if carried.empty:
+        return
+    registered = carried['Basis'].astype(str) == LoaderUnits.BASIS_REGISTER
+    held = carried[registered]
+    read = carried[~registered]
+    if not held.empty:
+        st.caption(f'{held["Identifier"].nunique():,} item(s) arrived as a '
+                   f'count and are priced on the size the PrepData '
+                   f'conversions register holds for them.  PrepData carries '
+                   f'them itself on its next run.')
+    if read.empty:
+        return
+    st.warning(f'{read["Identifier"].nunique():,} item(s) arrived as a count '
+               f'and are priced on a size read from the item description.  '
+               f'Check each size, then add it to the PrepData conversions '
+               f'register so PrepData carries it and this list empties.')
+    Screen.table(read, key='carried_units', height=260, column_config={
+        'Multiplier': st.column_config.NumberColumn(format='%,.4g'),
+        'Quantity': st.column_config.NumberColumn(format='%,.2f'),
+    })
+
+
+def _unpriced_panel(precomputed):
+    """Recorded dollars that no method prices.  Silent when there are none."""
+    unpriced = unpriced_spend(precomputed.ghg_df)
+    if unpriced.empty:
+        return
+    st.warning(f'${unpriced["Value"].sum():,.0f} of recorded expenditure '
+               f'has no product group and no emission, so nothing prices it.  '
+               f'Give it a product group in the PrepData item register, or a '
+               f'physical quantity its NGA factor can take.')
+    Screen.table(unpriced, key='unpriced_spend', height=200, column_config={
+        'Value': st.column_config.NumberColumn(format='$%,.0f')})
+
+
 def page_verify(precomputed, table):
     st.subheader('Verify')
     st.caption('Whether this build is safe to publish: that it holds together, that the physicals agree with the plan, and what has moved since the last publication.')
@@ -234,6 +372,11 @@ def page_verify(precomputed, table):
     columns[3].metric('Forecast emissions', f'{forecast:,.0f} t')
 
     st.caption(f'Milestones: {MILESTONE_SOURCE}')
+
+    _unit_gap_panel(precomputed)
+    _corrections_panel(precomputed)
+    _carried_panel(precomputed)
+    _unpriced_panel(precomputed)
 
     left, right = st.columns(2)
     with left:
@@ -280,8 +423,13 @@ def page_verify(precomputed, table):
         st.warning(f'{len(drifting)} of {len(checks)} physical checks are '
                    f'drifting from the plan.  Worth a look before publishing.')
     else:
-        st.error(f'{len(disagreeing)} of {len(checks)} physical checks '
-                 f'disagree with the plan.')
+        # A warning, not an error: a disagreement is a question for the
+        # forecast and does not block publishing.  Red is kept for what does.
+        named = ', '.join(disagreeing['Check'].astype(str))
+        st.warning(f'{len(disagreeing)} of {len(checks)} physical checks '
+                   f'disagree with the plan: {named}.  Publishing is not '
+                   f'blocked; what each means, and where it is put right, '
+                   f'is in the table.')
 
     shown = checks.copy()
     shown['Drift'] = shown['Drift'].apply(
@@ -328,6 +476,26 @@ def page_verify(precomputed, table):
                    'it.  Read the cumulative figure above for the recovery '
                    'and read this column for how well the two series line up.')
 
+    slips = Production.unit_slips(precomputed.ghg_df)
+    if slips.empty:
+        st.success('No stream has a month a hundred times away from its '
+                   'typical month.')
+    else:
+        st.error(f'{len(slips)} stream(s) have months a hundred times or more '
+                 f'away from their typical month.  That is the size of a '
+                 f'unit slip, kilograms under a tonne heading or litres under '
+                 f'kilolitres, and the emissions carry it.  Check each at '
+                 f'source before publishing.')
+        shown = slips.copy()
+        shown['From'] = Screen.months(shown['From'])
+        shown['To'] = Screen.months(shown['To'])
+        Screen.table(shown, key='unit_slips', height=240, column_config={
+            'Typical': st.column_config.NumberColumn(
+                'Typical month', format='%,.1f'),
+            'High': st.column_config.NumberColumn('Months high'),
+            'Low': st.column_config.NumberColumn('Months low'),
+        })
+
     with st.expander('Activity streams', expanded=False):
         st.dataframe(Production.continuity(precomputed.ghg_df),
                      hide_index=True, width='stretch')
@@ -352,11 +520,13 @@ def page_verify(precomputed, table):
         st.dataframe(failures, hide_index=True, width='stretch')
 
     with st.expander('Inputs in this build', expanded=False):
+        st.caption(f'Operational data read from {Paths.source_label()}.')
         rows = []
+        base = os.path.dirname(Paths.ROOT)
         for path in TRACKED_INPUTS:
             exists = os.path.exists(path)
             rows.append({
-                'File': os.path.basename(path),
+                'File': os.path.relpath(path, base),
                 'Present': exists,
                 'Size': f'{os.path.getsize(path):,}' if exists else '',
                 'Modified': (datetime.fromtimestamp(os.path.getmtime(path))
@@ -496,17 +666,25 @@ def page_explore(table):
                     'Quantity', format='%,.0f')})
 
     # Most recent first, because the question asked of a row list is almost
-    # always about the latest month rather than the first one.
-    display = picked.sort_values('Date', ascending=False).copy()
-    if not display.empty:
-        display['Date'] = pd.to_datetime(display['Date']).dt.date
-    display = display.drop(
-        columns=[column for column in ('CalendarYear', 'FinancialYear')
-                 if column in display.columns])
+    # always about the latest month rather than the first one.  Only the
+    # rows shown are sorted and copied: the whole selection is a million
+    # rows, and preparing it on every draw, with a download of all of it
+    # built into the page each time, is what ran the page out of memory.
+    def _shaped(frame):
+        frame = frame.copy()
+        if not frame.empty:
+            frame['Date'] = pd.to_datetime(frame['Date']).dt.date
+        return frame.drop(
+            columns=[column for column in ('CalendarYear', 'FinancialYear')
+                     if column in frame.columns])
 
-    with st.expander(f'Rows ({len(display):,})', expanded=False):
+    display = _shaped(picked.nlargest(2000, 'Date')
+                      if len(picked) > 2000 else
+                      picked.sort_values('Date', ascending=False))
+
+    with st.expander(f'Rows ({len(picked):,})', expanded=False):
         st.dataframe(
-            display.head(2000), hide_index=True, width='stretch', height=400,
+            display, hide_index=True, width='stretch', height=400,
             column_config={
                 'Date': st.column_config.DateColumn(format='YYYY-MM-DD'),
                 'Quantity': st.column_config.NumberColumn(format='%,.3f'),
@@ -515,15 +693,20 @@ def page_explore(table):
                     format='%,.2f'),
                 'Energy_GJ': st.column_config.NumberColumn(format='%,.0f'),
             })
-        st.caption(f'Showing the most recent {min(len(display), 2000):,} of '
-                   f'{len(display):,} rows.  The download carries all of '
+        st.caption(f'Showing the most recent {len(display):,} of '
+                   f'{len(picked):,} rows.  The download carries all of '
                    f'them.')
-        buffer = io.StringIO()
-        display.to_csv(buffer, index=False)
-        st.download_button('Download this selection',
-                           data=buffer.getvalue().encode('utf-8'),
-                           file_name='EmissionsSelection.csv',
-                           mime='text/csv')
+        # Made when asked for, compressed, and handed over once.
+        if st.button('Prepare the download', key='prepare_selection'):
+            whole = _shaped(picked.sort_values('Date', ascending=False))
+            st.session_state['selection_file'] = gzip.compress(
+                whole.to_csv(index=False).encode('utf-8'))
+        ready = st.session_state.pop('selection_file', None)
+        if ready is not None:
+            st.download_button('Download this selection',
+                               data=ready,
+                               file_name='EmissionsSelection.csv.gz',
+                               mime='application/gzip')
 
 
 # ---------------------------------------------------------------------
@@ -531,7 +714,7 @@ def page_explore(table):
 # ---------------------------------------------------------------------
 
 BADGE = {'Calculated': '🟢', 'Estimated': '🟡', 'Outstanding': '🔴',
-         'Excluded': '⚪', 'Not applicable': '⚪'}
+         'None identified': '⚪', 'Excluded': '⚪', 'Not applicable': '⚪'}
 
 
 # ---------------------------------------------------------------------
@@ -552,7 +735,9 @@ def page_scope12(precomputed, table):
     rows = table[(table['RowKind'] == 'Emission')
                  & table['GHGScope'].isin(['Scope 1', 'Scope 2'])].copy()
     if rows.empty:
-        st.info('No Scope 1 or Scope 2 rows in this build.')
+        Screen.nothing('Nothing in scope 1 or 2',
+                       'This build holds no scope 1 or scope 2 row.  Import '
+                       'operations data and rebuild.')
         return
 
     # Activity carrying a fuel or a common name that produced no emission at
@@ -692,6 +877,21 @@ def page_scope12(precomputed, table):
 
 
 
+# What the tiles on the Scope 3 page are narrowed to, if anything, and what
+# each status means: said under the count rather than in a tooltip nobody
+# hovers over.
+SCOPE3_FOCUS = 'scope3_focus'
+
+STATUS_MEANS = {
+    'Calculated': 'A figure from activity and a factor',
+    'Estimated': 'A figure, on a basis weaker than activity',
+    'Outstanding': 'No figure yet, and one is owed',
+    'None identified': 'Considered, and nothing in it is identified today',
+    'Excluded': 'Considered and left out, on the record',
+    'Not applicable': 'The operation does not have this category',
+}
+
+
 def page_scope3(precomputed, reference):
     st.subheader('Scope 3, all fifteen categories')
     st.caption('Every category carries a position.  A category without a '
@@ -700,18 +900,23 @@ def page_scope3(precomputed, reference):
 
     status = Status.category_status(precomputed.scope3, reference)
     counts = status['Status'].value_counts()
-    columns = st.columns(5)
-    for index, name in enumerate(Status.CATEGORY_STATUSES):
-        columns[index].metric(f'{BADGE[name]} {name}', int(counts.get(name, 0)))
+    Screen.cards(list(Status.CATEGORY_STATUSES),
+                 {name: int(counts.get(name, 0))
+                  for name in Status.CATEGORY_STATUSES},
+                 SCOPE3_FOCUS, 'scope3', means=STATUS_MEANS)
 
-    shown = status.copy()
-    shown['Status'] = shown['Status'].map(lambda s: f'{BADGE[s]} {s}')
-    st.dataframe(
-        shown[['Category', 'Name', 'Status', 'tCO2e', 'ActualBasis',
-               'ForecastBasis', 'OpenItems', 'Reason']],
-        hide_index=True, width='stretch', height=580,
-        column_config={'tCO2e': st.column_config.NumberColumn(
-            'tCO2-e', format='%.0f')})
+    which = Screen.focus(SCOPE3_FOCUS)
+    shown = status[status['Status'] == which] if which else status
+    if shown.empty:
+        Screen.unfilter(SCOPE3_FOCUS, 'No category reads as %s.' % which)
+    else:
+        st.caption('%d of %d categories' % (len(shown), len(status)))
+        st.dataframe(
+            shown[['Category', 'Name', 'Status', 'tCO2e', 'ActualBasis',
+                   'ForecastBasis', 'OpenItems', 'Reason']],
+            hide_index=True, width='stretch', height=580,
+            column_config={'tCO2e': st.column_config.NumberColumn(
+                'tCO2e', format='%.0f')})
 
     st.divider()
     picked = st.selectbox('Category detail',
@@ -753,6 +958,15 @@ def page_scope3(precomputed, reference):
 
 HISTORY_PATH = os.path.join(os.path.dirname(LoaderCapital.REGISTER_PATH),
                             'ChangeHistory.csv')
+
+
+
+def _plain(count, word):
+    """`1 row`, `4 rows`.  A count and its word, agreeing."""
+    if count == 1:
+        return '%d %s' % (count, word)
+    plural = word[:-1] + 'ies' if word.endswith('y') else word + 's'
+    return '%d %s' % (count, plural)
 
 
 def _maintain(frame, key, column_config=None, disabled=None, height=420,
@@ -834,9 +1048,10 @@ def page_assumptions(reference):
 
     rows = Status.assumption_rows(reference.config)
     if rows.empty:
-        st.error('No assumptions found in the configuration.  If the file '
-                 'looks empty, restore it from `Data/ReferenceInputs.yaml` or '
-                 'from the archive under `Data/Published/`.')
+        Screen.nothing('No assumptions',
+                       'The configuration holds none.  Restore it from '
+                       '`Data/ReferenceInputs.yaml` or from the archive '
+                       'under `Data/Published/`.')
         return
 
     shown = rows[['Category', 'Group', 'Parameter', 'Value', 'Unit', 'Source']]
@@ -863,8 +1078,23 @@ def page_assumptions(reference):
     if not unsourced.empty:
         st.warning(
             f'{len(unsourced)} figure(s) carry no source: '
-            + ', '.join(f'category {int(r.Category)} {r.Parameter}'
+            + ', '.join(f'{r.Category} {r.Group} {r.Parameter}'.strip()
                         for r in unsourced.itertuples()))
+
+    mappings = Status.mapping_rows(reference.config)
+    if not mappings.empty:
+        st.markdown('**Mappings and corrections**')
+        st.caption('Which product group prices each contractor charge, the '
+                   'two factors each blend is made of, and each unit '
+                   'correction.  Names rather than figures, so they are '
+                   'changed in '
+                   f'{os.path.basename(CONFIG_PATH)} rather than here.  '
+                   'Published with every build beside the figures above.')
+        st.dataframe(mappings[['Group', 'Parameter', 'Value', 'Source']],
+                     hide_index=True, width='stretch')
+        for problem in [e for e in reference.errors
+                        if 'equipment_share' in e or '_factor is not' in e]:
+            st.error(problem)
 
     if changed.any():
         st.info(f'{int(changed.sum())} assumption(s) edited and not yet '
@@ -962,7 +1192,10 @@ def page_capital(reference):
                 help='t CO2-e per $1M AUD, from the class.'),
         })
 
-    if st.button('Save register', type='primary'):
+    moved = _diff_rows(register, edited, 'CapitalID')
+    if moved:
+        st.caption('%s edited and not yet saved.' % _plain(len(moved), 'row'))
+    if st.button('Save register', type='primary', disabled=not moved):
         saving = edited.copy()
         # Issue an identifier to anything added in the grid.
         for position in saving.index[saving['CapitalID'].fillna('').eq('')]:
@@ -981,7 +1214,7 @@ def page_capital(reference):
                 'CapitalGoodsRegister.csv')
         LoaderCapital.save_register(merged)
         _rebuild()
-        st.success('Saved.  Press Rebuild to bring it into the figures.')
+        st.success('Saved.  The build brings it into the figures now.')
         st.rerun()
 
     if not resolved.empty:
@@ -1060,7 +1293,11 @@ def page_credits():
                 'Value AUD', format='%,.0f'),
         })
 
-    if st.button('Save transactions', type='primary'):
+    moved = _diff_rows(ledger.assign(_row=ledger.index.astype(str)),
+                       edited.assign(_row=edited.index.astype(str)), '_row')
+    if moved:
+        st.caption('%s edited and not yet saved.' % _plain(len(moved), 'row'))
+    if st.button('Save transactions', type='primary', disabled=not moved):
         saving = edited.copy()
         # Direction is a property of the transaction, not of what somebody
         # happened to type.
@@ -1072,7 +1309,9 @@ def page_credits():
         _record(_diff_rows(ledger.assign(_row=ledger.index.astype(str)),
                            saving.assign(_row=saving.index.astype(str)),
                            '_row'), 'SmcTransactions.csv')
-        saving.to_csv(SMC_PATH, index=False)
+        temporary = SMC_PATH + '.writing'
+        saving.to_csv(temporary, index=False)
+        os.replace(temporary, SMC_PATH)
         _rebuild()
         st.success('Saved.')
         st.rerun()
@@ -1091,7 +1330,9 @@ def page_history():
 
     history = ConfigEdit.read_history(HISTORY_PATH)
     if history.empty:
-        st.info('No changes recorded yet.')
+        Screen.nothing('No changes yet',
+                       'Every edit made on these pages is recorded here as '
+                       'it is saved.')
         return
 
     controls = st.columns(3)
@@ -1125,28 +1366,11 @@ def page_changes(reference):
     st.caption('What this session has done, and what publishing would write.  '
                'Reading this page changes nothing.')
 
-    # This page always builds.  Comparing the current inputs against the
-    # published figures is the whole question it answers, so it cannot be
-    # asked from the published file alone and does not wait to be told.
+    # The same checks the sidebar's Publish reads, made once for the build.
     _, precomputed, table = _inventory()
-
-    checks = pd.concat([reconcile(table, precomputed, 'CY'),
-                        reconcile(table, precomputed, 'FY')])
-    failures = checks[~checks['Within']]
-
-    status = Status.category_status(precomputed.scope3, reference)
-    outstanding = pd.DataFrame(
-        getattr(precomputed.scope3, 'outstanding', None) or [])
-    capital_issues = LoaderCapital.register_issues(LoaderCapital.load_register())
-    if not capital_issues.empty:
-        outstanding = pd.concat([outstanding, capital_issues],
-                                ignore_index=True)
-    # Held for the sidebar, so publishing writes exactly what was reviewed
-    # here rather than gathering it again afterwards.
-    st.session_state['pending_outstanding'] = outstanding
-    st.session_state['pending_assumptions'] = Status.assumption_rows(
-        reference.config)
-    st.session_state['pending_ok'] = bool(failures.empty)
+    gate = _gate()
+    failures, gaps = gate['failures'], gate['gaps']
+    status, outstanding = gate['status'], gate['outstanding']
 
     columns = st.columns(3)
     columns[0].metric('Reconciliation',
@@ -1160,12 +1384,17 @@ def page_changes(reference):
                  'is blocked.')
         st.dataframe(failures, hide_index=True, width='stretch')
         return
+    if not gaps.empty:
+        st.error(f'{len(gaps):,} source lines carry a unit their factor '
+                 f'cannot take and are not priced.  Publishing is blocked.  '
+                 f'Verify lists them.')
 
     current = _summarise(table)
     baseline, name = _pick_baseline()
     if baseline is None:
-        st.info('Nothing published yet, so there is nothing to compare '
-                'against.')
+        Screen.nothing('Nothing to compare against',
+                       'Nothing has been published, so this build has no '
+                       'earlier one to move against.')
         return
 
     moved = _movement(baseline, current, name, 'This build')
@@ -1239,7 +1468,7 @@ def _pick_baseline():
         opened = st.session_state.get('session_opened')
         when = opened.strftime('%d %b %H:%M') if opened else 'this session'
         st.caption(f'Against the build this session opened on, at {when}.  '
-                   f'An edit appears here once Rebuild has brought it in.')
+                   f'An edit appears here as soon as it is saved.')
         return st.session_state.get('session_baseline'), 'Opened'
     if chosen == 'Published build':
         st.caption(f'Against the published build, {current_id or "none"}.  '
@@ -1419,7 +1648,9 @@ def page_factors():
     items = Items.load()
     lookups = Lookups.load()
     if factors.empty:
-        st.error('Factors.csv is empty.  Import a factor set before editing.')
+        Screen.nothing('No factors',
+                       'Factors.csv is empty.  Import a factor set before '
+                       'editing.')
         return
 
     identities = factors['FactorKey'].nunique()
@@ -1503,7 +1734,12 @@ def _factors_tab(factors, items, lookups):
             own[FACTOR_VIEW], key='internal_factors', height=260,
             allow_rows=False, column_config=FACTOR_CONFIG,
             disabled=['FactorID', 'Class', 'Source', 'Release'])
-        if st.button('Save factors', type='primary', key='factor_save'):
+        moved = _diff_rows(own[FACTOR_VIEW], edited, 'FactorID')
+        if moved:
+            st.caption('%s edited and not yet saved.'
+                       % _plain(len(moved), 'factor'))
+        if st.button('Save factors', type='primary', key='factor_save',
+                     disabled=not moved):
             _save_factors(own[FACTOR_VIEW], edited)
 
     _add_factor(factors, lookups)
@@ -1565,7 +1801,7 @@ def _save_factors(before, edited):
                    'items pointing at them.')
     _record(changes, 'Factors.csv')
     _rebuild()
-    st.success('Saved.  Press Rebuild to bring it into the figures.')
+    st.success('Saved.  The build brings it into the figures now.')
     st.rerun()
 
 
@@ -1745,14 +1981,14 @@ def _items_tab(items, factors, lookups):
             Items.save(updated)
             _record(changes, 'Items.csv', note=reason)
             _rebuild()
-            st.success(f'{len(picked)} item(s) assigned.  Press Rebuild.')
+            st.success(f'{len(picked)} item(s) assigned.  The build brings them in now.')
             st.rerun()
         if clear:
             updated, changes = Items.clear_assignment(items, picked)
             Items.save(updated)
             _record(changes, 'Items.csv', note='Returned to distributed.')
             _rebuild()
-            st.success('Returned to the distributed factor.  Press Rebuild.')
+            st.success('Returned to the distributed factor.  The build brings it in now.')
             st.rerun()
 
 
@@ -1770,7 +2006,11 @@ def _lookups_tab(lookups):
                    'price an item, and by how much to convert it.')
     edited = _maintain(rows, key='lookup_editor', height=380, allow_rows=True,
                        disabled=['ListName'], column_config=LOOKUP_CONFIG)
-    if st.button('Save list', type='primary', key='lookup_save'):
+    moved = _diff_rows(rows, edited.assign(ListName=chosen), 'Code')
+    if moved:
+        st.caption('%s edited and not yet saved.' % _plain(len(moved), 'row'))
+    if st.button('Save list', type='primary', key='lookup_save',
+                 disabled=not moved):
         saving = edited.copy()
         saving['ListName'] = chosen
         changes = _diff_rows(rows, saving, 'Code')
@@ -1782,525 +2022,154 @@ def _lookups_tab(lookups):
         Lookups.save(whole)
         _record(changes, 'Lookups.csv')
         _rebuild()
-        st.success('Saved.  Press Rebuild to bring it into the figures.')
+        st.success('Saved.  The build brings it into the figures now.')
         st.rerun()
 
 
 
 
 # ---------------------------------------------------------------------
-# IMPORT
+# SOURCES
 # ---------------------------------------------------------------------
-# One table.  Every row of the file, checked against what the model holds,
-# with the cell at fault coloured and clickable.  Nothing is written until
-# the button at the bottom, and the button says what it will do.
+# What the build reads, and whether the build on screen has read it.  Nothing
+# is chosen or uploaded here: PrepData writes the operational data, this
+# program keeps its own registers, and the build reads both.  The screen is how
+# a person sees that, and how an auditor sees what a figure was made from.
 
-OVERWRITE_CHOICES = {
-    'No, stop': 'Nothing is imported while a reported month would move.  '
-                'The safest, and why it is first.',
-    'Ignore them': 'New rows are imported, reported months are left as they '
-                   'are.  Right when the model is correct and the file is '
-                   'not.',
-    'Overwrite them': 'Reported months take the file\'s values.  Right when '
-                      'you know why the source changed.',
-    'Row by row': 'Tick the ones to overwrite.',
-}
-
-VERDICT_MARK = {'rejected': '✕', 'questioned': '⚠', 'restated': '↻',
-                'new': '✓', 'unchanged': '·', 'left out': '⊘'}
-
-# The cell at fault, and a lighter wash across the rest of its row so the eye
-# finds the row first and the cell second.
-CELL_TINT = {'rejected': 'background-color: #F1948A; color: #4A1109',
-             'questioned': 'background-color: #F7DC6F; color: #4A3B00',
-             'restated': 'background-color: #A9CCE3; color: #0E2A3E'}
-ROW_TINT = {'rejected': 'background-color: #FDEDEC',
-            'questioned': 'background-color: #FEF9E7',
-            'restated': 'background-color: #EAF2F8',
-            # Grey and struck through: still legible, plainly not going in.
-            'left out': 'background-color: #EEEEEE; color: #7B7B7B; '
-                        'text-decoration: line-through'}
-
-IMPORT_FIELDS = ['Date', 'Activity', 'SubActivity', 'Description',
-                 'Department', 'CostCentre', 'UOM', 'Quantity',
-                 'ProductGroup', 'Value', 'Source', 'TransactionType']
-
-SHOWN = ['Line', 'Verdict', 'What is wrong', 'Held now'] + IMPORT_FIELDS
-
-
-def _live_operations():
-    """The operations file as it stands, read as text so nothing is coerced."""
-    path = os.path.join(DATA_DIR, 'OperationsMetricsActual.csv')
-    if not os.path.exists(path):
-        return pd.DataFrame()
-    return pd.read_csv(path, dtype=str)
-
-
-def _corrections():
-    return st.session_state.setdefault('import_corrections', {})
-
-
-def _left_out():
-    """Line numbers set aside for this import.
-
-    Held in the session rather than written into the data, so a correction
-    that happens to make a row acceptable does not quietly reinstate it.
-    Leaving a row out is deliberate, and so is putting it back.
-    """
-    return st.session_state.setdefault('import_left_out', set())
-
-
-def page_import():
-    st.subheader('Import')
-    st.caption('Every row of the file, against what the model already holds.  '
-               'Click a coloured cell to fix it.  Nothing is written until '
-               'the button at the bottom.')
-
-    top = st.columns([3, 1])
-    uploaded = top[0].file_uploader(
-        'Operations file, csv or Excel', type=['csv', 'xlsx', 'xlsm'],
-        key='import_file', label_visibility='collapsed')
-    top[1].download_button(
-        'Blank template', Importer.template().to_csv(index=False),
-        file_name='OperationsImportTemplate.csv', mime='text/csv',
-        width='stretch')
-
-    if uploaded is None:
-        st.info('Choose a file.  It is read and checked here; nothing is '
-                'written until you say so.')
-        st.session_state.pop('import_corrections', None)
-        st.session_state.pop('import_left_out', None)
-        return
-
+@st.cache_data(show_spinner='Reading what the file covers...')
+def _coverage(path, stamp):
+    """Rows and the months a dated csv covers.  Read again when it changes."""
     try:
-        frame, sheets, sheet = Importer.read(uploaded)
-    except ValueError as exc:
-        st.error(str(exc))
-        return
+        dates = pd.read_csv(path, usecols=['Date'], dtype=str)['Date']
+    except (ValueError, OSError):
+        return None
+    when = pd.to_datetime(dates, dayfirst=True, errors='coerce').dropna()
+    if when.empty:
+        return {'rows': len(dates), 'from': None, 'to': None}
+    return {'rows': len(dates), 'from': when.min(), 'to': when.max()}
 
-    # -- the columns, only when they need attention --------------------
-    proposed, spare = Importer.propose(frame.columns)
-    missing = proposed[proposed['Required'] & proposed['Column in file'].eq('')]
-    guessed = proposed[proposed['Matched by'].str.contains('guess')]
-    mapping = proposed
-    if not missing.empty or not guessed.empty:
-        with st.expander('Columns need a look', expanded=True):
-            if not missing.empty:
-                st.error('Nothing matched %s, and a row cannot be read '
-                         'without it.' % ', '.join(missing['Field']))
-            mapping = st.data_editor(
-                proposed, hide_index=True, width='stretch', num_rows='fixed',
-                key='import_mapping',
-                disabled=['Field', 'Required', 'Matched by', 'What it is for'],
-                column_config={'Column in file':
-                               st.column_config.SelectboxColumn(
-                                   'Column in file',
-                                   options=[''] + list(frame.columns))})
-    else:
-        st.caption('%s: %d rows.  All columns matched by name.%s'
-                   % (uploaded.name, len(frame),
-                      '  Not used: %s.' % ', '.join(spare) if spare else ''))
 
-    try:
-        staged = Importer.apply_mapping(frame, mapping)
-    except ValueError as exc:
-        st.error(str(exc))
-        return
+def _inputs_frame():
+    """Every input, where it is, whether it is there and whether it is in."""
+    base = os.path.dirname(Paths.ROOT)
+    labels = {Paths.source('actual'): 'Actuals',
+              Paths.source('forecast'): 'Forecast',
+              Paths.source('lom'): 'Life of mine',
+              Paths.source('fx'): 'Exchange rates'}
+    built_at = st.session_state.get('built_at')
+    rows = []
+    for path in TRACKED_INPUTS:
+        exists = os.path.exists(path)
+        modified = (datetime.fromtimestamp(os.path.getmtime(path))
+                    if exists else None)
+        if not exists:
+            status = 'Missing'
+        elif built_at is None:
+            status = 'Read at the next build'
+        elif modified > built_at:
+            status = 'Changed since the build'
+        else:
+            status = 'In this build'
+        rows.append({
+            'Input': labels.get(path, os.path.splitext(
+                os.path.basename(path))[0]),
+            'Owner': 'PrepData' if path in PREPDATA_INPUTS else 'Builder',
+            'Status': status,
+            'File': os.path.relpath(path, base),
+            'Modified': modified.strftime('%d %b %Y %H:%M') if modified else '',
+            'Size': f'{os.path.getsize(path) / 1_048_576:,.1f} MB'
+                    if exists else '',
+        })
+    return pd.DataFrame(rows)
 
-    # Corrections are applied before the check, so the table recolours the
-    # moment one is made rather than at some later confirmation step.
-    fixes = _corrections()
-    for (line, column), value in fixes.items():
-        if column in staged.columns and 0 <= line - 2 < len(staged):
-            staged.iat[line - 2, staged.columns.get_loc(column)] = value
 
-    live = _live_operations()
-    work, found, absent = Import.validate(staged, live)
+def page_sources():
+    Screen.dressed()
+    Screen.headline('Sources', f'Operational data is read from '
+                               f'{Paths.source_label()}.  Nothing is uploaded '
+                               f'here; the build reads every file below.')
 
-    # Rows set aside by hand.  After the check, so every finding against one
-    # is still there to read, and before the counts, so a row left out stops
-    # blocking the import and stops being counted as arriving.
-    work = Import.leave_out(work, _left_out())
+    tiles = []
+    for key, name in (('actual', 'Actuals'), ('forecast', 'Forecast')):
+        path = Paths.source(key)
+        if not os.path.exists(path):
+            tiles.append((name, 'not there', os.path.relpath(
+                path, os.path.dirname(Paths.ROOT))))
+            continue
+        held = _coverage(path, os.path.getmtime(path))
+        covers = ('no dated rows' if not held or held['from'] is None else
+                  f"{held['from']:%b %Y} to {held['to']:%b %Y}")
+        rows = f"{held['rows']:,} rows" if held else ''
+        stamp = datetime.fromtimestamp(os.path.getmtime(path))
+        tiles.append((name, covers, f'{rows}, written {stamp:%d %b %H:%M}'))
+    lom = LomSummary()
+    tiles.append(('Life of mine', lom[0], lom[1]))
+    Screen.held(tiles)
 
-    counts = work['Verdict'].value_counts()
-    stopped = Import.blocking(work)
-    aside = int(counts.get('left out', 0))
-    restated = work[work['Verdict'] == 'restated']
+    frame = _inputs_frame()
+    changed = frame[frame['Status'] == 'Changed since the build']
+    missing = frame[frame['Status'] == 'Missing']
+    if not missing.empty:
+        st.error(f"Missing: {', '.join(missing['File'])}.  The build cannot "
+                 f"be made without them.")
+    if not changed.empty:
+        st.warning(f"{len(changed)} input(s) changed after the build on "
+                   f"screen was made.  The next page drawn reads them.")
 
-    # -- what kind of file is this --------------------------------------
-    # Asked before the rows, because a file can pass every row check and
-    # still be last month's sent again, or half a month, or four thousand
-    # rows where eleven hundred was normal.
-    about = Import.file_checks(work, live)
-    if not about.empty:
-        for _, item in about[about['Severity'] == 'rejected'].iterrows():
-            st.error('%s.  %s' % (item['Check'], item['Detail']))
-        asked = about[about['Severity'] == 'questioned']
-        if not asked.empty:
-            st.warning('\n\n'.join(
-                '**%s.**  %s' % (item['Check'], item['Detail'])
-                for _, item in asked.iterrows()))
-        stated = about[about['Severity'] == 'note']
-        for _, item in stated.iterrows():
-            st.caption('%s: %s' % (item['Check'], item['Detail']))
-
-    tiles = st.columns(len(Import.BUCKETS))
-    for tile, bucket in zip(tiles, Import.BUCKETS):
-        number = len(absent) if bucket == 'absent' else int(counts.get(bucket, 0))
-        tile.metric(bucket.title(), f'{number:,}',
-                    help=Import.MEANING.get(bucket))
-
-    if fixes:
-        st.caption('%d correction(s) applied on this screen.  They are not in '
-                   'the file, and not written anywhere, until you import.'
-                   % len(fixes))
-    if aside:
-        st.caption('%d row(s) set aside.  They stay in the file you uploaded '
-                   'and are simply not written.  Select one and put it back '
-                   'to change your mind.' % aside)
-    if stopped:
-        st.error('%d row(s) cannot be imported.  Click a red cell to fix it, '
-                 'or leave them and they are left out.' % stopped)
-    elif not restated.empty:
-        st.warning('%d row(s) would change a month already reported.'
-                   % len(restated))
-    else:
-        st.success('Every row reads cleanly and nothing already reported '
-                   'would move.')
-
-    # -- the one table --------------------------------------------------
-    choices = ['Needs attention', 'All rows', 'Already reported', 'New',
-               'Unchanged', 'Left out']
-    which = st.radio('Show', choices, horizontal=True, key='import_show',
-                     label_visibility='collapsed')
-    if which == 'Needs attention':
-        rows = work[work['Verdict'].isin(['rejected', 'questioned'])]
-    elif which == 'Already reported':
-        rows = restated
-    elif which == 'New':
-        rows = work[work['Verdict'] == 'new']
-    elif which == 'Unchanged':
-        rows = work[work['Verdict'] == 'unchanged']
-    elif which == 'Left out':
-        rows = work[work['Verdict'] == 'left out']
-    else:
-        rows = work
-
-    capped = rows.head(500).reset_index(drop=True)
-    if capped.empty:
-        st.caption('No rows in this view.')
-        selection = None
-    else:
-        view = capped[['_row', 'Verdict', 'Issue'] + IMPORT_FIELDS].copy()
-        view.insert(3, 'Held now', capped['Was'].values)
-        view = view.rename(columns={'_row': 'Line', 'Issue': 'What is wrong'})
-        view['Verdict'] = view['Verdict'].map(VERDICT_MARK)
-
-        # Which cell is at fault, per row, from the findings themselves.
-        at_fault = {}
-        if not found.empty:
-            for _, finding in found.iterrows():
-                at_fault.setdefault(int(finding['Line']), []).append(
-                    (finding['Column'], finding['Severity']))
-
-        verdicts = dict(zip(capped['_row'], capped['Verdict']))
-
-        def paint(frame):
-            styles = pd.DataFrame('', index=frame.index, columns=frame.columns)
-            for position, line in enumerate(view['Line']):
-                verdict = verdicts.get(line, '')
-                wash = ROW_TINT.get(verdict, '')
-                if wash:
-                    styles.iloc[position] = wash
-                for column, severity in at_fault.get(int(line), []):
-                    if column in styles.columns:
-                        styles.iloc[position,
-                                    styles.columns.get_loc(column)] = \
-                            CELL_TINT.get(severity, '')
-            return styles
-
-        selection = st.dataframe(
-            view.style.apply(paint, axis=None), hide_index=True,
-            width='stretch', height=420, key='import_table',
-            on_select='rerun', selection_mode=['multi-row', 'single-cell'],
-            column_config={
-                'Line': st.column_config.NumberColumn('Line', width='small',
-                                                      format='%d'),
-                'Verdict': st.column_config.TextColumn('', width='small'),
-                'What is wrong': st.column_config.TextColumn(
-                    'What is wrong', width='large',
-                    help='The first finding.  Select the row to read every '
-                         'finding against it in full.'),
-                'Held now': st.column_config.NumberColumn(
-                    'Held now', format='%.6g', width='small',
-                    help='What the model holds for this row today.'),
-                'Quantity': st.column_config.TextColumn('In this file',
-                                                        width='small'),
-            })
-        if len(rows) > 500:
-            st.caption('Showing the first 500 of %d.' % len(rows))
-
-        _fix_panel(selection, view, capped, found)
-
-    if not absent.empty:
-        with st.expander('%d row(s) the model holds and this file does not'
-                         % len(absent)):
-            st.caption('Left alone.  An import never deletes: a file that '
-                       'arrived short is far commoner than a line that '
-                       'genuinely stopped, and only one of those two '
-                       'mistakes can be undone.')
-            st.dataframe(absent[['Date', 'SubActivity', 'Description',
-                                 'CostCentre', 'Quantity']].head(100),
-                         hide_index=True, width='stretch', height=200)
-
-    # -- the reported months, and writing it ---------------------------
-    policy = 'No, stop'
-    if not restated.empty:
-        policy = st.radio(
-            'If the file changes a month already reported',
-            list(OVERWRITE_CHOICES), horizontal=True, key='import_policy',
-            captions=list(OVERWRITE_CHOICES.values()))
-        if policy == 'Row by row':
-            side = restated[['_row', 'Date', 'SubActivity', 'Description']].copy()
-            side['Held now'] = restated['Was'].values
-            side['In this file'] = restated['_quantity'].values
-            side['Overwrite'] = False
-            decided = st.data_editor(
-                side, hide_index=True, width='stretch', num_rows='fixed',
-                key='import_decide',
-                disabled=[c for c in side.columns if c != 'Overwrite'],
-                column_config={
-                    '_row': st.column_config.NumberColumn('Line', format='%d'),
-                    'Held now': st.column_config.NumberColumn(
-                        'Held now', format='%.6g'),
-                    'In this file': st.column_config.NumberColumn(
-                        'In this file', format='%.6g')})
-            st.session_state['import_decisions'] = decided
-
-    will_add = int(counts.get('new', 0))
-    if policy == 'Overwrite them':
-        will_change = len(restated)
-    elif policy == 'Row by row':
-        decided = st.session_state.get('import_decisions')
-        will_change = (int(decided['Overwrite'].sum())
-                       if decided is not None and 'Overwrite' in decided else 0)
-    else:
-        will_change = 0
-
-    stop = policy == 'No, stop' and not restated.empty
     st.divider()
-    if stop:
-        st.error('%d row(s) would change a reported month and the choice is '
-                 'to stop.  Choose what to do with them above.' % len(restated))
-    else:
-        st.caption('%d new row(s) added, %d reported row(s) overwritten, '
-                   '%d refused as unreadable, %d set aside by hand.  Nothing '
-                   'is deleted and the file you uploaded is unchanged.'
-                   % (will_add, will_change, stopped, aside))
-
-    confirm = st.checkbox('I have looked at the rows above',
-                          key='import_confirm')
-    if st.button('Import', type='primary', disabled=stop or not confirm,
-                 key='import_apply'):
-        added, changed = _apply_import(work, policy, uploaded.name)
-        st.session_state.pop('import_corrections', None)
-        st.session_state.pop('import_left_out', None)
-        st.success('%d row(s) added, %d overwritten.  Press Rebuild to bring '
-                   'it into the figures.' % (added, changed))
-        _rebuild()
-
-
-def _fix_panel(selection, view, capped, found):
-    """The selected row, whole, with everything known against it.
-
-    One panel for both ways in.  A clicked cell says which field to point at;
-    a selected row says nothing more than which row.  Either way the whole
-    line is shown, because the fault named in one column is often corrected
-    in another and nobody can tell which without the rest of the row.
-    """
-    state = getattr(selection, 'selection', None) or {}
-    cells = list(getattr(state, 'cells', None) or state.get('cells') or [])
-    picked = list(getattr(state, 'rows', None) or state.get('rows') or [])
-    fixes = _corrections()
-    aside = _left_out()
-
-    position, pointed = None, None
-    if cells:
-        position, pointed = cells[0][0], cells[0][1]
-    elif len(picked) == 1:
-        position = picked[0]
-
-    if position is not None:
-        _row_form(position, pointed, view, capped, found, fixes, aside)
-        return
-
-    if picked:
-        _bulk_form(picked, view, fixes, aside)
-        return
-
-    st.caption('Select a row, or click any cell in it, to see the whole line '
-               'and everything known against it.')
+    st.markdown('### What the build reads')
+    counts = frame['Status'].value_counts().to_dict()
+    words = [w for w in ('In this build', 'Changed since the build',
+                         'Read at the next build', 'Missing') if w in counts]
+    Screen.cards(words, counts, 'sources_focus', 'sources', means={
+        'In this build': 'Read by the build on screen.',
+        'Changed since the build': 'Newer than the build on screen.  '
+                                   'The next page drawn reads it.',
+        'Read at the next build': 'No build has been made this session.',
+        'Missing': 'Not where the build looks for it.'})
+    which = Screen.focus('sources_focus')
+    owners = ['All'] + sorted(frame['Owner'].unique())
+    owner = st.radio('Owner', owners, horizontal=True, key='sources_owner',
+                     label_visibility='collapsed')
+    view = frame if which is None else frame[frame['Status'] == which]
+    if owner != 'All':
+        view = view[view['Owner'] == owner]
+    Screen.table(view, key='sources_table', held=len(frame), height=460)
+    st.caption('PrepData files are read where PrepData writes them and never '
+               'written to.  Builder files are this program\'s own registers, '
+               'changed on the Factors, Assumptions and Capital goods '
+               'screens.')
 
 
-def _row_form(position, pointed, view, capped, found, fixes, aside):
-    """One line: what is wrong with it, what the model holds, every field."""
-    line = int(view.at[position, 'Line'])
-    verdict = str(capped.iloc[position]['Verdict'])
-    is_aside = line in aside
+def LomSummary():
+    """The plan and the recorded-to date, for the tile."""
+    try:
+        from LoaderLom import LOM
+        to = DEFAULT_ACTUALS_TO_DATE
+        return (str(getattr(LOM, 'plan_name', '') or 'not read'),
+                f"recorded to {to:%d %b %Y}" if to else 'no recorded-to date')
+    except Exception:                               # pragma: no cover
+        return ('not read', '')
 
-    if is_aside:
-        st.info('This row is set aside and will not be written.  It is still '
-                'in the file you uploaded; nothing has been deleted.')
-
-    against = found[found['Line'] == line] if not found.empty else found
-    if len(against):
-        for _, finding in against.iterrows():
-            speak = {'rejected': st.error, 'questioned': st.warning,
-                     'restated': st.info}.get(finding['Severity'], st.info)
-            speak('**%s**  %s' % (finding['Column'], finding['Finding']))
-    else:
-        st.success('Nothing is wrong with this row.  It is %s.' % verdict)
-
-    held = view.at[position, 'Held now']
-    if pd.notna(held):
-        st.caption('The model holds %s for this row today, and this file says '
-                   '%s.' % (f'{held:,.6g}', view.at[position, 'Quantity']))
-    if pointed and pointed in IMPORT_FIELDS:
-        st.caption('You clicked %s.  The whole row is below, because the '
-                   'column at fault is not always the column to change.'
-                   % pointed)
-
-    with st.form('fix_row_%d' % line):
-        st.markdown('**Line %d**' % line)
-        entered = {}
-        for block in range(0, len(IMPORT_FIELDS), 3):
-            columns = st.columns(3)
-            for slot, column in zip(columns, IMPORT_FIELDS[block:block + 3]):
-                entered[column] = slot.text_input(
-                    column, value=str(view.at[position, column]),
-                    key='row_%d_%s' % (line, column))
-        left, middle, right = st.columns(3)
-        if left.form_submit_button('Apply to this row', type='primary',
-                                   disabled=is_aside):
-            for column, value in entered.items():
-                if value != str(view.at[position, column]):
-                    fixes[(line, column)] = value
-            st.rerun()
-        # Not a delete.  The row stays in the uploaded file and is simply
-        # not written, which is the answer for a row that reads perfectly
-        # well and still should not go in.
-        if middle.form_submit_button(
-                'Put this row back' if is_aside else 'Leave this row out'):
-            aside.discard(line) if is_aside else aside.add(line)
-            st.rerun()
-        if right.form_submit_button('Undo corrections on this row'):
-            for column in IMPORT_FIELDS:
-                fixes.pop((line, column), None)
-            st.rerun()
-
-
-def _bulk_form(picked, view, fixes, aside):
-    """One field, the same value, across every selected row."""
-    lines = [int(view.at[position, 'Line']) for position in picked]
-    held = [line for line in lines if line in aside]
-    with st.form('fix_rows'):
-        st.markdown('**%d rows selected**' % len(lines))
-        if held:
-            st.caption('%d of them are already set aside.' % len(held))
-        st.caption('Set one field to the same value on all of them.  Select a '
-                   'single row instead to see that line in full.')
-        column = st.selectbox('Field', IMPORT_FIELDS, key='bulk_field')
-        replacement = st.text_input('Value for all of them', key='bulk_value')
-        left, middle, right = st.columns(3)
-        if left.form_submit_button('Apply to all', type='primary'):
-            for line in lines:
-                fixes[(line, column)] = replacement
-            st.rerun()
-        if middle.form_submit_button(
-                'Put them back' if len(held) == len(lines)
-                else 'Leave them out'):
-            if len(held) == len(lines):
-                aside.difference_update(lines)
-            else:
-                aside.update(lines)
-            st.rerun()
-        if right.form_submit_button('Undo on these rows'):
-            for line in lines:
-                fixes.pop((line, column), None)
-            st.rerun()
-
-
-def _fields_at_fault(trouble):
-    """The field names a finding sentence refers to, best effort."""
-    return [(field, True) for field in IMPORT_FIELDS
-            if field.lower() in str(trouble).lower()]
-
-
-def _apply_import(work, policy, filename):
-    """Write the accepted rows into the operations file.
-
-    An import never deletes.  A row the model holds and the file does not is
-    left where it is, because a file that arrived short is far commoner than
-    a line that genuinely stopped, and one of those two mistakes can be
-    undone.
-
-    Rows set aside on the screen carry the verdict `left out`, which is
-    neither `new` nor `restated`, so they fall out of both selections below
-    without a rule of their own.  The uploaded file is never written to at
-    all, whatever was set aside in it.
-    """
-    path = os.path.join(DATA_DIR, 'OperationsMetricsActual.csv')
-    live = _live_operations()
-    columns = list(live.columns) if not live.empty else IMPORT_FIELDS
-
-    adding = work[work['Verdict'] == 'new']
-    changed = 0
-
-    if policy == 'Overwrite them':
-        overwrite = work[work['Verdict'] == 'restated']
-    elif policy == 'Row by row':
-        decided = st.session_state.get('import_decisions')
-        keep = (set(decided.loc[decided['Overwrite'], '_row'])
-                if decided is not None and 'Overwrite' in decided else set())
-        overwrite = work[work['_row'].isin(keep)]
-    else:
-        overwrite = work.iloc[0:0]
-
-    if not overwrite.empty:
-        live = live.copy()
-        live['_key'] = Import.row_key(live)
-        replacing = dict(zip(overwrite['_key'], overwrite['Quantity']))
-        touched = live['_key'].isin(replacing)
-        live.loc[touched, 'Quantity'] = live.loc[touched, '_key'].map(replacing)
-        changed = int(touched.sum())
-        live = live.drop(columns=['_key'])
-
-    if not adding.empty:
-        fresh = adding.copy()
-        for column in columns:
-            if column not in fresh.columns:
-                fresh[column] = ''
-        live = pd.concat([live, fresh[columns]], ignore_index=True)
-
-    temporary = path + '.writing'
-    live.to_csv(temporary, index=False, encoding='utf-8')
-    os.replace(temporary, path)
-
-    _record([{'Path': 'OperationsMetricsActual.csv',
-              'From': '%d rows' % (len(live) - len(adding)),
-              'To': '%d rows' % len(live)}],
-            'OperationsMetricsActual.csv',
-            note='Imported %s: %d added, %d overwritten, "%s".'
-                 % (filename, len(adding), changed, policy))
-    return len(adding), changed
 
 # ---------------------------------------------------------------------
 # DIRECTOR
 # ---------------------------------------------------------------------
 
-PAGES = ('Verify', 'Import', 'Inventory', 'Scope 1 and 2', 'Scope 3',
-         'Factors',
-         'Assumptions', 'Capital goods', 'Credits', 'Changes', 'History')
+# The screens, in the order the work runs, with PrepData's icons where the
+# two applications share a screen.
+SCREENS = [('Sources', ':material/folder_open:'),
+           ('Verify', ':material/fact_check:'),
+           ('Inventory', ':material/table_view:'),
+           ('Scope 1 and 2', ':material/local_fire_department:'),
+           ('Scope 3', ':material/hub:'),
+           ('Factors', ':material/functions:'),
+           ('Assumptions', ':material/tune:'),
+           ('Capital goods', ':material/construction:'),
+           ('Credits', ':material/savings:'),
+           ('Changes', ':material/compare_arrows:'),
+           ('History', ':material/history:')]
+PAGES = tuple(name for name, _ in SCREENS)
 
 # Pages that read figures and nothing else.  These run off the published
 # file, which is a read rather than a projection.
@@ -2308,41 +2177,36 @@ FIGURE_PAGES = ('Verify', 'Inventory', 'Scope 1 and 2', 'Scope 3', 'Changes')
 
 
 def _build_controls():
-    """Rebuild, and publish.  Two buttons, and they do different things."""
+    """Publish.  The build is made from the files as they stand, so there is
+    nothing to press to make it: Publish is offered whenever it passes."""
     side = st.sidebar
     side.divider()
     side.caption(Publisher.published_summary())
 
-    if _stale():
-        side.warning('An input has changed since this build was made.  '
-                     'Rebuild to see it.')
-
-    if side.button('Rebuild', width='stretch',
-                   type='primary' if _stale() else 'secondary',
-                   help='Rebuild from the current assumptions, capital '
-                        'items, factors and overrides.  Nothing is '
-                        'written.'):
-        _force_rebuild()
-        st.rerun()
-
-    # Publishing is offered once the Changes page has been read and the
-    # build reconciled.  There is no way to publish a build nobody has
-    # looked at, and an edit made afterwards withdraws the permission.
-    ready = st.session_state.get('pending_ok') is True
+    gate = _gate()
+    ready = gate['ok']
+    if not ready:
+        side.error('Publishing is blocked: ' + '; '.join(gate['blocked'])
+                   + '.  Verify lists them.')
     if side.button('Publish', type='primary', width='stretch',
                    disabled=not ready,
                    help='Write this build to the published figures.'
-                        if ready else
-                        'Open Changes first.  Publishing is offered once the '
-                        'build has been reviewed there and reconciles.'):
+                        if ready else 'Blocked until the build passes.'):
         st.session_state['confirm_publish'] = True
+    if ready:
+        side.caption(f"{gate['total']:,.0f} t CO2-e.  {gate['says']}")
 
     if st.session_state.get('confirm_publish'):
+        log = Publisher.load_build_log() or {}
+        before = (log.get('Totals_tCO2e') or {}).get('total')
         with side.form('publish_form'):
-            st.markdown('**Publish this build?**')
-            st.caption('The reporting application will read these figures '
-                       'from now on.  The previous build is archived and can '
-                       'be restored.')
+            st.markdown('**Publish this build?  Are you sure?**')
+            st.caption('The reporting application reads these figures from '
+                       'now on.  The last build is archived.')
+            moved = (f"  {gate['total'] - float(before):+,.0f} t against the "
+                     f"published build." if before is not None else '')
+            st.caption(f"{gate['total']:,.0f} t CO2-e.{moved}  "
+                       f"{gate['says']}")
             notes = st.text_input('Publication note',
                                   placeholder='What changed, and why.')
             go, stop = st.columns(2)
@@ -2358,15 +2222,20 @@ def _build_controls():
 
 def _do_publish(notes):
     _, precomputed, table = _inventory()
+    gate = _gate()
     log = Publisher.publish(
         table,
-        outstanding=st.session_state.get('pending_outstanding'),
-        assumptions=st.session_state.get('pending_assumptions'),
+        outstanding=gate['outstanding'],
+        assumptions=gate['assumptions'],
         inputs=TRACKED_INPUTS,
         actuals_to=DEFAULT_ACTUALS_TO_DATE,
-        forecast_to=table['Date'].max(), notes=notes)
+        forecast_to=table['Date'].max(), notes=notes,
+        # The build itself goes with the table: its frames are the reporting
+        # pack, which is what the reporting application reads.  Left out, the
+        # table moved and the application went on showing the pack from the
+        # publication before it.
+        precomputed=precomputed)
     st.session_state.pop('confirm_publish', None)
-    st.session_state.pop('pending_ok', None)
     # What was just written is the new starting point, so the next thing
     # this session shows is what happened after the publication.
     st.session_state['session_baseline'] = _summarise(table)
@@ -2377,11 +2246,16 @@ def _do_publish(notes):
 
 
 def main():
-    st.sidebar.title('Emissions Data Builder')
+    Screen.dressed()
+    st.sidebar.markdown('## Emissions Data Builder')
     st.sidebar.caption('Builds the inventory.  The reporting application '
                        'reads what is published here.')
-    page = st.sidebar.radio('Section', PAGES, label_visibility='collapsed')
+    page = Screen.navigation(SCREENS)
     _build_controls()
+
+    if page == 'Sources':
+        page_sources()
+        return
 
     # Pages that touch no inventory load nothing, so entering a capital item
     # or a credit transaction does not wait on a projection.
@@ -2404,9 +2278,7 @@ def main():
         return
 
     _, precomputed, table = _inventory()
-    if page == 'Import':
-        page_import()
-    elif page == 'Verify':
+    if page == 'Verify':
         page_verify(precomputed, table)
     elif page == 'Inventory':
         page_explore(table)

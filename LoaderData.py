@@ -54,7 +54,7 @@ import os
 from pathlib import Path
 from CalcCalendar import date_to_fy, series_to_fy
 from Config import (NGER_FY_START_MONTH, DIESEL_TRANSPORT_COSTCENTRES,
-                    DIESEL_TRANSPORT_NGAFUEL)
+                    DIESEL_TRANSPORT_NGAFUEL, FORECAST_ROLLUP_ACTIVITIES)
 from CalcUnits import canonical as canonical_uom
 from LookupIdentifiers import enrich_with_lookup
 from LoaderNga import NGAFactorsByYear
@@ -65,35 +65,86 @@ from CalcNga import (
 
 
 # Data files live in ./Data/ alongside this module.
+import Paths
 from Paths import DATA_DIR
 
 
-def _read_csv_or_enc(csv_path, passphrase=None, **read_csv_kwargs):
-    """Read a CSV file, decrypting from .enc if available.
 
-    Priority:
-        1. If <csv_path>.enc exists AND a passphrase is provided, decrypt and load.
-        2. Otherwise fall back to plain <csv_path>.
 
-    This lets the app work in both distributed (encrypted) and local-dev
-    (plain CSV) scenarios without code changes.
+def _rollup_forecast(df):
+    """Sum item-level forecast rows to product group, cost centre and month.
+
+    Only Budget rows of the activities Config names are touched.  Quantity,
+    value and mass are summed, so every total is exactly what it was; the
+    item description and number are the only things given up.
     """
-    enc_path = csv_path + '.enc'
-    if os.path.exists(enc_path) and passphrase:
-        from CryptoUtils import decrypt_file
-        plaintext = decrypt_file(enc_path, passphrase)
-        print(f'Decrypted: {enc_path}')
-        return pd.read_csv(io.BytesIO(plaintext), **read_csv_kwargs)
+    if not FORECAST_ROLLUP_ACTIVITIES:
+        return df
+    target = ((df['DataSet'] == 'Budget')
+              & df['Activity'].isin(FORECAST_ROLLUP_ACTIVITIES))
+    if not target.any():
+        return df
 
-    return pd.read_csv(csv_path, **read_csv_kwargs)
+    keys = ['Date', 'DataSet', 'Activity', 'SubActivity', 'Department',
+            'CostCentre', 'State', 'UOM', 'ProductGroup', 'Source']
+    before = int(target.sum())
+    part = df.loc[target].copy()
+    for column in keys:
+        part[column] = part[column].fillna('')
+    rolled = part.groupby(keys, sort=False, dropna=False).agg(
+        Quantity=('Quantity', 'sum'),
+        Value=('Value', 'sum'),
+        Mass_kg=('Mass_kg', 'sum'),
+        Mass_rows=('Mass_kg', 'count'),
+    ).reset_index()
+    rolled.loc[rolled['Mass_rows'] == 0, 'Mass_kg'] = float('nan')
+    rolled = rolled.drop(columns=['Mass_rows'])
+    # The line still reads as what it is.
+    rolled['Description'] = rolled['SubActivity']
+    rolled['Identifier'] = ''
 
+    # The sums must stand exactly, or the roll-up has changed the answer.
+    for column in ('Quantity', 'Value'):
+        was, now = float(part[column].sum()), float(rolled[column].sum())
+        if abs(was - now) > max(1e-6 * abs(was), 1e-3):
+            raise ValueError(f'Forecast roll-up changed the {column} total '
+                             f'from {was:,.4f} to {now:,.4f}.')
+
+    out = pd.concat([df.loc[~target], rolled], ignore_index=True)
+    print(f'Forecast roll-up: {before:,} item rows for '
+          f'{", ".join(FORECAST_ROLLUP_ACTIVITIES)} summed to {len(rolled):,}')
+    return out
+
+
+def _contract_service_groups(df):
+    """Give contractor charges the product group that prices their service.
+
+    The mapping is contract_services in ReferenceInputs.yaml.
+    """
+    from LoaderReference import load_settings
+    settings = load_settings().get('contract_services', {}) or {}
+    activity = settings.get('activity', 'Contract labour')
+    groups = {str(g.get('name')): str(g.get('product_group')).strip()
+              for g in (settings.get('groups') or [])
+              if g.get('name') and g.get('product_group')}
+    rows = ((df['Activity'] == activity) & (df['ProductGroup'] == ''))
+    if not rows.any() or not groups:
+        return df
+    mapped = df.loc[rows, 'SubActivity'].map(groups)
+    df.loc[mapped.index[mapped.notna()], 'ProductGroup'] = mapped.dropna()
+    missing = df.loc[rows & df['ProductGroup'].eq(''), 'SubActivity']
+    for name, count in missing.value_counts().items():
+        print(f"Contract services: {count:,} rows of '{name}' have no product "
+              f"group in contract_services and carry no factor.")
+    print(f'Contract services: {int(mapped.notna().sum()):,} rows given a '
+          f'product group')
+    return df
 
 
 def load_all_data(actual_path=None,
                   budget_path=None,
                   nga_folder=None,
-                  fy_start_month=NGER_FY_START_MONTH,
-                  passphrase=None):
+                  fy_start_month=NGER_FY_START_MONTH):
     """Load and process operational metrics from separate actual/budget files.
 
     Reads two CSVs with Activity/SubActivity/Description/Identifier schema,
@@ -111,10 +162,11 @@ def load_all_data(actual_path=None,
     """
 
     # Default to files in DATA_DIR.  Explicit paths override.
+    # Read where PrepData writes them.  See PREPDATA_SOURCES in Paths.
     if actual_path is None:
-        actual_path = os.path.join(DATA_DIR, 'OperationsMetricsActual.csv')
+        actual_path = Paths.source('actual')
     if budget_path is None:
-        budget_path = os.path.join(DATA_DIR, 'OperationsMetricsBudget.csv')
+        budget_path = Paths.source('forecast')
 
     print('=' * 80)
     print('LOADING EMISSIONS DATA')
@@ -122,11 +174,10 @@ def load_all_data(actual_path=None,
 
     # 1. LOAD CSVs AND TAG WITH DATASET
     # Source files have no DataSet column — we synthesise it from the file origin.
-    # Uses _read_csv_or_enc to transparently decrypt .enc files when distributed.
     frames = []
     for path, label in [(actual_path, 'Actual'), (budget_path, 'Budget')]:
         try:
-            part = _read_csv_or_enc(path, passphrase=passphrase)
+            part = pd.read_csv(path)
             part['DataSet'] = label
             frames.append(part)
             print(f'Loaded {label}: {len(part):,} records from {path}')
@@ -153,6 +204,12 @@ def load_all_data(actual_path=None,
     if 'Mass_kg' not in df.columns:
         df['Mass_kg'] = float('nan')
 
+    # 1b2. PREPDATA'S SPELLINGS
+    # Every spelling PrepData's unit register knows, so a unit it writes is
+    # never unknown here.  See LoaderUnits.
+    import LoaderUnits
+    LoaderUnits.extend_spellings()
+
     # 1c. NORMALISE UNIT SPELLINGS
     # The same physical unit occasionally appears under two spellings, for
     # example 'kilogram' beside 'kg'.  PrepData feeds several programs, so the
@@ -170,8 +227,30 @@ def load_all_data(actual_path=None,
                           for u, c in sorted(_changed.items())))
 
     df['ProductGroup'] = df['ProductGroup'].fillna('').astype(str).str.strip()
+    # A product group is its code.  Pronto writes 'BATT - BATTERIES' on some
+    # extracts and 'BATT' on others, and the factor register keys on the
+    # code, so the pair priced nothing and raised a gap for every group
+    # that arrived that way.  PrepData now writes the code; this holds the
+    # line if an older file arrives.
+    _pair = df['ProductGroup'].str.extract(r'^([A-Z0-9_]{2,6})\s-\s', expand=False)
+    df['ProductGroup'] = _pair.fillna(df['ProductGroup'])
     df['Value'] = pd.to_numeric(df['Value'], errors='coerce').fillna(0.0)
     df['Mass_kg'] = pd.to_numeric(df['Mass_kg'], errors='coerce')
+
+    # 1d. ROLL UP ITEM-LEVEL FORECAST LINES
+    # See FORECAST_ROLLUP_ACTIVITIES in Config.  Done before anything else
+    # touches the frame, so every later step works on the smaller one.
+    df = _rollup_forecast(df)
+
+    # 1e. PRODUCT GROUP FOR CONTRACT SERVICES
+    # See contract_services in ReferenceInputs.yaml.
+    df = _contract_service_groups(df)
+
+    # 1f. COUNTED LINES CARRIED INTO THEIR UNIT
+    # A line in a count, a new pack size PrepData's register does not yet
+    # hold, is carried into the unit its mapping declares where the register
+    # or the item description says what one holds.  See LoaderUnits.
+    df = LoaderUnits.resolve_counts(df)
 
     _valued = int((df['Value'] != 0).sum())
     print(f'Spend carried: {_valued:,} rows, ${df["Value"].sum():,.0f} AUD')
@@ -184,9 +263,9 @@ def load_all_data(actual_path=None,
     failed_dates = df['Date'].isna().sum()
     if failed_dates > 0:
         # Re-read raw to show bad rows
-        raw_a = _read_csv_or_enc(actual_path, passphrase=passphrase)
+        raw_a = pd.read_csv(actual_path, low_memory=False)
         raw_a['DataSet'] = 'Actual'
-        raw_b = _read_csv_or_enc(budget_path, passphrase=passphrase)
+        raw_b = pd.read_csv(budget_path, low_memory=False)
         raw_b['DataSet'] = 'Budget'
         raw_df = pd.concat([raw_a, raw_b], ignore_index=True)
         bad_mask = pd.to_datetime(raw_df['Date'], dayfirst=True, errors='coerce').isna()
@@ -218,6 +297,12 @@ def load_all_data(actual_path=None,
                 f' Quantity column contains non-numeric values. '
                 f'Fix the source CSV.\n\nFirst bad rows:\n{sample}'
             ) from e
+
+    # 2c. UNIT CORRECTIONS
+    # A figure recorded under the wrong unit heading, named by a person in
+    # units.corrections and read here in the unit it is really in.  Never
+    # written back.  See LoaderUnits.
+    df = LoaderUnits.apply_corrections(df)
 
     # 3. ENRICH WITH LOOKUP (Activity/SubActivity → NGAFuel/CommonName/RowType)
     # This replaces the old embedded NGA/GRI columns that were removed from
@@ -262,6 +347,11 @@ def load_all_data(actual_path=None,
         Source=('Source', 'first'),
         # Budget: Budget|SubActivity|CostCentre; Actuals: invoice number
         Identifier=('Identifier', 'first'),
+        # How a counted line was carried into its unit, where it was.
+        UnitBasis=('UnitBasis', 'first'),
+        UnitFactor=('UnitFactor', 'first'),
+        UnitFrom=('UnitFrom', 'first'),
+        UnitCorrection=('UnitCorrection', 'first'),
     ).reset_index()
 
     # A group with no mass at all stays blank rather than nil, so an unknown
@@ -286,7 +376,9 @@ def load_all_data(actual_path=None,
     # 5. LOAD NGA FACTORS
     if nga_folder is None:
         # Auto-detect NGA folder from actual file location
-        nga_folder = Path(actual_path).parent
+        # The factors are this program's and live in Data, wherever the
+        # operational data was read from.
+        nga_folder = DATA_DIR
 
     try:
         nga_by_year = NGAFactorsByYear(str(nga_folder))
@@ -397,7 +489,7 @@ def load_energy_data(*args, **kwargs):
     raise NotImplementedError('load_energy_data() deprecated — use load_all_data()')
 
 
-def load_smc_transactions(filepath=None, passphrase=None):
+def load_smc_transactions(filepath=None):
     """Load SMC transaction log for reconciling model against registry actuals.
 
     Transaction types:
@@ -418,13 +510,12 @@ def load_smc_transactions(filepath=None, passphrase=None):
         filepath = os.path.join(DATA_DIR, 'SmcTransactions.csv')
 
     path = Path(filepath)
-    enc_path = Path(filepath + '.enc')
-    if not path.exists() and not enc_path.exists():
+    if not path.exists():
         return pd.DataFrame(columns=['Date', 'FY', 'Type', 'Quantity',
                                       'Unit_Price', 'Total_Value',
                                       'Reference', 'Notes'])
 
-    df = _read_csv_or_enc(filepath, passphrase=passphrase, parse_dates=['Date'])
+    df = pd.read_csv(filepath, parse_dates=['Date'])
 
     # Applies_To_FY is the reporting year the transaction relates to
     # (issuances lag — CER issues FY2024 credits in Feb 2025)

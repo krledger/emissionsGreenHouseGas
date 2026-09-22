@@ -342,7 +342,7 @@ IDENTIFIER_LOOKUP = {
         'NGAFuel': '',
         'CommonName': 'Productivity',
         'RowType': 'production',
-        'UOM': 'hrs',
+        'UOM': 'h',
     },
     ('Crushing - Beneficiation', 'Ore Crushed'): {
         'NGAFuel': '',
@@ -386,7 +386,7 @@ IDENTIFIER_LOOKUP = {
         'NGAFuel': '',
         'CommonName': 'Productivity',
         'RowType': 'production',
-        'UOM': 'hrs',
+        'UOM': 'h',
     },
     # ---- REVENUE ----
     ('Revenue', 'Gold Recovered'): {
@@ -443,6 +443,21 @@ ACTIVITY_FALLBACK = {
     'Headcount': {
         'NGAFuel': '',
         'RowType': 'headcount',
+    },
+    # Contractor charges from the general ledger, in dollars.  Category 1
+    # purchased services, priced on spend at the product group Config gives
+    # each subactivity.  A row type of its own so the projection can price it
+    # and nothing else mistakes a dollar for a physical.
+    'Contract labour': {
+        'NGAFuel': '',
+        'RowType': 'services',
+    },
+    # Capital project lines.  Capital goods are Category 2 and are assessed
+    # from the capital register, so these carry no emission here and are
+    # classified only so they are not reported as unmapped.
+    'Project': {
+        'NGAFuel': '',
+        'RowType': 'project',
     },
 }
 

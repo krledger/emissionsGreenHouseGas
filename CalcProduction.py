@@ -31,7 +31,19 @@ from Config import (NGER_FY_START_MONTH, GRADE_TOLERANCE,
                     THROUGHPUT_TOLERANCE, RECOVERY_PLAUSIBLE_LOW,
                     RECOVERY_PLAUSIBLE_HIGH,
                     POWER_INTENSITY_TOLERANCE,
-                    PROCESS_POWER_SUBACTIVITIES)
+                    PROCESS_POWER_SUBACTIVITIES,
+                    HEAD_GRADE_TOLERANCE,
+                    DEFAULT_END_PROCESSING_DATE,
+                    DIESEL_INTENSITY_TOLERANCE)
+
+# Recorded months needed before a stream can be read against its driver.
+# A year gives a floor and a rate that mean something; fewer does not.
+DRIVER_FIT_MONTHS = 12
+KWH_PER_GWH = 1_000_000.0
+
+# Stockpile rehandle feeds the mill and runs after the pit closes, so it
+# is not pit work.  Named by cost centre, as the site codes it.
+REHANDLE_PATTERN = r'Rehandl|Bene Rejects'
 from LoaderLom import LOM
 
 
@@ -58,15 +70,20 @@ def reclaim(frame):
     return _diesel(frame) & frame['CostCentre'].astype(str).isin(['Rehandling'])
 
 
-def reclaim_tonnes(frame):
-    return ((frame['Activity'] == 'Mining')
-            & (frame['SubActivity'].astype(str).str.contains('Reclaim',
-                                                             na=False)))
-
-
 def tailings(frame):
+    # Tailings deposition is pumped, so its diesel is next to nothing and
+    # arrives in odd years.  The flocculant dosed to the tailings is the
+    # measure that runs whenever the plant does.
+    return ((frame['Activity'] == 'Reagent')
+            & (frame['SubActivity'] == 'Flocculant')
+            & (frame['CostCentre'].astype(str) == 'Tailings Disposal'))
+
+
+def dredging(frame):
+    # The dredges' diesel.  Kept apart from tailings, because a dredge runs
+    # when there is ore to dredge and not every year.
     return _diesel(frame) & frame['CostCentre'].astype(str).isin(
-        ['Tailings Disposal', 'NPE Dredge'])
+        ['NPE Dredge', 'Sarsfield Dredging'])
 
 
 def crushing(frame):
@@ -74,13 +91,6 @@ def crushing(frame):
     # throughput and product feed for every crusher, plus a parallel
     # beneficiation series in dry metric tonnes; summing them counts the same
     # tonnes two or three times.
-    return ((frame['Activity'] == 'Crushing')
-            & (frame['SubActivity'] == 'Ore Crushed')
-            & (frame['Description'].astype(str)
-               .str.contains('Feed Throughput', na=False)))
-
-
-def crushed_tonnes(frame):
     return ((frame['Activity'] == 'Crushing')
             & (frame['SubActivity'] == 'Ore Crushed')
             & (frame['Description'].astype(str)
@@ -115,11 +125,6 @@ def gold_poured(frame):
             & (frame['SubActivity'] == 'Gold Poured'))
 
 
-def gold_sold(frame):
-    return ((frame['Activity'] == 'Revenue')
-            & (frame['SubActivity'] == 'Gold Sold'))
-
-
 def reagents(frame):
     return (frame['Activity'] == 'Reagent') & (frame['UOM'].astype(str) == 't')
 
@@ -147,7 +152,8 @@ STREAMS = {
     'ROM ore mined': rom_mined,
     'Mining fleet diesel': mining_fleet,
     'Reclaim rehandle': reclaim,
-    'TSF and tailings': tailings,
+    'Tailings': tailings,
+    'Dredging': dredging,
     'Crushing': crushing,
     'Milling': milling,
     'Reagents': reagents,
@@ -160,6 +166,198 @@ STREAMS = {
 # ---------------------------------------------------------------------
 # ANNUAL SERIES
 # ---------------------------------------------------------------------
+
+def material_moved(frame):
+    """Ore and waste tonnes taken from the pit: what the mining fleet works on."""
+    return ((frame['Activity'] == 'Mining')
+            & frame['SubActivity'].isin(['Ore ROM', 'Ore Waste'])
+            & (frame['UOM'].astype(str) == 't'))
+
+
+def pit_diesel(frame):
+    """Mining fleet diesel spent in the pit.
+
+    The fleet less stockpile rehandle, which feeds the mill and runs after the
+    pit closes, and less the dredges, which run on a span of their own.
+    """
+    rehandle = frame['CostCentre'].astype(str).str.contains(
+        REHANDLE_PATTERN, regex=True)
+    return mining_fleet(frame) & ~rehandle & ~dredging(frame)
+
+
+def _fit_line(driven, used, floor):
+    """Consumption against its driver, as a rate and optionally a floor.
+
+    Theil-Sen: the rate is the median of the slopes between every pair of
+    months, and the floor the median of what each month leaves over.  A
+    median fit is not pulled by an odd month the way least squares is.
+
+    Without a floor, or where the fit gives a negative floor or a rate at or
+    below nil (which describes no real plant), the line is a straight rate:
+    total consumption over total driver in the months read.
+
+    Returns (floor, rate).
+    """
+    x = np.asarray(driven, dtype=float)
+    y = np.asarray(used, dtype=float)
+    straight = (0.0, float(y.sum() / x.sum()) if x.sum() > 0 else 0.0)
+    if not floor:
+        return straight
+    first, second = np.triu_indices(len(x), 1)
+    step = x[second] - x[first]
+    usable = np.abs(step) > 0
+    if not usable.any():
+        return straight
+    rate = float(np.median((y[second] - y[first])[usable] / step[usable]))
+    base = float(np.median(y - rate * x))
+    if base < 0 or rate <= 0:
+        return straight
+    return base, rate
+
+
+def driver_line(frame, consumer, driver, floor):
+    """One consumption stream against the driver it should follow.
+
+    Derived from the recorded months only, never from the forecast being
+    checked: consumption a month = floor + rate x driver, fitted over every
+    recorded month in which both were measured.  The floor is what the plant
+    draws to run at all, so a year at part throughput draws more per tonne
+    than a full one and still sits on the line; it applies only in a month
+    the driver runs.  A stream with no floor is a straight rate.
+
+    Takes a frame from with_year().  Returns None with fewer than
+    DRIVER_FIT_MONTHS recorded months to read, otherwise a dict:
+        years     one row per year from the first year the driver is
+                  measured: Used, Driver, Running (months the driver ran),
+                  Expected (on the line), Apart (share away from the line)
+        floor     consumption a running month before any tonne
+        rate      consumption per unit of driver
+        months    recorded months the line was read from
+    """
+    if 'Date' not in frame.columns or 'DataSet' not in frame.columns:
+        return None
+    used = frame[consumer(frame)]
+    driving = frame[driver(frame)]
+
+    recorded = lambda part: part[part['DataSet'].astype(str) == 'Actual']
+    fit = pd.concat([
+        recorded(used).groupby('Date')['Quantity'].sum().rename('used'),
+        recorded(driving).groupby('Date')['Quantity'].sum().rename('driver'),
+    ], axis=1, sort=True).dropna()
+    fit = fit[(fit['driver'] > 0) & (fit['used'] > 0)]
+    if len(fit) < DRIVER_FIT_MONTHS:
+        return None
+    base, rate = _fit_line(fit['driver'], fit['used'], floor)
+
+    months = pd.concat([
+        used.groupby(['_yr', 'Date'])['Quantity'].sum().rename('used'),
+        driving.groupby(['_yr', 'Date'])['Quantity'].sum().rename('driver'),
+    ], axis=1, sort=True).fillna(0.0).reset_index()
+    if months.empty:
+        return None
+    # Before the driver is first measured there is nothing to hold the stream
+    # to, and a month of consumption with no recorded driver is a gap in the
+    # history, not a fault in the forecast.  Cut at the month, not the year,
+    # so a year that starts before the driver does is read from its start.
+    begins = months.loc[months['driver'] > 0, 'Date'].min()
+    months = months[months['Date'] >= begins]
+    years = months.groupby('_yr').agg(
+        Used=('used', 'sum'), Driver=('driver', 'sum'),
+        Running=('driver', lambda s: int((s > 0).sum())))
+    years['Expected'] = base * years['Running'] + rate * years['Driver']
+
+    # A year the driver does not run is held to nothing, and measured against
+    # a typical recorded year so a trickle (a camp meter after closure) is not
+    # reported while a fleet still burning at half its rate is.
+    typical = float(recorded(used).groupby(
+        recorded(used)['Date'].dt.year)['Quantity'].sum().median() or 0.0)
+    apart = pd.Series(0.0, index=years.index)
+    on = years['Expected'] > 0
+    apart[on] = ((years.loc[on, 'Used'] - years.loc[on, 'Expected']).abs()
+                 / years.loc[on, 'Expected'])
+    idle = ~on & (years['Used'] > 0)
+    if typical > 0:
+        apart[idle] = years.loc[idle, 'Used'] / typical
+    years['Apart'] = apart
+    return {'years': years, 'floor': base, 'rate': rate, 'months': len(fit)}
+
+
+# Each consumption stream the forecast carries, the driver it should follow,
+# and whether the plant has a floor under it.  Power has one: a mill draws
+# power to turn at all, whatever the tonnes.  Pit diesel is a straight rate
+# on the tonnes the fleet moves.
+DRIVER_CHECKS = (
+    {'Check': 'Power against tonnes milled', 'consumer': process_power,
+     'driver': milling, 'floor': True, 'scale': 1.0, 'unit': 'kWh per t',
+     'tolerance': 'power', 'scope': 'Scope 2',
+     'floor_says': lambda v: f'{v / KWH_PER_GWH:,.1f} GWh a month while the '
+                             f'mill runs',
+     'rate_says': lambda v: f'{v:,.1f} kWh per tonne milled',
+     'follows': 'the mill'},
+    {'Check': 'Pit diesel against material moved', 'consumer': pit_diesel,
+     'driver': material_moved, 'floor': False, 'scale': 1000.0,
+     'unit': 'kL per kt', 'tolerance': 'diesel', 'scope': 'Scope 1',
+     'floor_says': lambda v: '',
+     'rate_says': lambda v: f'{v * 1000:,.2f} kL per thousand tonnes of ore '
+                            f'and waste moved',
+     'follows': 'the mine'},
+)
+
+
+def _driver_row(spec, dated):
+    """The plan check row for one DRIVER_CHECKS entry, or None."""
+    line = driver_line(dated, spec['consumer'], spec['driver'], spec['floor'])
+    if line is None:
+        return None
+    tolerance = (POWER_INTENSITY_TOLERANCE if spec['tolerance'] == 'power'
+                 else DIESEL_INTENSITY_TOLERANCE)
+    years = line['years']
+    adrift = years[years['Apart'] > tolerance]
+    said = spec['rate_says'](line['rate'])
+    if line['floor'] > 0:
+        said = f"a floor of {spec['floor_says'](line['floor'])}, plus {said}"
+    basis = (f"The {line['months']} recorded months give {said}")
+
+    # The figure shown is the worst year the driver ran in, as consumption
+    # per unit of driver against the line's own figure for that year.
+    ran = years[years['Driver'] > 0]
+    shown = adrift[adrift['Driver'] > 0] if not adrift.empty else ran
+    if shown.empty:
+        shown = ran
+    worst = shown['Apart'].idxmax() if not shown.empty else None
+    measured = planned = None
+    if worst is not None:
+        measured = float(years.loc[worst, 'Used'] / years.loc[worst, 'Driver']
+                         * spec['scale'])
+        planned = float(years.loc[worst, 'Expected'] / years.loc[worst, 'Driver']
+                        * spec['scale'])
+    if adrift.empty:
+        means = (f"{basis}.  Every year sits within "
+                 f"{tolerance:.0%} of that line.")
+    else:
+        idle = adrift[adrift['Driver'] <= 0].index
+        moved = adrift[adrift['Driver'] > 0].index
+        parts = []
+        if len(moved):
+            parts.append('off the line in ' + ', '.join(
+                str(int(y)) for y in moved))
+        if len(idle):
+            parts.append('running with nothing to drive it in ' + ', '.join(
+                str(int(y)) for y in idle))
+        means = (f"{basis}.  The forecast is {' and '.join(parts)}, so it is "
+                 f"not following {spec['follows']} and the {spec['scope']} "
+                 f"that rests on it sits in the wrong years.  The forecast "
+                 f"is corrected in PrepData.")
+    return {
+        'Check': spec['Check'],
+        'Measured': None if measured is None else round(measured, 2),
+        'Planned': None if planned is None else round(planned, 2),
+        'Unit': spec['unit'],
+        'Drift': _band(measured, planned, tolerance),
+        'Tolerance': tolerance,
+        'Verdict': 'agrees' if adrift.empty else 'disagrees',
+        'Means': means}
+
 
 def with_year(frame, year_type='CY'):
     """The frame with a plain integer year column for the chosen basis.
@@ -349,12 +547,12 @@ def plan_checks(frame, year_type='CY'):
     grade = head_grade(dated, year_type)
     measured = float(grade.mean()) if not grade.empty else None
     planned = totals.get('ore_grade_gpt')
-    drift = _band(measured, planned, GRADE_TOLERANCE)
+    drift = _band(measured, planned, HEAD_GRADE_TOLERANCE)
     rows.append({
         'Check': 'Mill head grade',
         'Measured': measured, 'Planned': planned, 'Unit': 'g/t',
-        'Drift': drift, 'Tolerance': GRADE_TOLERANCE,
-        'Verdict': _verdict(drift, GRADE_TOLERANCE),
+        'Drift': drift, 'Tolerance': HEAD_GRADE_TOLERANCE,
+        'Verdict': _verdict(drift, HEAD_GRADE_TOLERANCE),
         'Means': 'Contained gold over milled tonnes.  A large drift is a '
                  'unit error before it is a geology result.'})
 
@@ -431,55 +629,37 @@ def plan_checks(frame, year_type='CY'):
                  'is built on.'})
 
 
-    # Two measures against each other, rather than against the plan.
+    # Each consumption stream against the driver it should follow, rather
+    # than against the plan.  A forecast can satisfy every check above and
+    # still be internally inconsistent: diesel held flat while the pit winds
+    # down is two individually plausible series whose ratio is not.
     #
-    # Every other check here compares one series to what the plan says it
-    # should be, and a forecast can satisfy all of them and still be
-    # internally inconsistent: diesel winding down with the fleet while
-    # electricity holds flat is two individually plausible series whose
-    # ratio is not.  A plant does not double its specific energy
-    # consumption, so a year well away from the rest of the series is a
-    # forecast that stopped reading the mill.
-    #
-    # This reports and changes nothing.  The quantity is written upstream
-    # and is read here as it arrives.
-    power = annual(dated, process_power, year_type)
-    together = pd.concat([power.rename('kWh'), milled.rename('t')], axis=1)
-    together = together.dropna()
-    together = together[together['t'] > 0]
-    if len(together) >= 3:
-        rate = together['kWh'] / together['t']
-        settled = float(rate.median())
-        apart = (rate - settled).abs() / settled
-        adrift = apart[apart > POWER_INTENSITY_TOLERANCE].sort_values()
-        worst = rate.loc[adrift.index[-1]] if len(adrift) else settled
-        rows.append({
-            'Check': 'Power against tonnes milled',
-            'Measured': round(float(worst), 1),
-            'Planned': round(settled, 1), 'Unit': 'kWh per t',
-            'Drift': _band(worst, settled, POWER_INTENSITY_TOLERANCE),
-            'Tolerance': POWER_INTENSITY_TOLERANCE,
-            'Verdict': 'agrees' if adrift.empty else 'disagrees',
-            'Means': ('Every year draws power in step with what it milled.'
-                      if adrift.empty else
-                      'Out of step in %s.  A plant does not change its '
-                      'energy per tonne by this much, so the power for '
-                      'those years is not following the mill, and the '
-                      'Scope 2 that rests on it is wrong.'
-                      % ', '.join(str(int(y)) for y in adrift.index))})
+    # The line is derived from the recorded months (driver_line), so the
+    # forecast is held to what the operation has done rather than to a value
+    # somebody typed.  This reports and changes nothing: the quantities are
+    # written upstream and read here as they arrive.
+    for spec in DRIVER_CHECKS:
+        row = _driver_row(spec, dated)
+        if row is not None:
+            rows.append(row)
 
     # A stream that runs for a different span than the ore it belongs to.
     spans = continuity(dated, year_type)
-    gapped = spans[spans['Gaps'] > 0]
+    gapped = spans[(spans['Gaps'] > 0) | (spans['Overrun'] > 0)]
+    said = []
+    for row in gapped.itertuples():
+        said.append(f'{row.Stream}: {row.Note}')
     rows.append({
-        'Check': 'Streams without gaps',
+        'Check': 'Streams as expected',
         'Measured': int(len(spans) - len(gapped)), 'Planned': int(len(spans)),
         'Unit': 'streams', 'Drift': None, 'Tolerance': 0.0,
         'Verdict': 'agrees' if gapped.empty else 'disagrees',
-        'Means': ('Every activity stream runs without a break.' if gapped.empty
-                  else 'Gaps in: %s.  A stream that stops mid life takes its '
-                       'emissions with it and the total reads as an '
-                       'abatement.' % ', '.join(gapped['Stream']))})
+        'Means': ('Every activity stream runs as expected.' if gapped.empty
+                  else '  '.join(said) + '  A stream that stops mid life '
+                       'takes its emissions with it, and one that runs past '
+                       'its end carries emissions that will not happen.  '
+                       'Correct the forecast in PrepData, or the stated '
+                       'span under Streams on the Assumptions page.')})
 
     frame_out = pd.DataFrame(rows)
     frame_out['Plan'] = LOM.plan_name
@@ -492,21 +672,130 @@ def continuity(frame, year_type='CY'):
     A stream that ends mid-forecast is how a wind-down assumption fails
     quietly: the tonnes stop, the emissions stop with them, and the total
     looks like an abatement.
+
+    A stream set as intermittent in streams.expected (ReferenceInputs.yaml)
+    is not faulted for a gap, and a stream with a last_year is faulted for
+    every year it runs past it.  Gaps and Overrun count only what is a fault.
     """
+    from LoaderReference import load_settings
+    expected = {str(item.get('name')): item for item in
+                ((load_settings().get('streams', {}) or {})
+                 .get('expected') or []) if isinstance(item, dict)}
     found = streams(frame, year_type)
     rows = []
     for name, series in found.items():
+        setting = expected.get(name, {})
+        intermittent = bool(setting.get('intermittent', False))
+        try:
+            last_year = int(setting.get('last_year'))
+        except (TypeError, ValueError):
+            last_year = None
         if series.empty:
             rows.append({'Stream': name, 'Years': 0, 'First': None,
-                         'Last': None, 'Gaps': 0,
+                         'Last': None, 'Gaps': 0, 'Overrun': 0,
                          'Note': 'No data at all.'})
             continue
         years = [int(y) for y in series.index]
         span = set(range(min(years), max(years) + 1))
         gaps = sorted(span - set(years))
+        past = sorted(y for y in years if last_year and y > last_year)
+        notes = []
+        if gaps:
+            said = ', '.join(str(g) for g in gaps[:6])
+            notes.append(f'No data in {said}, which is expected: set as '
+                         f'intermittent.' if intermittent
+                         else f'No data in {said}.')
+        if past:
+            notes.append(f'Runs to {max(past)}, past its stated last year '
+                         f'{last_year}.')
         rows.append({
             'Stream': name, 'Years': len(years), 'First': min(years),
-            'Last': max(years), 'Gaps': len(gaps),
-            'Note': ('Runs without a break.' if not gaps
-                     else 'No data in %s.' % ', '.join(str(g) for g in gaps[:6]))})
+            'Last': max(years),
+            'Gaps': 0 if intermittent else len(gaps),
+            'Overrun': len(past),
+            'Note': '  '.join(notes) or 'Runs without a break.'})
     return pd.DataFrame(rows)
+
+
+# ---------------------------------------------------------------------
+# UNIT SLIPS
+# ---------------------------------------------------------------------
+# A quantity recorded in kilograms under a tonne heading is a thousand times
+# too big, and it still sums, still charts and still produces an emission.
+# Nothing downstream can tell, because the unit on the row says tonnes.
+# What gives it away is the stream itself: the same line, month after month,
+# jumping by orders of magnitude when nothing on site changed that much.
+#
+# Each month of each stream is compared with that stream's typical (median)
+# month.  A slip between the units in use on site is a factor of a thousand
+# (kg and t, L and kL), so a hundredfold departure catches every one with a
+# wide margin, while a mine winding down, a new ore source or a plant
+# switching over moves a stream by tens at most and is left alone.
+UNIT_SLIP_RATIO = 100.0
+
+# Streams measured in a physical unit.  Stores and services are in counts
+# and dollars, where a hundredfold month is a big order, not a unit slip.
+_SLIP_ROWTYPES = ('consumption', 'fuel', 'production', 'electricity')
+
+
+def unit_slips(frame, ratio=UNIT_SLIP_RATIO):
+    """Streams with months a hundredfold away from their typical month.
+
+    Actual and forecast are read together, after the forecast superseded by
+    an actual is dropped, so a forecast built in the wrong unit shows against
+    the record and the other way round.
+
+    Returns one row per stream carrying any such month:
+        Activity, SubActivity, UOM, Typical, Months, High, Low, From, To,
+        Actual, Forecast
+    where High and Low count months above and below, and Actual and Forecast
+    count the flagged months in each dataset.
+    """
+    columns = ['Activity', 'SubActivity', 'UOM', 'Typical', 'Months', 'High',
+               'Low', 'From', 'To', 'Actual', 'Forecast']
+    if frame is None or frame.empty:
+        return pd.DataFrame(columns=columns)
+    from CalcNga import dedupe_actual_over_budget
+    work = dedupe_actual_over_budget(frame)
+    measured = work['RowType'].astype(str).isin(_SLIP_ROWTYPES)
+    if 'NGAFuel' in work.columns:
+        measured |= work['NGAFuel'].astype(str).ne('')
+    work = work[measured]
+    # Only the operating years.  After processing ends every stream falls to
+    # a rehabilitation trickle, a hundred times below its operating month by
+    # design, and flagging each of those months buried anything real.
+    if DEFAULT_END_PROCESSING_DATE is not None and 'Date' in work.columns:
+        work = work[work['Date'] <= pd.Timestamp(DEFAULT_END_PROCESSING_DATE)]
+    if work.empty:
+        return pd.DataFrame(columns=columns)
+
+    keys = ['Activity', 'SubActivity', 'UOM']
+    monthly = (work.assign(**{k: work[k].astype(str) for k in keys},
+                           DataSet=work['DataSet'].astype(str))
+               .groupby(keys + ['Date'], observed=True)
+               .agg(Quantity=('Quantity', 'sum'),
+                    Actual=('DataSet', lambda d: (d == 'Actual').any()))
+               .reset_index())
+    monthly = monthly[monthly['Quantity'] > 0]
+    if monthly.empty:
+        return pd.DataFrame(columns=columns)
+    monthly['Typical'] = monthly.groupby(keys)['Quantity'].transform('median')
+    monthly['Ratio'] = monthly['Quantity'] / monthly['Typical']
+    flagged = monthly[(monthly['Ratio'] >= ratio)
+                      | (monthly['Ratio'] <= 1.0 / ratio)]
+    if flagged.empty:
+        return pd.DataFrame(columns=columns)
+
+    found = flagged.groupby(keys).agg(
+        Typical=('Typical', 'first'),
+        Months=('Ratio', 'size'),
+        High=('Ratio', lambda r: int((r >= ratio).sum())),
+        Low=('Ratio', lambda r: int((r <= 1.0 / ratio).sum())),
+        From=('Date', 'min'),
+        To=('Date', 'max'),
+        Actual=('Actual', 'sum'),
+    ).reset_index()
+    found['Actual'] = found['Actual'].astype(int)
+    found['Forecast'] = found['Months'] - found['Actual']
+    return found.sort_values('Months', ascending=False)[columns] \
+        .reset_index(drop=True)

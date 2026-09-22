@@ -30,10 +30,9 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from CalcNga import resolve_factor_key
+from CalcNga import dedupe_actual_over_budget, resolve_factor_key
 from CalcUnits import KG_PER_TONNE_CO2E
-from Config import (FACTOR_SET_NGA, GHG_EXPLOSIVES_EF_T_CO2_PER_T,
-                    GHG_EXPLOSIVES_SOURCE, canonical_factor_source,
+from Config import (FACTOR_SET_NGA, canonical_factor_source,
                     factor_derivation, factor_is_regulated, factor_set)
 
 __all__ = [
@@ -151,7 +150,11 @@ def _factor_lookup(agg_df, year_factor_map):
             's1': (record or {}).get('s1', 0.0),
             's2': (record or {}).get('s2', 0.0),
             'uom': (record or {}).get('expected_uom', ''),
-            'nga_year': year_factors.get('_nga_year', ''),
+            # A factor from outside the National Greenhouse Accounts names
+            # its own publication and edition on its record.
+            'source': (record or {}).get('factor_source', FACTOR_SET_NGA),
+            'nga_year': (record or {}).get('factor_year',
+                                           year_factors.get('_nga_year', '')),
         }
     return out
 
@@ -183,6 +186,7 @@ def _scope12_rows(agg_df, year_factor_map, build_id, actual_to=None):
     frame['_f2'] = [lookup[k]['s2'] for k in keys]
     frame['_funit'] = [lookup[k]['uom'] for k in keys]
     frame['_ngayear'] = [lookup[k]['nga_year'] for k in keys]
+    frame['_fsource'] = [lookup[k]['source'] for k in keys]
 
     parts = []
     for scope, column, factor_col in (('Scope 1', 'Scope1_tCO2e', '_f1'),
@@ -206,23 +210,17 @@ def _scope12_rows(agg_df, year_factor_map, build_id, actual_to=None):
             'SpendAUD': rows['Value'].values,
             'GHGScope': scope,
             'Scope3Category': np.nan,
-            # Where no NGA factor resolved, the source is the line's own
-            # common name: it is a GHG-only source with a factor of its own.
-            'EmissionSource': rows['_source'].astype(str).where(
-                rows['_source'].astype(str) != '',
-                rows['CommonName'].astype(str)).to_numpy(),
-            'EmissionFactor': rows[factor_col].where(
-                rows['_source'].astype(str) != '',
-                GHG_EXPLOSIVES_EF_T_CO2_PER_T * KG_PER_TONNE_CO2E).values,
-            'FactorUOM': ('kg CO2-e/' + rows['_funit'].astype(str)).where(
-                rows['_source'].astype(str) != '', 'kg CO2-e/t').values,
-            'FactorSource': pd.Series(FACTOR_SET_NGA, index=rows.index)
-                .where(rows['_source'].astype(str) != '',
-                       GHG_EXPLOSIVES_SOURCE).to_numpy(),
+            # Every line is priced from the GHG factor map, so the factor,
+            # its unit and its publication are read from the record that
+            # priced it.  No source is a special case here.
+            'EmissionSource': rows['_source'].astype(str).to_numpy(),
+            'EmissionFactor': rows[factor_col].values,
+            'FactorUOM': ('kg CO2-e/' + rows['_funit'].astype(str)).values,
+            'FactorSource': rows['_fsource'].astype(str).to_numpy(),
             'FactorYear': rows['_ngayear'].values,
             'Emissions_tCO2e': rows[column].values,
             'Energy_GJ': rows['Energy_GJ'].values if 'Energy_GJ' in rows else np.nan,
-            'CalculationMethod': 'Quantity x NGA factor / 1000',
+            'CalculationMethod': 'Quantity x published factor / 1000',
             'ActivityDataSource': rows['Source'].astype(str).values,
             'DataQuality': 'Metered or inventory-derived',
         }))
@@ -431,11 +429,13 @@ def build_emissions_table(precomputed, agg_df, build_id=None):
         physical measures.
     """
     detail = getattr(getattr(precomputed, 'scope3', None), 'detail', None)
+    settle_id = build_id is None
     if build_id is None:
         build_id = build_id_for(
             len(agg_df), 0 if detail is None else len(detail),
             agg_df['Date'].max() if len(agg_df) else '',
-            sorted(getattr(precomputed, 'year_factor_map', {}) or {}),
+            sorted((getattr(precomputed, 'ghg_factor_map', None)
+                       or getattr(precomputed, 'year_factor_map', {}) or {})),
         )
 
     # Where the record stops, taken from the data rather than from a
@@ -444,8 +444,16 @@ def build_emissions_table(precomputed, agg_df, build_id=None):
                           'Date']
     actual_to = recorded.max() if len(recorded) else None
 
+    # A month can carry both an actual and a budget line for the same thing:
+    # the record has run past the start of the forecast.  The engines keep
+    # the actual and drop the budget line it supersedes, on the same month
+    # and match key, and the table must do the same or it counts the month
+    # twice.  Scope 3 detail arrives already superseded from CalcGhgCategories.
+    agg_df = dedupe_actual_over_budget(agg_df)
+
     parts = [
-        _scope12_rows(agg_df, getattr(precomputed, 'year_factor_map', {}) or {},
+        _scope12_rows(agg_df, (getattr(precomputed, 'ghg_factor_map', None)
+                       or getattr(precomputed, 'year_factor_map', {}) or {}),
                       build_id, actual_to),
         _scope3_rows(detail, build_id, actual_to),
         _physical_rows(agg_df, build_id, actual_to),
@@ -458,6 +466,21 @@ def build_emissions_table(precomputed, agg_df, build_id=None):
     table = table.sort_values(['Date', 'GHGScope', 'Scope3Category',
                                'Department', 'SubActivity'],
                               na_position='last').reset_index(drop=True)
+    # The identifier is settled from the figures the build produced, not from
+    # the shape of the inputs that produced them.  Read from the shape, a
+    # forecast corrected and republished carried the identifier of the build
+    # it replaced: three publications an hour apart, each a million tonnes
+    # apart, all called eaa0713cccd9, and an archive a person could tell
+    # apart only by its timestamp.  Same figures, same identifier still, so a
+    # rebuild is still visibly a rebuild.
+    if settle_id and not table.empty:
+        emissions = table.loc[table['RowKind'] == 'Emission']
+        by_year = (emissions.groupby(['CalendarYear', 'GHGScope'],
+                                     observed=True)['Emissions_tCO2e']
+                   .sum().round(3))
+        table['BuildID'] = build_id_for(
+            len(table), round(float(emissions['Emissions_tCO2e'].sum()), 3),
+            *(f'{where}:{value}' for where, value in by_year.items()))
     # Text columns as categories.  Every one of them is a label from a short
     # list, and holding eight hundred thousand rows of Python strings costs
     # more memory than the whole of the rest of the model.  Done after the
@@ -505,11 +528,20 @@ def reconcile(table, precomputed, basis='CY', tolerance=1.0):
     # projection, which starts at the Safeguard commencement, so a year the
     # projection only partly covers is not a difference in emissions and must
     # not be reported as one.
+    #
+    # Only the start is trimmed.  The engines' annual frames carry a modelled
+    # annual estimate (Categories 6 and 7) for the whole of the last year
+    # even where the physicals stop part way through it, so trimming the
+    # table at the last month compared a full year against part of one and
+    # failed on a difference that is not there.  A table year the engines do
+    # not carry is never compared, so nothing past the end needs trimming.
     rows = table[table['RowKind'] == 'Emission']
-    window = getattr(precomputed, 'monthly', None)
+    # The GHG inventory's own window.  The table is a GHG table, so it is
+    # compared over the months the GHG pipeline covers and not over the
+    # Safeguard projection's.
+    window = getattr(precomputed, 'ghg_monthly', None)
     if window is not None and not window.empty:
-        rows = rows[(rows['Date'] >= window['Date'].min())
-                    & (rows['Date'] <= window['Date'].max())]
+        rows = rows[rows['Date'] >= window['Date'].min()]
         first_full = window['Date'].min()
         annual = annual[pd.to_datetime(annual['Date']) >= first_full] \
             if 'Date' in annual.columns else annual

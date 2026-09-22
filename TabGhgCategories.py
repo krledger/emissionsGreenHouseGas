@@ -25,6 +25,8 @@ PURPOSE:
     nothing here feeds either.
 """
 
+import gzip
+
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -112,28 +114,6 @@ def _layout(figure, title, ylab, height=420):
 # =============================================================================
 # Headline
 # =============================================================================
-
-def _render_headline(result, year_type, display_year, period_label):
-    st.subheader('Scope 3 position')
-
-    summary = category_headline(result, year_type, display_year)
-    if summary is None:
-        st.info(f'No Scope 3 data for {period_label}.')
-        return
-
-    columns = st.columns(4)
-    columns[0].metric(f'Total Scope 3 {period_label}',
-                      f"{summary['total']:,.0f} t")
-    columns[1].metric('Upstream, categories 1 to 8',
-                      f"{summary['upstream']:,.0f} t")
-    columns[2].metric('Downstream, categories 9 to 15',
-                      f"{summary['downstream']:,.0f} t")
-    columns[3].metric('Category 3 share',
-                      f"{summary['cat3_share']:.0f}%",
-                      help='Fuel and energy related activities, the only '
-                           'category measured at transaction level.')
-
-    st.caption(result.notes.get('boundary', ''))
 
 
 # =============================================================================
@@ -313,9 +293,10 @@ def _render_spend_against_physical(result):
             f"**Factor basis in force.**  "
             f"{int(counts.get('physical', 0))} product groups are charged on a "
             f"physical unit factor and {int(counts.get('spend', 0))} on spend.  "
-            f"Moving a group across is a configuration change: add it to "
-            f"`category_1.physical_unit_factors` in `ConfigScope3.yaml` and "
-            f"rebuild `Scope3Factors.csv`."
+            f"Physical is preferred and spend is the fallback.  Moving a "
+            f"group across means holding a factor per unit for it: add the "
+            f"factor and a physical item on the Factors screen of the "
+            f"Emissions Data Builder."
         )
         with st.expander('Factor basis by product group', expanded=False):
             st.dataframe(status, hide_index=True, width='stretch', height=360)
@@ -393,13 +374,22 @@ def _render_detail(result):
                'quantity or expenditure, the rate applied, the factor and its '
                'source.  This is the audit trail for every figure above.')
 
-    st.download_button(
-        'Download the Scope 3 detail',
-        data=result.detail.to_csv(index=False).encode('utf-8'),
-        file_name='Scope3Detail.csv',
-        mime='text/csv',
-        key='scope3_detail_download',
-    )
+    # Made when it is asked for, and compressed.  The detail is a million
+    # rows: written out on every draw, as it was, it built a quarter of a
+    # gigabyte of text each time the view was opened, whether or not anybody
+    # wanted the file.
+    if st.button('Prepare the Scope 3 detail', key='scope3_detail_prepare'):
+        st.session_state['scope3_detail_file'] = gzip.compress(
+            result.detail.to_csv(index=False).encode('utf-8'))
+    ready = st.session_state.pop('scope3_detail_file', None)
+    if ready is not None:
+        st.download_button(
+            'Download the Scope 3 detail',
+            data=ready,
+            file_name='Scope3Detail.csv.gz',
+            mime='application/gzip',
+            key='scope3_detail_download',
+        )
 
     with st.expander('Preview', expanded=False):
         st.dataframe(result.detail.head(400), hide_index=True,
@@ -424,22 +414,16 @@ def render_scope3_panel(result, year_type='CY', display_year=None,
         error:        why the result is absent, where it is
     """
     st.caption('GHG Protocol Corporate Value Chain (Scope 3) Standard, all '
-               'fifteen categories.  Scope 3 sits outside the Safeguard '
-               'Mechanism baseline and the NGER position; nothing here '
-               'affects either.')
+               'fifteen categories.')
 
     if result is None or result.detail.empty:
         if error:
             st.error(f'Scope 3 could not be computed.  {error}')
         else:
             st.warning(
-                'Scope 3 has not been computed.  The most common cause is a '
-                'cached run from before this tab existed: the projection is '
-                'held for an hour, so clear the cache and rerun.  Use the '
-                'Streamlit menu, top right, then Clear cache, then R.  If it '
-                'persists, check that Data/ConfigScope3.yaml, '
-                'Data/ReferenceInputs.yaml and Data/Scope3Factors.csv are '
-                'present.  Both are distributed by PrepData.')
+                'The published build carries no Scope 3 result.  Open the '
+                'Emissions Data Builder, check the Scope 3 screen for what '
+                'is missing, and publish again.')
         return
 
     if display_year is None:

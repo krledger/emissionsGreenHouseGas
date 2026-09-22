@@ -5,7 +5,7 @@ ItemID,Category,Key,Description,Basis,Quantity_UOM,Match_Key,FactorKey_Imported,
 1|excluded|PROP,1,PROP,PROPANE,excluded,,,,,,,,True,Propane.  Scope 1 combustion and Category 3 well to tank.,NGA — WTT LPG,Scope3Factors.csv,
 1|excluded|ZDEL,1,ZDEL,Deleted Items,excluded,,,,,,,,True,Deleted items.,,Scope3Factors.csv,
 1|excluded|ZZZZ,1,ZZZZ,Generic - To Be Corrected,excluded,,,,,,,,True,"Generic, to be corrected.",,Scope3Factors.csv,
-1|physical|EXPL,1,EXPL,EXPL,physical,t,Explosives,"Industry|AusLCI|ammonium nitrate, market for ammonium nitrate|Australia|t CO2-e per t",,,,,False,,,Scope3Factors.csv,"Manufacture of the explosive. Detonation is separate, 0.17 t CO2 per tonne on AGO 2004 Table 11, and is carried as Scope 1 in Config.py."
+1|physical|EXPL,1,EXPL,EXPL,physical,t,Explosives,"Industry|AusLCI|ammonium nitrate, market for ammonium nitrate|Australia|t CO2-e per t",,,,,False,,,Scope3Factors.csv,"Manufacture of the explosive. Detonation is separate, 0.17 t CO2 per tonne on AGO 2004 Table 11, and is priced as Scope 1 from the AGO ANFO detonation factor in this register."
 1|spend|ACID,1,ACID,ACID,spend,,,Spend-based|EPA SCEF|Other Basic Inorganic Chemical Manufacturing|USA|kg/USD,,,,,False,,,Scope3Factors.csv,
 1|spend|ANTI,1,ANTI,ANTISCALANT,spend,,,Spend-based|EPA SCEF|All Other Miscellaneous Chemical Product and Preparation Manufacturing|USA|kg/USD,,,,,False,,,Scope3Factors.csv,
 1|spend|BATT,1,BATT,BATTERIES,spend,,,Spend-based|EPA SCEF|All Other Miscellaneous Chemical Product and Preparation Manufacturing|USA|kg/USD,,,,,False,,,Scope3Factors.csv,

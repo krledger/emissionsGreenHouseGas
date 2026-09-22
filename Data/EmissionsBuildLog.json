@@ -1,46 +1,66 @@
 {
-  "BuildID": "7fb7d7b1ef6b",
-  "BuiltAt": "2026-09-03T01:13:17",
+  "BuildID": "ef3d538f64ba",
+  "BuiltAt": "2026-09-22T14:33:41",
   "ActualsTo": "2026-07-31 00:00:00",
   "ForecastTo": "2049-12-01 00:00:00",
   "Rows": {
-    "lines": 850646,
-    "published": 297839
+    "lines": 1169154,
+    "published": 952866
   },
   "Totals_tCO2e": {
     "by_scope": {
-      "Scope 1": 1820625.47,
-      "Scope 2": 2238930.23,
-      "Scope 3": 1442231.14
+      "Scope 1": 1865196.31,
+      "Scope 2": 2205645.9,
+      "Scope 3": 1792961.61
     },
     "by_basis": {
-      "Actual": 1172945.66,
-      "Forecast": 4328841.18
+      "Actual": 1144447.73,
+      "Forecast": 4719356.09
     },
-    "total": 5501786.84
+    "total": 5863803.82
   },
-  "Outstanding": 17,
+  "Outstanding": 10,
   "Inputs": {
-    "OperationsMetricsActual.csv": {
-      "bytes": 1888006,
-      "modified": "2026-09-02T23:07:20"
+    "ActivityActual.csv": {
+      "bytes": 6672736,
+      "modified": "2026-09-21T10:39:01"
     },
-    "OperationsMetricsBudget.csv": {
-      "bytes": 68040492,
-      "modified": "2026-09-02T23:08:56"
+    "ActivityForecast.csv": {
+      "bytes": 114209530,
+      "modified": "2026-09-12T11:58:16"
     },
-    "NgaFactors.csv": {
-      "bytes": 94644,
-      "modified": "2026-03-23T03:19:56"
+    "ReferenceLifeOfMine.yaml": {
+      "bytes": 2625,
+      "modified": "2026-08-19T08:27:40"
     },
     "ReferenceFx.csv": {
       "bytes": 7704,
-      "modified": "2026-08-19T01:58:15"
+      "modified": "2026-08-19T11:58:15"
     },
-    "LOM.yaml": {
-      "bytes": 2625,
-      "modified": "2026-08-18T22:27:40"
+    "NgaFactors.csv": {
+      "bytes": 119037,
+      "modified": "2026-09-03T17:05:58"
+    },
+    "ReferenceInputs.yaml": {
+      "bytes": 24014,
+      "modified": "2026-09-21T10:58:03"
+    },
+    "CapitalGoodsRegister.csv": {
+      "bytes": 2018,
+      "modified": "2026-09-03T10:17:35"
+    },
+    "Factors.csv": {
+      "bytes": 170226,
+      "modified": "2026-09-21T10:18:33"
+    },
+    "Items.csv": {
+      "bytes": 66471,
+      "modified": "2026-09-21T10:18:33"
+    },
+    "Lookups.csv": {
+      "bytes": 8234,
+      "modified": "2026-09-05T08:49:53"
     }
   },
-  "Notes": "One name per department; blanks read back as blanks."
+  "Notes": ""
 }

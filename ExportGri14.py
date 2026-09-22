@@ -12,14 +12,14 @@ Architecture:
     - Coverage report summarises auto/collectible/N-A status
 
 Data sources mapped:
-    Scope 1/2/3 totals ........... annual_fy (from precompute)
+    Scope 1/2/3 totals ........... gri_annual, calendar year (CalcGri)
     Gas-by-gas CO2/CH4/N2O ....... NGA individual gas EFs x fuel quantities
-    Energy (GJ) by fuel type ..... safeguard_source (Energy_GJ column)
-    Electricity (kWh -> GJ) ...... annual_fy Site/Grid kWh
-    ROM ore (t) .................. annual_fy ROM_t
+    Energy (GJ) by fuel type ..... gri_source, recorded months (CalcGri)
+    Electricity (kWh -> GJ) ...... gri_annual Site/Grid kWh
+    ROM ore (t) .................. gri_annual ROM_t
     Milled tonnes ................ raw df (Description == 'Milled Tonnes')
     Gold production (oz) ......... raw df (Description == 'Gold Recovered oz')
-    Emission intensity ........... annual_fy Scope1 / ROM_t
+    Emission intensity ........... gri_annual Scope1 / ROM_t
     SMC issuances/sales/surrenders SmcTransactions.csv
     Energy intensity ............. total Energy_GJ / ROM_t
 
@@ -71,6 +71,8 @@ def _period_row(annual_df, start_date, end_date):
     column that holds the period-start timestamp from the Grouper.
     Returns filtered DataFrame (may be empty).
     """
+    if annual_df is None or len(annual_df) == 0:
+        return pd.DataFrame()
     if 'Date' in annual_df.columns:
         return period_filter(annual_df, start_date, end_date, date_col='Date')
     # Fallback: derive FY from the date range and match on label
@@ -83,6 +85,29 @@ def _period_row(annual_df, start_date, end_date):
         return result
     result = annual_df[annual_df['FY'] == f'CY{fy_int}']
     return result
+
+
+def _gri_annual(precomputed):
+    """The calendar year totals this export reads: its own frame (CalcGri).
+
+    Never a Safeguard or NGER frame.  Those are financial year frames for the
+    regulator and are the wrong period and the wrong boundary for GRI.
+    """
+    return getattr(precomputed, 'gri_annual', pd.DataFrame())
+
+
+def _gri_source_rows(precomputed, start_date, end_date):
+    """Recorded emission sources inside the period, from the GRI source frame.
+
+    Half-open on the end date, as every period in this export is.  Returns an
+    empty frame where the build carries no GRI source.
+    """
+    src = getattr(precomputed, 'gri_source', None)
+    if src is None or len(src) == 0:
+        return pd.DataFrame()
+    dates = pd.to_datetime(src['Date'])
+    return src[(dates >= pd.Timestamp(start_date))
+               & (dates < pd.Timestamp(end_date))]
 
 
 def _date_range_to_fy(start_date, end_date):
@@ -539,7 +564,7 @@ def _get_gas_ef(nga_fuel, gas, nga_year=None):
 
 def _get_scope1_total(precomputed, start_date, end_date, raw_df=None, **kw):
     """Gross Scope 1 tCO2-e for the given period."""
-    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
+    row = _period_row(kw.get('annual_df', _gri_annual(precomputed)), start_date, end_date)
     if row.empty:
         return None
     val = float(row['Scope1'].iloc[0])
@@ -548,7 +573,7 @@ def _get_scope1_total(precomputed, start_date, end_date, raw_df=None, **kw):
 
 def _get_scope2_total(precomputed, start_date, end_date, raw_df=None, **kw):
     """Gross location-based Scope 2 tCO2-e."""
-    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
+    row = _period_row(kw.get('annual_df', _gri_annual(precomputed)), start_date, end_date)
     if row.empty:
         return None
     val = float(row['Scope2'].iloc[0])
@@ -565,7 +590,7 @@ def _get_scope3_total(precomputed, start_date, end_date, raw_df=None, **kw):
     fall back only where the Scope 3 build did not run, so a partial figure is
     never published as a gross one.
     """
-    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
+    row = _period_row(kw.get('annual_df', _gri_annual(precomputed)), start_date, end_date)
     if row.empty:
         return None
     column = 'Scope3_Total' if 'Scope3_Total' in row.columns else 'Scope3'
@@ -622,21 +647,21 @@ def _get_scope1_gas(precomputed, start_date, end_date, raw_df=None, gas='CO2', *
 
     tCO2-e(gas) = sum over fuels [ Energy_GJ * EF_gas(kgCO2-e/GJ) / 1000 ]
 
-    Note: safeguard_source is FY-based (no Date column) so we derive the
-    FY from the date range for lookup.
+    Source: the GRI source frame (CalcGri), recorded rows inside the period.
     """
-    src = precomputed.safeguard_source
-    if src.empty:
-        return None
-
-    fy = _date_range_to_fy(start_date, end_date)
-    mask = (src['FY'] == fy) & (src['DataSet'] == 'Actual')
-    if not mask.any():
+    rows = _gri_source_rows(precomputed, start_date, end_date)
+    if rows.empty:
         return None
 
     total = 0.0
-    for _, row in src[mask].iterrows():
+    for _, row in rows.iterrows():
         nga_fuel = str(row['NGAFuel'])
+        # Detonation of explosives is carbon dioxide and has no energy
+        # content, so it is taken as recorded and counted under CO2 only.
+        if nga_fuel == 'Explosives':
+            if gas == 'CO2':
+                total += float(row['Scope1_tCO2e'])
+            continue
         energy_gj = float(row['Energy_GJ'])
         if energy_gj <= 0:
             continue
@@ -652,7 +677,7 @@ def _get_scope1_gas(precomputed, start_date, end_date, raw_df=None, gas='CO2', *
 
 def _get_emission_intensity(precomputed, start_date, end_date, raw_df=None, **kw):
     """Scope 1 emissions intensity: tCO2-e per tonne ROM ore."""
-    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
+    row = _period_row(kw.get('annual_df', _gri_annual(precomputed)), start_date, end_date)
     if row.empty:
         return None
     rom_t = float(row['ROM_t'].iloc[0])
@@ -664,7 +689,7 @@ def _get_emission_intensity(precomputed, start_date, end_date, raw_df=None, **kw
 
 def _get_energy_intensity(precomputed, start_date, end_date, raw_df=None, **kw):
     """Energy intensity: total fuel GJ per tonne ROM ore."""
-    rom_t = _get_rom_tonnes(precomputed, start_date, end_date)
+    rom_t = _get_rom_tonnes(precomputed, start_date, end_date, **kw)
     fuel_gj = _get_total_fuel_gj(precomputed, start_date, end_date)
     if rom_t is None or fuel_gj is None or rom_t <= 0:
         return None
@@ -673,7 +698,7 @@ def _get_energy_intensity(precomputed, start_date, end_date, raw_df=None, **kw):
 
 def _get_rom_tonnes(precomputed, start_date, end_date, raw_df=None, **kw):
     """Total ROM ore tonnes."""
-    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
+    row = _period_row(kw.get('annual_df', _gri_annual(precomputed)), start_date, end_date)
     if row.empty:
         return None
     val = float(row['ROM_t'].iloc[0])
@@ -704,23 +729,19 @@ def _get_smc_by_type(precomputed, start_date, end_date, raw_df=None, txn_type='I
 def _get_total_fuel_gj(precomputed, start_date, end_date, raw_df=None, **kw):
     """Total fuel energy consumption in GJ (excludes electricity).
 
-    safeguard_source is FY-based so we derive FY from the date range.
+    Source: the GRI source frame (CalcGri), calendar period.
     """
-    src = precomputed.safeguard_source
-    if src.empty:
+    rows = _gri_source_rows(precomputed, start_date, end_date)
+    if rows.empty:
         return None
-    fy = _date_range_to_fy(start_date, end_date)
-    mask = (src['FY'] == fy) & (src['DataSet'] == 'Actual')
-    if not mask.any():
-        return None
-    val = float(src.loc[mask, 'Energy_GJ'].sum())
+    val = float(rows['Energy_GJ'].sum())
     return round(val, 2) if val > 0 else None
 
 
 def _get_fuel_gj_by_nga(precomputed, start_date, end_date, raw_df=None, nga_prefix='', exclude_prefix='', **kw):
     """Energy GJ for a specific NGAFuel prefix.
 
-    safeguard_source is FY-based so we derive FY from the date range.
+    Source: the GRI source frame (CalcGri), calendar period.
 
     Args:
         nga_prefix: NGAFuel must start with this string.
@@ -728,15 +749,10 @@ def _get_fuel_gj_by_nga(precomputed, start_date, end_date, raw_df=None, nga_pref
                         (e.g. exclude 'Diesel oil-Cars' from 'Diesel oil' to
                         get stationary diesel only).
     """
-    src = precomputed.safeguard_source
+    src = _gri_source_rows(precomputed, start_date, end_date)
     if src.empty:
         return None
-    fy = _date_range_to_fy(start_date, end_date)
-    mask = (
-        (src['FY'] == fy)
-        & (src['DataSet'] == 'Actual')
-        & (src['NGAFuel'].astype(str).str.startswith(nga_prefix))
-    )
+    mask = src['NGAFuel'].astype(str).str.startswith(nga_prefix)
     if exclude_prefix:
         mask = mask & (~src['NGAFuel'].astype(str).str.startswith(exclude_prefix))
     if not mask.any():
@@ -745,31 +761,9 @@ def _get_fuel_gj_by_nga(precomputed, start_date, end_date, raw_df=None, nga_pref
     return round(val, 2) if val > 0 else None
 
 
-def _get_fuel_gj_by_desc(precomputed, start_date, end_date, raw_df=None, descriptions=None, **kw):
-    """Energy GJ for specific Description values from safeguard source.
-
-    safeguard_source is FY-based so we derive FY from the date range.
-    """
-    if descriptions is None:
-        return None
-    src = precomputed.safeguard_source
-    if src.empty:
-        return None
-    fy = _date_range_to_fy(start_date, end_date)
-    mask = (
-        (src['FY'] == fy)
-        & (src['DataSet'] == 'Actual')
-        & (src['Description'].isin(descriptions))
-    )
-    if not mask.any():
-        return None
-    val = float(src.loc[mask, 'Energy_GJ'].sum())
-    return round(val, 2) if val > 0 else None
-
-
 def _get_grid_electricity_gj(precomputed, start_date, end_date, raw_df=None, **kw):
     """Purchased grid electricity in GJ.  1 kWh = 0.0036 GJ."""
-    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
+    row = _period_row(kw.get('annual_df', _gri_annual(precomputed)), start_date, end_date)
     if row.empty:
         return None
     kwh = float(row['Grid_Electricity_kWh'].iloc[0])
@@ -778,7 +772,7 @@ def _get_grid_electricity_gj(precomputed, start_date, end_date, raw_df=None, **k
 
 def _get_grid_electricity_kwh(precomputed, start_date, end_date, raw_df=None, **kw):
     """Purchased grid electricity in kWh."""
-    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
+    row = _period_row(kw.get('annual_df', _gri_annual(precomputed)), start_date, end_date)
     if row.empty:
         return None
     val = float(row['Grid_Electricity_kWh'].iloc[0])
@@ -787,7 +781,7 @@ def _get_grid_electricity_kwh(precomputed, start_date, end_date, raw_df=None, **
 
 def _get_site_electricity_gj(precomputed, start_date, end_date, raw_df=None, **kw):
     """Self-generated electricity in GJ."""
-    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
+    row = _period_row(kw.get('annual_df', _gri_annual(precomputed)), start_date, end_date)
     if row.empty:
         return None
     kwh = float(row['Site_Electricity_kWh'].iloc[0])
@@ -796,7 +790,7 @@ def _get_site_electricity_gj(precomputed, start_date, end_date, raw_df=None, **k
 
 def _get_site_electricity_kwh(precomputed, start_date, end_date, raw_df=None, **kw):
     """Self-generated electricity in kWh."""
-    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
+    row = _period_row(kw.get('annual_df', _gri_annual(precomputed)), start_date, end_date)
     if row.empty:
         return None
     val = float(row['Site_Electricity_kWh'].iloc[0])
@@ -945,7 +939,7 @@ def _get_gri_consumable(precomputed, start_date, end_date, raw_df=None, common_n
 
 def _get_emission_intensity_gold(precomputed, start_date, end_date, raw_df=None, **kw):
     """Scope 1 emissions intensity: tCO2-e per troy ounce gold recovered."""
-    row = _period_row(kw.get('annual_df', precomputed.annual_fy), start_date, end_date)
+    row = _period_row(kw.get('annual_df', _gri_annual(precomputed)), start_date, end_date)
     if row.empty:
         return None
     s1 = float(row['Scope1'].iloc[0])
@@ -1016,7 +1010,7 @@ def _get_waste_total(precomputed, start_date, end_date, raw_df=None, **kw):
 def _get_strip_ratio(precomputed, start_date, end_date, raw_df=None, **kw):
     """Strip ratio: waste rock tonnes / ROM ore tonnes."""
     waste_t = _get_ore_waste(precomputed, start_date, end_date, raw_df=raw_df, uom='t')
-    rom_t = _get_rom_tonnes(precomputed, start_date, end_date)
+    rom_t = _get_rom_tonnes(precomputed, start_date, end_date, **kw)
     if waste_t is None or rom_t is None or rom_t <= 0:
         return None
     return round(waste_t / rom_t, 2)
@@ -1042,7 +1036,6 @@ _CALC_FN_MAP = {
     '_get_smc_by_type':           _get_smc_by_type,
     '_get_total_fuel_gj':         _get_total_fuel_gj,
     '_get_fuel_gj_by_nga':        _get_fuel_gj_by_nga,
-    '_get_fuel_gj_by_desc':       _get_fuel_gj_by_desc,
     '_get_grid_electricity_gj':   _get_grid_electricity_gj,
     '_get_grid_electricity_kwh':  _get_grid_electricity_kwh,
     '_get_site_electricity_gj':   _get_site_electricity_gj,
@@ -1159,7 +1152,7 @@ def build_gri14_export(precomputed, raw_df=None, reporting_fys=None,
                 reporting_periods.append((start, end, f"{prefix}{fy}"))
         else:
             # Auto-detect from annual table
-            annual = precomputed.annual_cy if year_type == 'CY' else precomputed.annual_fy
+            annual = _gri_annual(precomputed)
             mask = annual['Scope1'] > 0
             raw_fys = annual.loc[mask, 'FY'].unique()
             prefix = 'CY' if year_type == 'CY' else 'FY'
@@ -1181,20 +1174,12 @@ def build_gri14_export(precomputed, raw_df=None, reporting_fys=None,
         calc_args = entry.get('calc_args', {})
 
         for start_date, end_date, label in reporting_periods:
-            # Pass the selected annual table so the extraction functions use
-            # the right year basis.  Prefer the GHG frame: it carries the same
-            # Scope 1 and Scope 2 figures as the Safeguard frame plus the
-            # Scope 3 columns for all fifteen categories, so a disclosure
-            # asking for gross Scope 3 gets a gross figure rather than
-            # Category 3 alone.
-            if year_type == 'CY':
-                annual_df = getattr(precomputed, 'ghg_annual_cy', None)
-                if annual_df is None or annual_df.empty:
-                    annual_df = precomputed.annual_cy
-            else:
-                annual_df = getattr(precomputed, 'ghg_annual_fy', None)
-                if annual_df is None or annual_df.empty:
-                    annual_df = precomputed.annual_fy
+            # The export's own calendar year frame (CalcGri).  It carries
+            # gross Scope 3 across all fifteen categories.  There is no
+            # fallback to a Safeguard or NGER frame: a missing frame gives
+            # blank values, which is visible, where a substituted frame
+            # gives wrong ones, which is not.
+            annual_df = _gri_annual(precomputed)
             value = fn(precomputed, start_date, end_date, raw_df=raw_df,
                        annual_df=annual_df, **calc_args)
 

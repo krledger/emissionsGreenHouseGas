@@ -39,7 +39,10 @@ from CalcSafeguard import (
     build_safeguard_source_table, build_safeguard_production_table
 )
 from CalcCalendar import date_to_fy, aggregate_by_year_type, detect_year_type
-from CalcGhg import build_ghg_frame
+from CalcGhg import build_ghg_frame, build_ghg_factor_map
+from CalcGhgInventory import build_ghg_monthly, aggregate_ghg_annual
+from CalcGri import build_gri_annual, build_gri_source
+from Config import GHG_START_DATE
 from CalcGhgCategories import build_scope3, add_other_categories_to_annual
 from CalcUnits import TONNES_PER_MEGATONNE, KWH_PER_MWH
 
@@ -78,6 +81,16 @@ class PrecomputedData:
     ghg_df: pd.DataFrame = field(default_factory=pd.DataFrame)
     ghg_annual_fy: pd.DataFrame = field(default_factory=pd.DataFrame)
     ghg_annual_cy: pd.DataFrame = field(default_factory=pd.DataFrame)
+    # The GHG monthly projection.  The GHG view reads its monthly series and
+    # its intensities from here, so every figure on that view is on the GHG
+    # basis and none is taken from the NGER projection above.
+    ghg_monthly: pd.DataFrame = field(default_factory=pd.DataFrame)
+    # Every factor the GHG inventory was priced on, by factor year.
+    ghg_factor_map: Dict[int, Any] = field(default_factory=dict)
+
+    # --- GRI 14 export source frames (CalcGri), calendar year ---
+    gri_annual: pd.DataFrame = field(default_factory=pd.DataFrame)
+    gri_source: pd.DataFrame = field(default_factory=pd.DataFrame)
 
     # --- Scope 3, all fifteen categories (Scope3Result from CalcGhgCategories) ---
     # Every GHG Protocol category except 3, which is already on the frames
@@ -93,8 +106,7 @@ class PrecomputedData:
 def precompute_all(df, fsei_rom, fsei_elec,
                    start_date, end_date,
                    end_mining_date, end_processing_date, end_rehabilitation_date,
-                   credit_start_date, decline_rate_phase2,
-                   passphrase=None) -> PrecomputedData:
+                   credit_start_date, decline_rate_phase2) -> PrecomputedData:
     """Run all heavy computation once.
 
     Args:
@@ -137,27 +149,32 @@ def precompute_all(df, fsei_rom, fsei_elec,
     safeguard_electricity = prod_tables['electricity']
 
     # ── 5. SMC transactions ──────────────────────────────────────────
-    smc_transactions = load_smc_transactions(passphrase=passphrase)
+    smc_transactions = load_smc_transactions()
 
     # ── 6. GHG Protocol frame (NGER + GHG-only items) ─────────────
     # Overlay GHG-only emissions (e.g. explosives Scope 1) onto the
     # NGER frame.  Runs a separate projection so GHG items flow through
     # to Tab 1 annual totals without affecting Safeguard / Carbon Tax.
-    ghg_df = build_ghg_frame(df)
-    ghg_monthly = build_projection(
+    # The GHG pipeline is its own: CalcGhgInventory, from GHG_START_DATE,
+    # calendar year, with no baseline, credit or Safeguard status on any
+    # frame.  It does not pass through build_projection, which belongs to
+    # the regulatory pipeline and starts at the Safeguard commencement.
+    ghg_df = df[df['Date'] >= GHG_START_DATE].reset_index(drop=True)
+    ghg_years = sorted(int(y) for y in ghg_df['FY'].unique())
+    ghg_factor_map = build_ghg_factor_map(nga_by_year, ghg_years, state='QLD')
+    ghg_df = build_ghg_frame(ghg_df, ghg_factor_map)
+    ghg_monthly = build_ghg_monthly(
         ghg_df,
+        start_date=GHG_START_DATE,
+        end_date=end_date,
         end_mining_date=end_mining_date,
         end_processing_date=end_processing_date,
         end_rehabilitation_date=end_rehabilitation_date,
-        fsei_rom=fsei_rom,
-        fsei_elec=fsei_elec,
-        credit_start_date=credit_start_date,
-        start_date=start_date,
-        end_date=end_date,
-        decline_rate_phase2=decline_rate_phase2
+        factor_map=ghg_factor_map,
     )
-    ghg_annual_fy = _aggregate_annual(ghg_monthly, 'FY')
-    ghg_annual_cy = _aggregate_annual(ghg_monthly, 'CY')
+    ghg_annual_cy = aggregate_ghg_annual(ghg_monthly, 'CY')
+    # Control total only, for reconciling the published table on both bases.
+    ghg_annual_fy = aggregate_ghg_annual(ghg_monthly, 'FY')
 
     # ── 7. Scope 3, all fifteen categories ───────────
     # Runs on the same frame and the same horizon as the projection, so the
@@ -166,7 +183,9 @@ def precompute_all(df, fsei_rom, fsei_elec,
     # of it.
     scope3_error = ''
     try:
-        scope3 = build_scope3(df, end_date=end_date)
+        # Scope 3 belongs to the GHG inventory and starts where it starts.
+        scope3 = build_scope3(df[df['Date'] >= GHG_START_DATE],
+                              end_date=end_date)
         print(f'Scope 3: {len(scope3.detail):,} rows, '
               f'{len(scope3.outstanding)} open items')
     except Exception as exc:
@@ -183,6 +202,12 @@ def precompute_all(df, fsei_rom, fsei_elec,
     ghg_annual_fy = add_other_categories_to_annual(ghg_annual_fy, scope3)
     ghg_annual_cy = add_other_categories_to_annual(ghg_annual_cy, scope3)
 
+    # ── 8. GRI 14 source frames ─────────────────────
+    # Its own frames, so a change to the GHG view or to the Safeguard
+    # tables cannot move a GRI figure unnoticed.
+    gri_annual = build_gri_annual(ghg_annual_cy)
+    gri_source = build_gri_source(ghg_df, start_date=GHG_START_DATE)
+
     return PrecomputedData(
         monthly=monthly,
         annual_fy=annual_fy,
@@ -196,6 +221,10 @@ def precompute_all(df, fsei_rom, fsei_elec,
         ghg_df=ghg_df,
         ghg_annual_fy=ghg_annual_fy,
         ghg_annual_cy=ghg_annual_cy,
+        ghg_monthly=ghg_monthly,
+        ghg_factor_map=ghg_factor_map,
+        gri_annual=gri_annual,
+        gri_source=gri_source,
         scope3=scope3,
         scope3_error=scope3_error,
     )

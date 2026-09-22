@@ -42,8 +42,10 @@ except ModuleNotFoundError as exc:                # pragma: no cover
         "(it is listed in requirements.txt)."
     ) from exc
 
-from Paths import DATA_DIR
-DEFAULT_LOM_PATH = os.path.join(DATA_DIR, 'LOM.yaml')
+import Paths
+# ReferenceLifeOfMine.yaml in PrepData, or the LOM.yaml copy in Data where
+# PrepData is not beside this repository.  See PREPDATA_SOURCES in Paths.
+DEFAULT_LOM_PATH = Paths.source('lom')
 
 # Milestone keys this model consumes.  A key absent from the file falls back
 # to the Config.py constant of the same meaning.

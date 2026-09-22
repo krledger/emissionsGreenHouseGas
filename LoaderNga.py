@@ -28,6 +28,21 @@ import os
 import Paths as _PATHS
 
 
+def nga_editions(folder_path=None):
+    """The NGA editions held in NgaFactors.csv, oldest first.
+
+    Reads the year column only, for display; lookups go through
+    NGAFactorsByYear.
+    """
+    if folder_path is None:
+        folder_path = _PATHS.DATA_DIR
+    csv_path = os.path.join(folder_path, 'NgaFactors.csv')
+    if not os.path.exists(csv_path):
+        return []
+    years = pd.read_csv(csv_path, usecols=['NGA_Year'])['NGA_Year']
+    return sorted(int(y) for y in years.dropna().unique())
+
+
 class NGAFactorsByYear:
     """Provide access to NGA emission factors for multiple years.
 

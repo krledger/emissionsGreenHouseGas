@@ -633,7 +633,7 @@ def render_safeguard_source_download(df, precomputed):
             "EF = NGA Scope 1 emission factor (kg CO2-e per native unit).  "
             "Scope 1 tCO2-e = Quantity \u00d7 EF / 1000.  "
             "Energy GJ = Quantity \u00d7 GJ/unit.  "
-            "NGA Year = publication year of the NGA factors applied.  "
+            "NGA Year = NGA edition applied; edition N covers 1 July N to 30 June N+1.  "
             "Annual totals reconcile exactly to the emissions model."
         )
 

@@ -21,8 +21,8 @@ from CalcGhgCategories import CATEGORY_NAMES
 
 __all__ = ['CATEGORY_STATUSES', 'category_status', 'assumption_rows']
 
-CATEGORY_STATUSES = ('Calculated', 'Estimated', 'Outstanding', 'Excluded',
-                     'Not applicable')
+CATEGORY_STATUSES = ('Calculated', 'Estimated', 'Outstanding',
+                     'None identified', 'Excluded', 'Not applicable')
 
 # A category the operation does not have, as distinct from one considered and
 # excluded on materiality or boundary grounds.  Both are stated; only the
@@ -87,6 +87,11 @@ def category_status(result, reference):
         elif tonnes > 0:
             status = 'Estimated' if number in estimated else 'Calculated'
             reason = ''
+        elif open_items.empty and settings.get('none_identified'):
+            # Considered, and nothing in it is identified today.  Not owed
+            # data, so not outstanding; stated, so not silent.
+            status = 'None identified'
+            reason = ' '.join(str(settings['none_identified']).split())
         else:
             status = 'Outstanding'
             reason = ('; '.join(open_items['Item'].astype(str))
@@ -137,6 +142,88 @@ EDITABLE = {
 }
 
 
+# Settings outside the Scope 3 categories that a person maintains and an
+# auditor is shown.  Same shape as EDITABLE, keyed on the section's name.
+EDITABLE_SECTIONS = {
+    'contract_services': ('Contract services', [
+        ('blends', 'equipment_share', 'share of spend on equipment')]),
+    'streams': ('Activity streams', [
+        ('expected', 'last_year', 'last year it runs')]),
+    'units': ('Units', [
+        ('mass_as_volume', 'litres_per_kg', 'L per kg'),
+        ('corrections', 'guard_ratio', 'times the typical month')]),
+}
+
+
+def _section_rows(config):
+    rows = []
+    for section, (label, fields) in EDITABLE_SECTIONS.items():
+        settings = (config or {}).get(section, {}) or {}
+        for container, key, unit in fields:
+            for item in (settings.get(container) or []):
+                if not isinstance(item, dict) or key not in item:
+                    continue
+                rows.append({
+                    'Category': label,
+                    'Group': str(item.get('name', container)),
+                    'Parameter': key, 'Value': item.get(key), 'Unit': unit,
+                    'Path': f"{section}.{container}.{item.get('name', '')}"
+                            f".{key}",
+                    'Source': str(item.get('factor_source', '')),
+                })
+    return rows
+
+
+def mapping_rows(config):
+    """The settings that are names rather than figures, for disclosure.
+
+    Which product group prices each contractor charge.  Not edited on the
+    Assumptions page, which edits figures; shown there and published beside
+    the figures so the whole setup is on the record.
+    """
+    settings = (config or {}).get('contract_services', {}) or {}
+    rows = []
+    for group in (settings.get('groups') or []):
+        rows.append({
+            'Category': 'Contract services',
+            'Group': str(group.get('name', '')),
+            'Parameter': 'product_group',
+            'Value': str(group.get('product_group', '')),
+            'Unit': f"{settings.get('activity', '')} charge",
+            'Path': f"contract_services.groups.{group.get('name', '')}"
+                    f".product_group",
+            'Source': str(group.get('note', '')),
+        })
+    for blend in (settings.get('blends') or []):
+        for key in ('equipment_factor', 'operator_factor'):
+            rows.append({
+                'Category': 'Contract services',
+                'Group': str(blend.get('name', '')),
+                'Parameter': key, 'Value': str(blend.get(key, '')),
+                'Unit': 'factor identity',
+                'Path': f"contract_services.blends.{blend.get('name', '')}"
+                        f".{key}",
+                'Source': str(blend.get('factor_source', '')),
+            })
+    for fix in (((config or {}).get('units', {}) or {}).get('corrections')
+                or []):
+        window = ' to '.join(str(fix.get(k)) for k in ('from', 'to')
+                             if fix.get(k))
+        rows.append({
+            'Category': 'Units',
+            'Group': str(fix.get('name', '')),
+            'Parameter': 'correction',
+            'Value': (f"{fix.get('activity')} / {fix.get('subactivity')}, "
+                      f"{fix.get('dataset', 'all')} {window}, stated "
+                      f"{fix.get('stated_unit')} read as "
+                      f"{fix.get('actual_unit')}").replace('  ', ' '),
+            'Unit': 'unit correction',
+            'Path': f"units.corrections.{fix.get('name', '')}",
+            'Source': str(fix.get('factor_source', '')),
+        })
+    return pd.DataFrame(rows)
+
+
 def assumption_rows(config):
     """Every user-maintained assumption in force, flattened for review.
 
@@ -174,5 +261,11 @@ def assumption_rows(config):
             if isinstance(settings.get(container), dict) and \
                     key in settings[container] and not rows[-1:]:
                 pass
-    return pd.DataFrame(rows)
+    rows.extend(_section_rows(config))
+    frame = pd.DataFrame(rows)
+    if not frame.empty:
+        # A category is a number and a section is a name; one column of text
+        # holds both without the table refusing either.
+        frame['Category'] = frame['Category'].astype(str)
+    return frame
 

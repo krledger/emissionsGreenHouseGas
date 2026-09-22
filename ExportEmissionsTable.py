@@ -32,9 +32,10 @@ from CalcEmissionsTable import COLUMNS, build_id_for
 
 __all__ = [
     'TABLE_PATH', 'FAST_PATH', 'BUILD_LOG_PATH', 'OUTSTANDING_PATH',
-    'ASSUMPTIONS_PATH', 'compact', 'archived_builds', 'load_archived',
-    'aggregate_for_publication', 'publish', 'load_published',
-    'load_build_log', 'compare_builds', 'published_summary',
+    'ASSUMPTIONS_PATH', 'REPORTING_DIR', 'REPORTING_FRAMES', 'compact',
+    'archived_builds', 'load_archived', 'aggregate_for_publication',
+    'publish', 'write_reporting_pack', 'load_published', 'load_build_log',
+    'compare_builds', 'published_summary',
 ]
 
 from Paths import ROOT as BASE_DIR
@@ -51,6 +52,45 @@ FAST_PATH = os.path.join(DATA_DIR, 'EmissionsTable.parquet')
 BUILD_LOG_PATH = os.path.join(DATA_DIR, 'EmissionsBuildLog.json')
 OUTSTANDING_PATH = os.path.join(DATA_DIR, 'EmissionsOutstanding.csv')
 ASSUMPTIONS_PATH = os.path.join(DATA_DIR, 'EmissionsAssumptions.csv')
+
+# The reporting pack: every frame the reporting application draws, written
+# by the publication that produced them.  The application reads these and
+# computes no inventory of its own, so the two cannot disagree: what is on
+# the screen is what was published, and a figure that has not been published
+# is not on the screen.
+#
+# The published table is the record of the inventory and stays the record.
+# These are the same figures in the shapes the views were built around, kept
+# beside it rather than derived again by a second program from the sources.
+REPORTING_DIR = os.path.join(DATA_DIR, 'Reporting')
+
+# Each frame, and the attribute of the build it comes from.  One list, so
+# writing and reading cannot fall out of step with each other.
+REPORTING_FRAMES = {
+    'Ghg': 'ghg_df',
+    'Monthly': 'monthly',
+    'AnnualCY': 'annual_cy',
+    'AnnualFY': 'annual_fy',
+    'GhgAnnualCY': 'ghg_annual_cy',
+    'GhgAnnualFY': 'ghg_annual_fy',
+    'GhgMonthly': 'ghg_monthly',
+    'GriAnnual': 'gri_annual',
+    'GriSource': 'gri_source',
+    'SafeguardSource': 'safeguard_source',
+    'SafeguardOre': 'safeguard_ore',
+    'SafeguardElectricity': 'safeguard_electricity',
+}
+
+# The Scope 3 result, in the parts it is made of.
+REPORTING_SCOPE3 = {
+    'Scope3Detail': 'detail',
+    'Scope3AnnualCY': 'annual_cy',
+    'Scope3AnnualFY': 'annual_fy',
+    'Scope3Rates': 'rates',
+    'Scope3Exclusions': 'exclusions',
+}
+SCOPE3_STATE = 'Scope3State.json'
+REPORTING_LOG = 'ReportingPack.json'
 
 # The grain the table is published at.  Everything that identifies where a
 # figure came from, what factor produced it and which framework it counts
@@ -103,8 +143,77 @@ def _fingerprint(path):
                 timespec='seconds')}
 
 
+def _write_frame(frame, name):
+    """One frame of the pack.  Nothing else writes these.
+
+    Parquet where the environment has an engine, because the largest frame
+    is seven hundred thousand rows and the application opens it on every
+    start; a gzipped csv where it does not, so the pack is written either
+    way and the reader takes whichever is there.
+    """
+    frame = pd.DataFrame() if frame is None else pd.DataFrame(frame)
+    # A category of mixed types, and an index the reader does not want, are
+    # the two things parquet refuses.  Both are the writer's to settle.
+    frame = frame.reset_index(drop=True)
+    for column in frame.columns:
+        if str(frame[column].dtype) == 'category':
+            frame[column] = frame[column].astype(object)
+    path = os.path.join(REPORTING_DIR, name + '.parquet')
+    plain = os.path.join(REPORTING_DIR, name + '.csv.gz')
+    try:
+        frame.to_parquet(path, index=False)
+        if os.path.exists(plain):
+            os.remove(plain)
+        return path
+    except Exception:
+        frame.to_csv(plain, index=False, compression='gzip')
+        if os.path.exists(path):
+            os.remove(path)
+        return plain
+
+
+def write_reporting_pack(precomputed, build_id, built_at=None):
+    """Write every frame the reporting application draws.
+
+    Called by publish(), with the build that was published.  The application
+    reads these instead of loading the sources and computing again, so it
+    reports the published figures and nothing else.
+
+    Returns the list of files written.
+    """
+    if precomputed is None:
+        return []
+    os.makedirs(REPORTING_DIR, exist_ok=True)
+    written = []
+    for name, attribute in REPORTING_FRAMES.items():
+        written.append(_write_frame(getattr(precomputed, attribute, None),
+                                    name))
+    scope3 = getattr(precomputed, 'scope3', None)
+    for name, attribute in REPORTING_SCOPE3.items():
+        written.append(_write_frame(getattr(scope3, attribute, None), name))
+    # What the Scope 3 result carries that is not a frame.
+    state = {
+        'outstanding': list(getattr(scope3, 'outstanding', None) or []),
+        'coverage': dict(getattr(scope3, 'coverage', None) or {}),
+        'notes': dict(getattr(scope3, 'notes', None) or {}),
+    }
+    with open(os.path.join(REPORTING_DIR, SCOPE3_STATE), 'w',
+              encoding='utf-8') as handle:
+        json.dump(state, handle, indent=2, default=str)
+    with open(os.path.join(REPORTING_DIR, REPORTING_LOG), 'w',
+              encoding='utf-8') as handle:
+        json.dump({'BuildID': build_id,
+                   'BuiltAt': (built_at or datetime.now()).isoformat(
+                       timespec='seconds') if not isinstance(built_at, str)
+                   else built_at,
+                   'Frames': sorted(os.path.basename(p) for p in written)},
+                  handle, indent=2, default=str)
+    return written
+
+
 def publish(table, outstanding=None, assumptions=None, inputs=None,
-            actuals_to=None, forecast_to=None, notes='', archive=True):
+            actuals_to=None, forecast_to=None, notes='', archive=True,
+            precomputed=None):
     """Write the reviewed table as the published inventory.
 
     Args:
@@ -117,6 +226,9 @@ def publish(table, outstanding=None, assumptions=None, inputs=None,
         forecast_to: last forecast month.
         notes:       free text from whoever published it.
         archive:     keep a copy under the build identifier.
+        precomputed: the build the table was made from.  Its frames are
+                     written as the reporting pack, which is what the
+                     reporting application reads.
 
     Returns:
         The build log that was written.
@@ -163,6 +275,9 @@ def publish(table, outstanding=None, assumptions=None, inputs=None,
     }
     with open(BUILD_LOG_PATH, 'w', encoding='utf-8') as handle:
         json.dump(log, handle, indent=2, default=str)
+
+    # The frames the reporting application draws, from the same build.
+    write_reporting_pack(precomputed, build_id, log['BuiltAt'])
 
     if archive:
         # A published build is kept whole, so an earlier disclosure can be

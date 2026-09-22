@@ -107,6 +107,27 @@ def resolve_factor_key(nga_fuel, year_factors):
     return reverse[0] if reverse else None
 
 
+def nga_edition_for_fy(fy):
+    """NGA Factors edition N is issued for the NGER reporting year
+    1 July N to 30 June N+1 (NGA Factors 2026, section 1.1).  A financial
+    year is labelled by the year it ends, so FY y takes edition y - 1."""
+    return int(fy) - 1
+
+
+def describe_edition_rule(editions):
+    """One line stating the NGA editions held and how a year selects one.
+
+    Mirrors nga_edition_for_fy and the fallback in
+    NGAFactorsByYear._resolve_year, for display in the About view.
+    """
+    if not editions:
+        return 'none held'
+    first, last = min(editions), max(editions)
+    held = f'{first} to {last}' if first != last else f'{first}'
+    return (f'{held}; FY y takes edition y - 1 (edition N covers '
+            f'1 July N to 30 June N+1); FY{last + 1} onward takes {last}')
+
+
 def build_year_factor_map(nga_by_year, unique_years, state='QLD'):
     """Build NGA emission factor lookup by FY year number.
 
@@ -141,12 +162,14 @@ def build_year_factor_map(nga_by_year, unique_years, state='QLD'):
     factor_map = {}
 
     for year in unique_years:
+        # Factors are looked up by NGA edition; the map stays keyed by FY.
+        edition = nga_edition_for_fy(year)
         year_factors = {}
 
         # --- Fuel factors (Scope 1 and 3) ---
         for prefix in FUEL_PREFIXES:
-            s1 = nga_by_year.match_fuel_factor(year, prefix, 1)
-            s3 = nga_by_year.match_fuel_factor(year, prefix, 3)
+            s1 = nga_by_year.match_fuel_factor(edition, prefix, 1)
+            s3 = nga_by_year.match_fuel_factor(edition, prefix, 3)
 
             if s1 is None:
                 raise ValueError(
@@ -169,8 +192,8 @@ def build_year_factor_map(nga_by_year, unique_years, state='QLD'):
             }
 
         # --- Grid electricity (Scope 2 and 3, state-specific) ---
-        s2 = nga_by_year.get_electricity_factor(year, state, 2)
-        s3 = nga_by_year.get_electricity_factor(year, state, 3)
+        s2 = nga_by_year.get_electricity_factor(edition, state, 2)
+        s3 = nga_by_year.get_electricity_factor(edition, state, 3)
 
         if s2 is None:
             raise ValueError(
@@ -186,14 +209,59 @@ def build_year_factor_map(nga_by_year, unique_years, state='QLD'):
             'expected_uom': 'kWh',
         }
 
-        # Record which NGA publication year was actually used (for audit trail).
-        # _resolve_year falls back to the latest available NGA year for future FYs.
-        resolved_nga_year = nga_by_year._resolve_year(year)
+        # Record the NGA edition actually used (audit trail).  _resolve_year
+        # lifts an edition before the first to the first and holds an edition
+        # after the last at the last.
+        resolved_nga_year = nga_by_year._resolve_year(edition)
         year_factors['_nga_year'] = resolved_nga_year
 
-        factor_map[year] = year_factors
+        factor_map[year] = year_factors   # still keyed by FY
 
     return factor_map
+
+
+# Marks a row carrying an NGA source in a unit its factor cannot take.
+UNIT_GAP_COLUMN = 'UnitGap'
+
+
+def unit_gaps(frame):
+    """Every line left unpriced because its unit has no conversion.
+
+    One row per source line, so each can be traced to the file and item it
+    came from and fixed there.  Budget lines superseded by an actual are
+    still listed: the forecast is what the future years are built on.
+
+    Returns a DataFrame, empty where there are none, with:
+        DataSet, Activity, SubActivity, NGAFuel, UOM, Description,
+        Identifier, Source, Rows, Quantity, Value_AUD, From, To
+    """
+    columns = ['DataSet', 'Activity', 'SubActivity', 'NGAFuel', 'UOM',
+               'Description', 'Identifier', 'Source', 'Rows', 'Quantity',
+               'Value_AUD', 'From', 'To']
+    if frame is None or UNIT_GAP_COLUMN not in frame.columns:
+        return pd.DataFrame(columns=columns)
+    marked = frame[frame[UNIT_GAP_COLUMN].fillna(False).astype(bool)]
+    if marked.empty:
+        return pd.DataFrame(columns=columns)
+    keys = ['DataSet', 'Activity', 'SubActivity', 'NGAFuel', 'UOM',
+            'Description', 'Identifier', 'Source']
+    work = marked.copy()
+    for column in keys:
+        if column not in work.columns:
+            work[column] = ''
+        work[column] = work[column].astype(str).replace('nan', '')
+    if 'Value' not in work.columns:
+        work['Value'] = 0.0
+    summary = work.groupby(keys, dropna=False).agg(
+        Rows=('Quantity', 'size'),
+        Quantity=('Quantity', 'sum'),
+        Value_AUD=('Value', 'sum'),
+        From=('Date', 'min'),
+        To=('Date', 'max'),
+    ).reset_index()
+    return summary.sort_values(['DataSet', 'Value_AUD'],
+                               ascending=[True, False])[columns] \
+        .reset_index(drop=True)
 
 
 def apply_emissions_to_df(agg_df, year_factor_map, fy_col='FY'):
@@ -261,6 +329,10 @@ def apply_emissions_to_df(agg_df, year_factor_map, fy_col='FY'):
         agg_df[column] = agg_df[column].astype('float64').fillna(0.0)
         agg_df.loc[will_compute, column] = 0.0
 
+    # Rows whose unit cannot be carried to the unit their factor is
+    # published in.  Marked rather than raised: see the unit check below.
+    agg_df[UNIT_GAP_COLUMN] = False
+
     if not has_fuel.any():
         return agg_df
 
@@ -297,9 +369,18 @@ def apply_emissions_to_df(agg_df, year_factor_map, fy_col='FY'):
         # UOM reconciliation.
         # The line is reported in the unit the site records it in; the factor
         # is published against the NGA unit.  Where the two differ, the
-        # quantity is converted on an exact definition from Config.  An
-        # unknown pair raises: a factor applied to the wrong unit is out by
-        # orders of magnitude and must not pass unnoticed.
+        # quantity is converted on an exact definition from Config.
+        #
+        # A unit that cannot be converted, such as a count of IBCs against a
+        # factor per kilolitre, is not priced at all.  A factor applied to the
+        # wrong unit is out by orders of magnitude and must not pass, so the
+        # row carries nil and is marked in UNIT_GAP_COLUMN.  The mark is what
+        # stops it passing unnoticed: unit_gaps() lists every marked row with
+        # its source, Verify shows them as critical and Changes will not
+        # offer Publish while any remain.  This used to raise, which stopped
+        # the whole build over one new pack size and showed nobody which
+        # lines were at fault.  The conversion itself belongs upstream, in
+        # the PrepData conversions register, not here.
         expected_uom = year_factors[factor_key].get('expected_uom', '')
         uom_scale = pd.Series(1.0, index=agg_df.index[mask])
         if expected_uom and 'UOM' in agg_df.columns:
@@ -309,13 +390,21 @@ def apply_emissions_to_df(agg_df, year_factor_map, fy_col='FY'):
                     continue
                 try:
                     conversion = uom_factor(uom, expected_uom)
-                except UnitError as exc:
-                    raise ValueError(
-                        f"UOM MISMATCH: '{nga_fuel}' is reported in '{uom}' but "
-                        f"the NGA factor is per '{expected_uom}'.  {exc}"
-                    ) from exc
+                except UnitError:
+                    at = row_uoms.index[row_uoms == uom]
+                    uom_scale.loc[at] = 0.0
+                    agg_df.loc[at, UNIT_GAP_COLUMN] = True
+                    logger.warning(
+                        f"UNIT GAP: {len(at):,} rows of '{nga_fuel}' are in "
+                        f"'{uom}' and the factor is per '{expected_uom}'.  Not "
+                        f"priced; listed on Verify.")
+                    continue
                 uom_scale.loc[row_uoms.index[row_uoms == uom]] = conversion
-                logger.warning(
+                # An exact conversion is the normal course, not a fault, so
+                # it is recorded for the trail and does not warn.  A unit
+                # that cannot be converted still warns, above, and blocks
+                # publishing.
+                logger.info(
                     f"UOM converted: {nga_fuel} reported in '{uom}', factor is "
                     f"per '{expected_uom}'; quantity multiplied by {conversion}."
                 )

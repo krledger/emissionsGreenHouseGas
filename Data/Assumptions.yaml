@@ -15,6 +15,10 @@ reporting:
   NGER_FY_START_MONTH: 7
   # Year the app opens on  [year]
   DEFAULT_DISPLAY_YEAR: 2025
+  # First calendar year of the GHG inventory.  Source data before it is not
+  # relied on.  The Safeguard Mechanism has its own start, 1 July 2023, set
+  # by the legislation and not by this  [year]
+  GHG_START_YEAR: 2023
 
 # ------------------------------------------------------------------
 # Facility emissions intensities (EIF_p)
@@ -75,31 +79,15 @@ section_58b:
   S58B_MIN_COVERED: 3
 
 # ------------------------------------------------------------------
-# Explosives detonation
-# ------------------------------------------------------------------
-explosives:
-  # ANFO detonation, quantities recorded in tonnes  [t CO2 per t]
-  GHG_EXPLOSIVES_EF_T_CO2_PER_T: 0.17
-  # ANFO detonation, quantities recorded in kilograms  [t CO2 per kg]
-  GHG_EXPLOSIVES_EF_KG_CO2_PER_KG: 0.00017
-
-# ------------------------------------------------------------------
-# Carbon market defaults
-# ------------------------------------------------------------------
-carbon_market:
-  # Carbon price the scenario opens on  [AUD per t CO2-e]
-  DEFAULT_TAX_RATE: 48.0
-  # Annual escalation applied to the carbon price  [proportion per year]
-  DEFAULT_TAX_ESCALATION: 0.08
-  # Assumed annual decline in the grid emission factor  [proportion per year]
-  DEFAULT_EF2_DECLINE_RATE: 0.05
-
-# ------------------------------------------------------------------
 # Materiality and presentation thresholds
 # ------------------------------------------------------------------
 materiality:
   # A movement is shown only where the prior period is at least this share of the current total.  Below it the percentage is noise.  [proportion]
   MATERIALITY_THRESHOLD: 0.02
+  # A department or cost centre below this share of the period total is left
+  # off the By department chart.  The total and the shares are still taken
+  # over everything, so nothing is lost from a figure  [proportion]
+  CHART_MINIMUM_SHARE: 0.001
 
 # ------------------------------------------------------------------
 # Period definitions
@@ -116,72 +104,36 @@ periods:
 # agreement; up to twice it is drift worth noting; beyond that the build and
 # the plan disagree and somebody looks before publishing.
 verification:
-  # Head grade and life of mine tonnage, as a proportion of the planned value
+  # Life of mine tonnage, as a proportion of the planned value
   GRADE_TOLERANCE: 0.2
+  # Mill head grade against the plan's ore grade.  Wide on purpose: the plan
+  # states the grade of ore mined, the mill sees ore after beneficiation has
+  # rejected the low grade, so the two differ by a quarter in an ordinary
+  # year.  What this check is for is a unit error, grams read as ounces or
+  # tonnes as kilograms, which moves the ratio by a multiple.  The yearly
+  # comparison with the plan's own grade belongs in PrepData, which holds it
+  # by year
+  HEAD_GRADE_TOLERANCE: 0.5
   # Metallurgical recovery, as a proportion of the planned recovery
   RECOVERY_TOLERANCE: 0.1
   # Throughput against plant rating.  Only exceeding it is a fault: running
   # below nameplate is an operating decision, running above it is not possible
   THROUGHPUT_TOLERANCE: 0.05
-  # A year whose electricity per tonne milled sits this far from the rest of
-  # the series is reported.  Wide on purpose: the check is looking for a
-  # forecast that stopped following the mill, which moves the ratio by a
-  # multiple, and not for ordinary variation in a plant's energy use
+  # Process power is read from the recorded months as a floor (what the
+  # plant draws to run at all) plus a rate per tonne milled.  A forecast
+  # year whose power sits this far from that line is reported.  A year at
+  # part throughput draws more per tonne and is on the line, so it is not
+  # reported.  Wide on purpose: the check is looking for a forecast that
+  # stopped following the mill, not for ordinary variation in energy use
   POWER_INTENSITY_TOLERANCE: 0.25
+  # Pit diesel is read from the recorded months as a rate per tonne of ore
+  # and waste moved.  A forecast year this far from it is reported, and so
+  # is a year that burns pit diesel with nothing mined
+  DIESEL_INTENSITY_TOLERANCE: 0.25
   # Outside this band a recovery figure is a timing artefact between two
   # source series and not a metallurgical result  [per cent]
   RECOVERY_PLAUSIBLE_LOW: 50.0
   RECOVERY_PLAUSIBLE_HIGH: 95.0
-
-# ------------------------------------------------------------------
-# Importing a file
-# ------------------------------------------------------------------
-# What makes a row worth stopping on.  Set too tight and every month is a
-# wall of warnings nobody reads; set too loose and a unit change reaches a
-# published figure.
-import_checks:
-  # A quantity this many times the line's own usual figure is questioned.
-  # Against the line's own history, not against everything, because a drum
-  # of reagent and a month of diesel were never comparable
-  IMPORT_SPIKE_MULTIPLE: 10.0
-  # Below this a multiple means nothing: three units against a usual of
-  # one tenth is a three hundred fold jump and is also nothing  [quantity]
-  IMPORT_SPIKE_MINIMUM: 1.0
-  # And only on a line whose own quantity is steady enough to have a usual,
-  # by the same ninetieth-to-tenth-percentile measure the cost band uses.
-  # Wider than the cost band because a month's consumption moves more than
-  # a month's prices do
-  IMPORT_SPIKE_SPREAD: 5.0
-  # A row already in the model counts as restated once it moves by more than
-  # this.  Not zero, because a file round trip through a spreadsheet moves
-  # the last decimal place and that is not a restatement  [proportion]
-  IMPORT_RESTATE_TOLERANCE: 0.0001
-  # A unit cost this many times away from what the line has cost before.
-  # A pack size counted the wrong way is the usual cause and moves the cost
-  # by the pack size, so the band is wide enough not to fire on a price rise
-  IMPORT_COST_BAND: 5.0
-  # And only on a line whose own cost is settled.  Measured as the ratio of
-  # its ninetieth to its tenth percentile cost: a real item sits near one, a
-  # consolidated bucket sits in the tens because it has no unit cost at all,
-  # only whatever mix fell into it that month
-  IMPORT_COST_SPREAD: 3.0
-  # Over at least this many priced rows, below which the percentiles above
-  # are describing three numbers and not a pattern
-  IMPORT_COST_HISTORY: 6
-  # A month whose last row is this many days before the month end is a part
-  # month, and imports as a fall in emissions that is really a fall in data
-  IMPORT_PARTIAL_MONTH_DAYS: 5
-  # A month this many times larger or smaller than the recent median row
-  # count is worth opening before importing
-  IMPORT_SIZE_BAND: 2.0
-  # An activity and unit whose monthly total moves this far against its own
-  # usual month is reported.  A decimal slip or a unit read the wrong way
-  # moves a total by a multiple, so the band is set where those show and
-  # ordinary operating variation does not  [proportion, 1.0 = double or half]
-  IMPORT_ACTIVITY_BAND: 1.0
-  # And only where that activity and unit carries at least this many rows a
-  # month.  Five Cylinders against two is arithmetic, not a finding
-  IMPORT_ACTIVITY_ROWS: 5
 
 # ------------------------------------------------------------------
 # Hybrid transition schedule, Safeguard Section 11

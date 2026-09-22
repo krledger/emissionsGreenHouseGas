@@ -24,7 +24,7 @@ Calculation methods
 Spend based
     tCO2-e = Value_AUD x AUD/USD x factor_kgCO2e_per_USD / 1000
     The rate is the quarter's AUD/USD from ReferenceFx.csv, then the deflator
-    stated in ConfigScope3.yaml.  PrepData distributes the rate and converts
+    stated in ReferenceInputs.yaml.  PrepData distributes the rate and converts
     nothing, so the conversion happens once, here, and is visible on the row.
 
 Physical unit
@@ -36,7 +36,7 @@ Forward projection
     Expenditure is recorded on inventory transactions from January 2026, and
     the budget physicals carry no value.  A dollar per reporting unit rate is
     fitted per Activity, SubActivity and unit over the window in
-    ConfigScope3.yaml and applied to budget quantities.  A line with no fitted
+    ReferenceInputs.yaml and applied to budget quantities.  A line with no fitted
     rate projects nothing and is named.
 """
 
@@ -165,6 +165,7 @@ def build_scope3(df, reference=None, end_date=None):
         outstanding.extend(gaps)
 
     parts.append(_category_3(work, reference))
+    outstanding = _one_gap_each(outstanding, reference)
 
     frames = [p for p in parts if p is not None and not p.empty]
     detail = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=DETAIL_COLUMNS)
@@ -191,6 +192,75 @@ def build_scope3(df, reference=None, end_date=None):
 # ---------------------------------------------------------------------
 # SHARED HELPERS
 # ---------------------------------------------------------------------
+
+def unpriced_spend(frame):
+    """Recorded expenditure that no method prices.
+
+    Spend without a product group is not charged by the spend method, and
+    that is right where the line is priced on its physical quantity instead:
+    grid power per kWh, explosives per tonne.  A line with dollars, no
+    product group and no emission in any scope is priced by nothing and
+    leaves the inventory short without saying so.  Those, and only those,
+    are returned, so the list is empty when everything is accounted for.
+
+    Returns: Activity, SubActivity, Rows, Value
+    """
+    columns = ['Activity', 'SubActivity', 'Rows', 'Value']
+    scopes = [c for c in ('Scope1_tCO2e', 'Scope2_tCO2e', 'Scope3_tCO2e')
+              if frame is not None and c in frame.columns]
+    if frame is None or 'Value' not in frame.columns or not scopes:
+        return pd.DataFrame(columns=columns)
+    group = frame['ProductGroup'].astype(str).str.strip()
+    emitted = frame[scopes].fillna(0).abs().sum(axis=1) > 0
+    # A capital project carries no product group and is priced in Category 2
+    # on its commissioned value, so it is not unpriced here.
+    project = frame['Activity'].astype(str) == PROJECT_ACTIVITY
+    rows = frame[(frame['Value'] != 0)
+                 & (frame['DataSet'].astype(str) != 'Budget')
+                 & group.isin(['', 'nan', 'None'])
+                 & ~project
+                 & ~emitted]
+    if rows.empty:
+        return pd.DataFrame(columns=columns)
+    out = rows.groupby(['Activity', 'SubActivity'], observed=True).agg(
+        Rows=('Value', 'size'), Value=('Value', 'sum')).reset_index()
+    return out.sort_values('Value', ascending=False)[columns] \
+        .reset_index(drop=True)
+
+
+def _one_gap_each(gaps, reference):
+    """Each gap said once, and only gaps somebody can close.
+
+    Category 4 prices the margin on the same expenditure Category 1 prices,
+    so a product group missing from the register was reported twice, once
+    under each.  It is one gap and is said once, under both numbers.  And
+    a contract service carries no margin at all (the EPA service factors'
+    margin is nil), so a margin missing for one is not missing.
+    """
+    services = set()
+    settings = (reference.config or {}).get('contract_services', {}) or {}
+    for entry in (settings.get('groups') or []) + (settings.get('blends') or []):
+        code = str(entry.get('product_group', '')).strip()
+        if code:
+            services.add(code)
+    merged, seen = [], {}
+    for gap in gaps:
+        item = str(gap.get('Item', ''))
+        if gap.get('Category') == 4 and any(
+                item == f'Product group {code} carries no factor'
+                for code in services):
+            continue
+        if item in seen and item.startswith('Product group '):
+            first = seen[item]
+            cats = {str(c).strip() for c in str(first['Category']).split(',')}
+            cats.add(str(gap.get('Category')))
+            first['Category'] = ', '.join(sorted(cats, key=lambda c: int(c)))
+            continue
+        gap = dict(gap)
+        seen[item] = gap
+        merged.append(gap)
+    return merged
+
 
 def _dedupe_actual_over_budget(df):
     """Drop budget rows superseded by an actual on the same month and match key."""
@@ -295,7 +365,7 @@ def _annual_row(year, category, method, basis, group, quantity, uom,
 def _fit_unit_rates(df, reference):
     """Dollars per reporting unit, per Activity, SubActivity and unit.
 
-    Fitted over the window in ConfigScope3.yaml from valued actual rows only.
+    Fitted over the window in ReferenceInputs.yaml from valued actual rows only.
     Each key carries the product group holding the largest share of its value
     in the window, which is the group whose factor projected spend is charged
     at.  A key with nil quantity produces no rate, so a line that was valued
@@ -489,7 +559,15 @@ def _spend_lines(df, reference, factors, category, method, basis,
     # Value nets: an inventory return carries a negative line cost against the
     # negative quantity it reverses, so both sides are charged and the result
     # is consumption, not issues.
-    rows = df[df['Value'] != 0].copy()
+    #
+    # Recorded expenditure is the actuals only.  The budget used to carry no
+    # value at all, so every valued row was an actual and no filter was
+    # needed.  PrepData's forecast now carries one, and without this the
+    # forecast spend was charged twice: once here as if recorded, and again
+    # by _projected_spend_lines, which prices the budget and already takes a
+    # value recorded on it in preference to a fitted rate.
+    rows = df[(df['Value'] != 0)
+              & (df['DataSet'].astype(str) != 'Budget')].copy()
     if exclude_common_names:
         rows = rows[~rows['CommonName'].astype(str).isin(exclude_common_names)]
     if rows.empty:
@@ -505,6 +583,11 @@ def _spend_lines(df, reference, factors, category, method, basis,
         for code, value in by_group.sort_values(ascending=False).items():
             if code in all_factors.index and bool(all_factors.loc[code, 'Excluded']):
                 # Charged elsewhere by design.  Not a gap.
+                continue
+            if code in all_factors.index and str(
+                    all_factors.loc[code, 'Basis']) == 'physical':
+                # Charged on its physical quantity, which is the better
+                # basis.  Its dollars are not a second figure owed.
                 continue
             gaps.append({
                 'Category': category,
@@ -565,7 +648,7 @@ def _projected_spend_lines(df, reference, rates, factors, category, method,
         gaps.append({
             'Category': category,
             'Item': 'Forward projection is off',
-            'Detail': 'ConfigScope3.yaml sets projection.basis to none, so the '
+            'Detail': 'ReferenceInputs.yaml sets projection.basis to none, so the '
                       'forward years carry no spend based emissions.',
         })
         return _blank_detail([]), gaps
@@ -784,22 +867,97 @@ def _category_2(df, reference, rates):
                       'not priced.',
         })
 
-    # Approved capital projects carry no value in the screen, so they are
-    # reported rather than estimated.
-    projects = reference.capital_projects
-    if not projects.empty and 'ApprovedValue_AUD' in projects.columns:
-        missing = int(pd.to_numeric(projects['ApprovedValue_AUD'],
-                                    errors='coerce').isna().sum())
-        if missing:
-            gaps.append({
-                'Category': 2,
-                'Item': f'{missing} approved capital projects carry no value',
-                'Detail': 'Cat2ProjectScreen.csv records the NAICS class and the '
-                          'intensity for each, but the approved value is not in '
-                          'the tracker, so no emission is recognised for them.',
-            })
+    project_rows, project_gaps = _completed_projects(df, reference, settings)
+    rows.extend(project_rows)
+    gaps.extend(project_gaps)
 
     return _blank_detail(rows), gaps
+
+
+# What PrepData calls a capital project line in the operations data.
+PROJECT_ACTIVITY = 'Project'
+
+
+def _completed_projects(df, reference, settings):
+    """Capital projects, recognised in the month they were commissioned.
+
+    PrepData writes a project into the operations data once, in the month its
+    work in progress was accrued to commissioning, one line per cost category
+    with its dollars (Activity 'Project').  That month is when it becomes an
+    emission.  A project still in progress is not an asset and carries none,
+    and PrepData does not write it.
+
+    The dollars come from PrepData and are never typed in here.
+    Cat2ProjectScreen.csv gives each project code its factor class, its
+    intensity in t CO2-e per $1M AUD and its treatment; a project whose
+    treatment is excluded (an intangible asset) is left out, and one with no
+    class is reported so a class can be given.
+
+    Emission = commissioned value / 1,000,000 x intensity.
+
+    Returns (rows, gaps).
+    """
+    if 'Activity' not in df.columns or 'Value' not in df.columns:
+        return [], []
+    lines = df[(df['Activity'].astype(str) == PROJECT_ACTIVITY)
+               & (df['DataSet'].astype(str) != 'Budget')
+               & (df['Value'] != 0)]
+    if lines.empty:
+        return [], []
+
+    screen = getattr(reference, 'capital_projects', None)
+    classes = {}
+    if screen is not None and not screen.empty and 'Project' in screen.columns:
+        for record in screen.to_dict('records'):
+            classes[str(record.get('Project', '')).strip()] = record
+    excluded = {str(t).strip() for t in
+                (settings.get('exclude_treatments', []) or [])}
+
+    rows, gaps = [], []
+    lines = lines.assign(_code=lines['Identifier'].astype(str).str.strip())
+    for (code, date), part in lines.groupby(['_code', 'Date'], observed=True):
+        value = float(part['Value'].sum())
+        described = str(part['Description'].iloc[0]).strip() or code
+        if value <= 0:
+            continue
+        entry = classes.get(code)
+        if entry is not None and str(entry.get('Treatment', '')).strip() in excluded:
+            continue
+        intensity = (pd.to_numeric(entry.get('tCO2e_per_1M_AUD'), errors='coerce')
+                     if entry is not None else np.nan)
+        if entry is None or pd.isna(intensity):
+            gaps.append({
+                'Category': 2,
+                'Item': f'Project {code} commissioned with no factor class',
+                'Detail': f'{described}: ${value:,.0f} commissioned '
+                          f'{pd.Timestamp(date):%b %Y}.  Give it a class and '
+                          f'intensity in Cat2ProjectScreen.csv and the next '
+                          f'build prices it.',
+            })
+            continue
+        stamp = pd.Timestamp(date)
+        record = _annual_row(
+            stamp.year, category=2, method=settings.get('method', ''),
+            basis='Commissioned project value',
+            group=code, quantity=1.0, uom='project',
+            factor=float(intensity), factor_unit='t CO2-e per $1M AUD',
+            factor_source=f"EPA SCEF, {entry.get('FactorClass', '')}, "
+                          f"NAICS {entry.get('NAICS', '')}",
+            tco2e=value / AUD_PER_MILLION * float(intensity),
+            description=described)
+        record.update({
+            'Date': stamp,
+            'Year': int(part['Year'].iloc[0]) if 'Year' in part else stamp.year,
+            'FY': int(part['FY'].iloc[0]) if 'FY' in part else record['FY'],
+            'Spend_AUD': value,
+            'Department': str(part['Department'].iloc[0] or 'Capital'),
+            'CostCentre': str(part['CostCentre'].iloc[0] or ''),
+            'Activity': 'Capital',
+            'SubActivity': 'Commissioned project',
+            'DataSet': 'Actual',
+        })
+        rows.append(record)
+    return rows, gaps
 
 
 # ---------------------------------------------------------------------
@@ -863,7 +1021,7 @@ def _category_5(df, reference, rates):
     """Waste mass by stream times a treatment factor, over the operating years.
 
     Tailings and waste rock are process residues retained on site and are not
-    a Category 5 stream; the exclusion is recorded in ConfigScope3.yaml.
+    a Category 5 stream; the exclusion is recorded in ReferenceInputs.yaml.
     """
     settings = reference.config.get('category_5', {}) or {}
     gaps: List[Dict[str, Any]] = []
@@ -976,7 +1134,7 @@ def _category_6(df, reference, rates):
         gaps.append({
             'Category': 6,
             'Item': 'Travel pattern not supplied',
-            'Detail': 'No air or road leg is defined in ConfigScope3.yaml, so '
+            'Detail': 'No air or road leg is defined in ReferenceInputs.yaml, so '
                       'business travel carries nothing.',
         })
         return _blank_detail([]), gaps

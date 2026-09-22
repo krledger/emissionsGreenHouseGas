@@ -1,13 +1,14 @@
 # Changelog
 
 All notable changes to the Ravenswood Gold Emissions Calculator.  
-Format: release date, summary of changes.  Each release is a dated block.
+Format: one dated block per day.  A day is split only where a formal release
+is pushed that day.
 
 Every block opens with a status line.  **Released** means the change is in a
 formal release and any build carrying that release date or later has it.
 **Unreleased** means the change is in the code and has not been through a
 release, so a figure produced by the last released build will differ where the
-change affects it.  The most recent formal release is 30 July 2026.
+change affects it.  The most recent formal release is 22 September 2026.
 
 Each block also carries an impact line.  A defect entry describes what went
 wrong, which reads as an incident whether or not it ever reached a released
@@ -16,12 +17,247 @@ reader can tell at once whether any reported figure is affected.
 
 ---
 
-## 2026-09-03m
+## 2026-09-22
 
-**Status:** Unreleased, after the 30 July 2026 release  
-**Impact:** Not published.  Scope 2 falls 60,624 tCO2-e and Scope 3 rises by
-the same amount, so the total does not move.  That is a reclassification, not
-an abatement, and it must not be read as one.
+**Status:** Released 22 September 2026  
+**Impact:** Figures move against the 30 July 2026 release.  This day's fix
+raises Scope 2 in every recorded year against build 62bd8190537a: calendar year 2024 by 3,714 tCO2-e to
+88,087, 2025 by 3,777 to 86,908 and 2026 by 1,291 to 86,242; financial year
+2024 by 2,382 to 86,959, 2025 by 5,047 to 89,576 and 2026 by 2,552 to 85,495.
+NGER Scope 2 moves with it and category 3 moves a little with the electricity
+Scope 3 factor.  Scope 1 and the Safeguard position do not move, and nothing
+from FY2027 onward moves.  The release is build ef3d538f64ba.
+
+### Fixed - each NGA edition is applied to the year it was issued for
+
+The National Greenhouse Accounts Factors 2026 are issued for the 2026-27 NGER
+reporting year (section 1.1): edition N covers 1 July N to 30 June N+1.  The
+model names a financial year by the June it ends in and passed that number
+straight to the factor lookup, so every edition was applied one year late.
+FY2025, July 2024 to June 2025, was priced on the 2025 edition when it belongs
+to the 2024 edition.
+
+The Queensland grid factor falls with each edition, so Scope 2 was understated:
+
+    edition          2023   2024   2025   2026
+    QLD scope 2      0.73   0.71   0.67   0.65
+    QLD scope 3      0.15   0.10   0.09   0.11
+
+`CalcNga.nga_edition_for_fy` converts a financial year to its edition (FY y
+takes edition y - 1) and `build_year_factor_map` looks factors up by edition,
+with the map still keyed by financial year.  The GHG, Safeguard, Query and
+projection paths all build their factors through that one function.  An
+edition before the first published takes the first, so FY2022 takes NGA 2022,
+and FY2027 onward takes NGA 2026 held flat.  The 2026 edition, added on
+3 September 2026, therefore first applies to FY2027 and not FY2026.  The factor
+year on the Query view and the NGA year on the Safeguard view show the edition
+actually used.
+
+Fuel factors are identical in every edition from 2022 to 2026, so Scope 1, the
+Safeguard baseline and the Safeguard position are unchanged to the tonne.
+
+### Changed - the method documents state the edition rule
+
+The GHG emissions method, NGER and NGA factors, Scope 3 method and the Method
+Reference state which edition a line takes.  The factor tables are labelled as
+NGA 2025, in force for FY2026.  The calendar year 2025 worked reconciliation
+splits grid electricity at 1 July: January to June on NGA 2024, July to
+December on NGA 2025.
+
+### Changed - one block per day in the change history
+
+The history carried up to thirteen blocks for a single day, each with its own
+status and impact, and the About view gave them all the same label.  Each day
+is now one block with one status and one impact.  A day is split only where a
+formal release is pushed that day.  The blocks of 3 and 21 September 2026 are
+consolidated; their content is unchanged.
+
+### Changed - the About view
+
+The impact paragraph is shown in full, where only its first line was shown,
+and the status and impact are no longer repeated in the detail below them.
+The view also states the published build, the NGA editions held and the rule
+that selects one, and offers the Method Reference for download.
+
+---
+
+## 2026-09-21
+
+**Status:** Released 22 September 2026  
+**Impact:** Figures move against the 30 July 2026 release.  Build
+1387034a8788 was published on 21 September 2026, which is not a formal release.  Against the
+build before it, the GHG view gained January to June 2023 (calendar year 2023
+Scope 1 reads 125,448 tCO2-e where it read 68,216, because the first half of
+the year was being cut off at the Safeguard commencement), the intensity cards
+include explosives and no figure from calendar year 2024 onward moved.  After
+that publication, restating spend to the factor's dollars lowers Scope 3 in
+calendar year 2025 by 1,774 tCO2-e to 90,901 (category 1 by 1,689, category 4
+by 85) and the 2025 inventory from 320,536 to 318,763.  Scope 1, Scope 2, NGER
+and the Safeguard position do not move.  A rebuild at the end of the
+day gave build 62bd8190537a.
+
+### Fixed - spend is restated to the factor's dollars before the factor is applied
+
+The EPA factors are per 2022 United States dollar.  Spend was converted to US
+dollars at the quarter's rate and met the factor as it stood, in the dollars
+of the year it was spent.  Prices have risen since 2022, so those dollars buy
+less than the ones the factor was measured against, and every spend based
+line was overstated by the inflation since: about 10% on 2025 spend and 14%
+on 2026.
+
+The parameter file said the opposite, that leaving the deflator off
+understated the result, and the method documents repeated it.  It also asked
+for a single hand entered number, which could only be right for one year.
+
+Spend is now converted at the quarter's rate and then multiplied by
+Index(2022) / Index(spend year) on the US CPI-U series in
+`Reference/PriceIndex.csv`: 0.909 for 2025, 0.876 for 2026.  The index and
+the function that reads it were already in the project and were called by
+nothing.  `currency.deflate_to_factor_year` in `ReferenceInputs.yaml` turns
+it on and replaces `deflator_2022_to_spend_year`.  A spend year missing from
+the index stops the build.
+
+Lines on a physical factor (explosives, grinding media) are not in dollars
+and do not move, which is why category 1 falls 4% and not 9%.  Forecast spend
+is in 2026 dollars held flat, and the index is held flat from 2026, so every
+forecast year takes 0.876.
+
+### Removed - files and code nothing uses
+
+Staged in `ToDelete` rather than deleted: the `Out` folder (four exports from
+April, written by a version that no longer exists; nothing writes there now),
+the compiled caches, which still held modules deleted months ago, and two
+`.DS_Store` files.
+
+Removed from the code, each confirmed to have no caller anywhere:
+
+    Config.py             26 constants and 2 functions, among them the 11
+                          import screen thresholds, CATEGORY_MAP, COLORS,
+                          DEFAULT_PATHS and the superseded decline constants
+    Assumptions.yaml      the import_checks block those thresholds were read
+                          from.  The import screen went when importing moved
+                          to PrepData
+    CalcProduction.py     reclaim_tonnes, crushed_tonnes, gold_sold
+    LoaderFactorTable.py  unit_mismatch
+    Tab1Ghg.py            _chart_trend, a chart that was never drawn
+    TabGhgCategories.py   _render_headline, the same
+    Paths.py              OUT_DIR and out()
+
+`UtilityNgaToCsv.py` is imported by nothing and stays: it is run by hand when
+a new edition of the National Greenhouse Accounts factors is published.
+
+### Fixed - a bad date reported the wrong error
+
+`LoaderData` reports the first rows whose date will not parse.  To do it, it
+called a reader that was removed with the file encryption, so a bad date
+raised a NameError about the reader and said nothing about the date.
+
+### Changed - the GHG dashboard is drawn with st.iframe
+
+Streamlit is removing `st.components.v1.html` and said so on every run.
+`st.iframe` takes markup as of Streamlit 1.63, the pinned version, so the
+dashboard frame moves to it with the same height and the same isolation of
+its stylesheet from the rest of the application.
+
+### Changed - small lines are left off the By department chart
+
+A department or cost centre below 0.1% of the period total is not drawn
+(`CHART_MINIMUM_SHARE` in `Assumptions.yaml`).  Shares are taken over the
+whole total before anything is left off, so a share is still a share of the
+real figure and no total changes.  The old cut was 0.05 t, which let through
+lines of a few tonnes that read as noise beside 320,000.
+
+### Changed - an exact unit conversion no longer warns
+
+Greases arrive in litres against a factor per kilolitre and are multiplied
+by 0.001.  That is the normal course, so it is logged for the trail and not
+raised as a warning.  A unit that cannot be converted still warns and still
+blocks publishing.
+
+### Fixed - references to files that no longer exist
+
+The About view listed `Data/ConfigScope3.yaml`, which has not existed since
+the parameters moved to `Reference/ReferenceInputs.yaml`; it now lists that
+file and `Data/Assumptions.yaml`.  The Scope 3 panel told a reader to edit
+`ConfigScope3.yaml` and rebuild `Scope3Factors.csv`, and to clear a cache the
+reporting application no longer keeps.  `LoaderReference` described factors
+as distributed by PrepData; they are held here.
+
+### Changed - the GHG inventory and the regulatory filing are separate pipelines
+
+The model began as an NGER and Safeguard model and the GHG view grew out of
+it, running through the same projection.  That carried three Safeguard
+effects into the financial disclosure: the GHG history started on 1 July
+2023, the GHG frames carried a baseline, credits and a Safeguard status
+computed on a Scope 1 that includes explosives, and the intensity cards read
+the NGER monthly series.
+
+`CalcGhgInventory.py` is now the GHG pipeline: Scopes 1, 2 and 3 on the GHG
+Protocol, calendar year, from `GHG_START_YEAR` (2023, in `Assumptions.yaml`),
+with no baseline, credit or status on any frame.  It imports nothing from
+`CalcSafeguard` or `Projections`.  The regulatory pipeline is unchanged:
+financial year, NGER Scope 1, from 1 July 2023.  The two share only the
+pricing of a line against a published factor, in `CalcNga`.
+
+The GHG Emissions view has no fallback to an NGER frame.  A build published
+without the GHG frames is reported as such.  The published table, and the
+reconciliation that gates publishing, run over the GHG window.
+
+### Changed - GRI 14 export reads its own frames
+
+`CalcGri.py` builds `GriAnnual` and `GriSource`, calendar year, recorded
+months.  The split of Scope 1 by gas, fuel energy and energy intensity were
+being read from the financial year Safeguard source table and shown beside
+calendar year totals.  They are now calendar year, the gas split counts
+explosives under CO2, and energy intensity and the strip ratio divide by the
+same year's ore.  Credit lines stay on the financial year they apply to,
+because that is what a credit is issued for.
+
+### Changed - Data Query reports the calendar year
+
+Annual resolution groups by calendar year with the factor year beside it,
+since published factors change on 1 July.
+
+### Changed - explosives are priced in the normal course
+
+Detonation was an overlay: a factor held in `Assumptions.yaml`, applied by a
+function written for that one source, with its own unit test and its own
+branch in the published table, while the same 0.17 also sat unused in the
+factor register.  The quantity was always ordinary activity data (Blasting,
+Explosives, tonnes, from the operations report).  The factor is now ordinary
+too: one row in `Reference/Factors.csv`, named for the source in
+`Config.GHG_SOURCE_FACTORS`, and priced by `CalcNga.apply_emissions_to_df`
+with the same unit conversion and unit gap check as diesel.  A kilogram line
+now converts where it used to be dropped.  No figure moves: calendar year
+2025 detonation is 859.2 tCO2-e before and after.  The regulatory pipeline
+prices against the National Greenhouse Accounts factors alone and carries
+nil for explosives, as before.
+
+### Removed - Carbon Tax Analysis
+
+The view was built for one audit request and has no other use.  `Tab3CarbonTax.py`
+and `CalcCarbonTax.py` are in `ToDelete`, and the carbon market assumptions are
+out of `Assumptions.yaml`.  The Safeguard credit price stays, on the Safeguard view.
+
+### Changed - wording
+
+The application is titled Emissions Model.  The GHG view carries no reference
+to NGER or the Safeguard Mechanism, and the monthly detail names its column
+Emission source.
+
+---
+
+## 2026-09-03
+
+**Status:** Released 22 September 2026  
+**Impact:** Figures move against the 30 July 2026 release.  Pricing grinding media on mass adds 205,656 tCO2-e (Scope 3 up
+14.3%, the inventory up 3.7%) and the separate refining factor adds 630.7
+tCO2-e to category 10.  The 2026 NGA edition moves 60,624 tCO2-e from Scope 2
+to Scope 3 and leaves the total unchanged: a reclassification, not an
+abatement.  Mining reports under one name instead of two, so a figure read off
+a department grouping changes although the emissions behind it do not.  Scope 1
+does not move, so the Safeguard position is untouched.  Everything else is
+structural and moves no figure.
 
 ### Added - National Greenhouse Accounts Factors 2026
 
@@ -68,15 +304,6 @@ Three changes stand between the published build and this one:
     total                           +206,287 tCO2-e
 
 Scope 1 does not move at all, so the Safeguard position is untouched.
-
----
-
-## 2026-09-03l
-
-**Status:** Unreleased, after the 30 July 2026 release  
-**Impact:** Not published.  The build now carries 205,656 tCO2-e more than the
-published one, Scope 3 up 14.3% and the inventory up 3.7%, and it stays
-unpublished until somebody reviews it on Changes and publishes it.
 
 ### Changed - grinding media is priced on tonnes, not on dollars
 
@@ -128,14 +355,6 @@ reads as a screen that has failed.  The fields are shown, read only, with the
 reason they cannot be typed into beside them and the items the factor prices
 underneath.
 
----
-
-## 2026-09-03k
-
-**Status:** Unreleased, after the 30 July 2026 release  
-**Impact:** None.  Both registers are empty, so every factor is still the
-distributed one and no figure changes.
-
 ### Changed - a factor is added once, and items are pointed at it
 
 Overrides were a mechanism of their own, with two kinds of record and a
@@ -183,14 +402,6 @@ History moved to the foot of the sidebar.
 `AttributeError: module 'LoaderFactors' has no attribute 'overrides_path'` on
 startup.  The register and the assignments are tracked in its place, so
 adding either marks the build stale.
-
----
-
-## 2026-09-03j
-
-**Status:** Unreleased, after the 30 July 2026 release  
-**Impact:** None.  No figure changes.  Editing a factor now reaches every
-product group it prices, which is what it always meant.
 
 ### Changed - the factor tabs show factors, and where each one is used
 
@@ -242,14 +453,6 @@ changes both.  Three classes carry the 139.0 band - poured concrete
 foundations, electrical contractors and other specialty trades - and that is
 the band saying they are priced the same, not an accident.
 
----
-
-## 2026-09-03i
-
-**Status:** Unreleased, after the 30 July 2026 release  
-**Impact:** None.  No figure changes.  Publications made before this are still
-readable and are listed beside the new ones.
-
 ### Changed - Changes compares against whichever build you name
 
 The page had two fixed comparisons, one against the build this session opened
@@ -281,15 +484,6 @@ Folders written under the old scheme carry the identifier alone and are still
 read: the reader accepts both shapes and takes the publication date from the
 build log where the folder name does not carry one.  Only the new shape is
 written.  Both of the existing publications list and load correctly.
-
----
-
-## 2026-09-03h
-
-**Status:** Unreleased, after the 30 July 2026 release  
-**Impact:** None on any released build.  No figure changes from any of this.
-The refining factor entered separately moves Scope 3 by 630.7 tCO2-e, which
-is the Category 10 figure and not a defect.
 
 ### Fixed - two thirds of the build was answering fifty questions eight hundred thousand times
 
@@ -356,13 +550,6 @@ A future reader could compare any two archived builds - every published build
 is kept whole under Data/Published - but that is a separate screen and is not
 built here.
 
----
-
-## 2026-09-03g
-
-**Status:** Unreleased, after the 30 July 2026 release  
-**Impact:** None.  Naming and navigation only.  No figure changes.
-
 ### Changed - the factors page is named on one principle
 
 Six tabs named on three different principles.  "Maintained here" and "Used as
@@ -407,14 +594,6 @@ The Brisbane to Townsville air sector, 0.155 kg CO2-e per passenger
 kilometre.  Every factor should trace to a source, so this is a defect rather
 than a category, and the page counts it and warns while it stands.
 
----
-
-## 2026-09-03f
-
-**Status:** Unreleased, after the 30 July 2026 release  
-**Impact:** None on any released build.  No figure changes.  The application
-stops recomputing what it has already computed.
-
 ### Fixed - the table was rebuilt on every click
 
 Loading and projecting were cached; the build was not.  So every page change
@@ -457,14 +636,6 @@ source, and filters for category and publication: "steel" narrows it to 71,
 The search sits outside the entry form rather than in it.  A form submits only
 on its own button, so a term typed inside one would not narrow anything until
 the override had already been added.
-
----
-
-## 2026-09-03e
-
-**Status:** Unreleased, after the 30 July 2026 release  
-**Impact:** None.  No override is entered, so no figure changes.  The
-mechanism is in place and does nothing until somebody uses it.
 
 ### Added - a company assumption can supersede a published factor
 
@@ -517,15 +688,6 @@ Dates are parsed on the way in and written back as plain dates, so the file
 stays readable by anything.  The numeric and text columns are settled the
 same way, so a blank in the ledger cannot decide a column's type.
 
----
-
-## 2026-09-03d
-
-**Status:** Unreleased, after the 30 July 2026 release  
-**Impact:** None on any released build.  No total moves.  Mining reports under
-one name instead of two, so a figure read off a department grouping changes
-even though the emissions behind it do not.
-
 ### Fixed - a blank published as a blank came back as a null
 
 The Inventory page raised `TypeError: '<' not supported between instances of
@@ -565,14 +727,6 @@ the same department.  It now imports the one in Config.
 A part that cast a null column to text before the schema was settled left the
 literal string `nan` behind, which grouped as a department of its own carrying
 one tonne.  A missing label is now blank.
-
----
-
-## 2026-09-03c
-
-**Status:** Unreleased, after the 30 July 2026 release  
-**Impact:** None on any released build.  No figure changes.  Publishing is now
-a deliberate act behind a confirmation rather than a button on a page.
 
 ### Changed - published by default, preview on request, publish on confirmation
 
@@ -622,16 +776,6 @@ it; the parquet is what the application reads, because opening the csv costs
 six seconds every time and the application opens it constantly.  Both are
 written together and archived together, so the two cannot drift.  A build
 published before the parquet existed writes one on first read.
-
----
-
-## 2026-09-03b
-
-**Status:** Unreleased, after the 30 July 2026 release  
-**Impact:** None on any released build.  No total moves.  Explosives change
-status from estimated to calculated and carry a factor where they carried a
-blank, and one factor is now shown as having no publication rather than as
-belonging to the Company.
 
 ### Changed - a publication and a derivation are two different facts
 
@@ -705,15 +849,6 @@ The Factors page counts these separately, warns while any remain and offers
 them in their own editable tab.  The National Greenhouse Accounts publish
 aviation fuel factors but no passenger kilometre factor, so this one has to
 be sourced elsewhere and the page says so.
-
----
-
-## 2026-09-03
-
-**Status:** Unreleased, after the 30 July 2026 release  
-**Impact:** None on any released build.  Two defects in this block understated
-what the Builder could report, and both were introduced after the 30 July 2026
-release.  No figure issued from a released build is affected.
 
 ### Added - one publication per factor, and only a company factor can be edited
 
@@ -827,8 +962,8 @@ emission is unchanged.
 
 ## 2026-09-02
 
-**Status:** Unreleased, after the 30 July 2026 release  
-**Impact:** None on any released build.  Every change in this block, the greases unit fix included, sits after the 30 July 2026 release and no figure issued from a released build is affected.
+**Status:** Released 22 September 2026  
+**Impact:** None on figures issued from the 30 July 2026 release.  Every change in this block, the greases unit fix included, sits after the 30 July 2026 release and no figure issued from a released build is affected.
 
 ### Changed - the GHG dashboard is drawn over the life of mine
 
@@ -1897,8 +2032,8 @@ modal reader rather than downloading, with the download offered inside it.
 
 ## 2026-08-13
 
-**Status:** Unreleased, after the 30 July 2026 release  
-**Impact:** None on any released build.
+**Status:** Released 22 September 2026  
+**Impact:** None on figures issued from the 30 July 2026 release.
 
 ### Fixed - Lifecycle phase dates did not match the data
 `Config.py` carried phase boundaries that no longer reflected the budget
@@ -1954,8 +2089,8 @@ Charting notes, both found while building the tab:
 
 ## 2026-08-06
 
-**Status:** Unreleased, after the 30 July 2026 release  
-**Impact:** None on any released build.
+**Status:** Released 22 September 2026  
+**Impact:** None on figures issued from the 30 July 2026 release.
 
 ### Fixed
 - Tab 1 emissions intensity chart: neither series was inclusive of all emissions
@@ -2079,7 +2214,8 @@ modelled mine life.  Not resolved here.
 
 ## 2026-07-28
 
-**Status:** Released 30 July 2026
+**Status:** Released 30 July 2026, superseded by the 22 September 2026 release
+
 
 ### Changed
 - Project-wide file and folder naming convention moved to PascalCase.  Module
@@ -2141,6 +2277,7 @@ modelled mine life.  Not resolved here.
 ## 2026-05-19
 
 **Status:** Released, superseded by the 30 July 2026 release
+
 
 ### Added
 - GHG Protocol Scope 1 emissions for explosives (ANFO) detonation on Tab 1 (GHG).

@@ -44,15 +44,18 @@ meta:
 #                        each month in that quarter, then the deflator below.
 #   mode: fixed          one rate for every month, from fixed_rate_audusd.
 #
-# deflator_2022_to_spend_year restates United States dollars of the spend year
-# into 2022 dollars.  Set to 1.0 it is not applied, and the factor is then
-# read as a 2022 intensity against current dollars, which understates the
-# result to the extent of United States producer price inflation since 2022.
+# deflate_to_factor_year restates spend to the dollars the factor is stated in.
+# Spend is converted to United States dollars at the quarter's rate, then
+# multiplied by Index(factor_dollar_year) / Index(spend year) from
+# Reference/PriceIndex.csv.  Prices have risen since 2022, so the ratio is
+# below one: 0.909 for 2025 spend and 0.876 for 2026.  Set to false, nominal
+# spend meets a 2022 factor and the result is overstated by that inflation.
 # -----------------------------------------------------------------------------
 currency:
   mode: reference_fx
   fixed_rate_audusd: 0.6290
-  deflator_2022_to_spend_year: 1.0
+  deflate_to_factor_year: true
+  price_index_series: US CPI-U
   factor_dollar_year: 2022
 
 # -----------------------------------------------------------------------------
@@ -206,19 +209,25 @@ category_5:
   data_supplied: false
   scale_to_subactivity: Ore Milled
   baseline_year: 2026
-  streams:
-    - name: General waste to landfill
-      tonnes_per_year: null
-      factor_tco2e_per_t: 0.586
-      factor_source: NGA Factors, solid waste to landfill, mixed municipal
-    - name: Prescribed and hazardous waste
-      tonnes_per_year: null
-      factor_tco2e_per_t: 0.020
-      factor_source: Treatment and disposal, screening factor
-    - name: Recycled metals
-      tonnes_per_year: null
-      factor_tco2e_per_t: 0.021
-      factor_source: Recycling, screening factor
+  # No waste stream is identified today, so the category reports as None
+  # identified rather than outstanding.  A stream is added under streams with
+  # its tonnes a year when it is identified, and the category is then
+  # calculated.  Factors held ready for the likely streams:
+  #   - name: General waste to landfill
+  #     tonnes_per_year: 0
+  #     factor_tco2e_per_t: 0.586
+  #     factor_source: NGA Factors, solid waste to landfill, mixed municipal
+  #   - name: Prescribed and hazardous waste
+  #     tonnes_per_year: 0
+  #     factor_tco2e_per_t: 0.020
+  #     factor_source: Treatment and disposal, screening factor
+  #   - name: Recycled metals
+  #     tonnes_per_year: 0
+  #     factor_tco2e_per_t: 0.021
+  #     factor_source: Recycling, screening factor
+  none_identified: No waste stream is identified for this inventory today.
+    Streams are added as they are identified.
+  streams: []
   excluded:
     Tailings: Process residue retained on site under environmental authority
       EPML00979013, not a waste stream transferred for treatment.
@@ -397,3 +406,107 @@ projection:
     - consumption
     - stores
     - fuel
+    - services
+
+# -----------------------------------------------------------------------------
+# Contract services
+#
+# Contractor charges arrive from the general ledger in dollars, with no product
+# group, so nothing would price them.  Each subactivity is given the product
+# group that prices the same service when it is bought through stores, so one
+# service carries one factor whichever system it was bought through.  A row
+# that already carries a product group keeps it.
+#
+# Wet hire is contractor plant with operators, with fuel issued by site.  It is
+# priced as a blend of two published factors: the equipment share at machinery
+# rental and the operator share at labour hire.  It is not priced as a
+# construction contractor, whose factor includes the fuel the contractor buys;
+# here that fuel is site diesel and is already Scope 1, so it would be counted
+# twice.
+#
+# The blend is calculated from the two factors in Reference/Factors.csv every
+# build, so a later edition of either moves it.  equipment_share is edited on
+# the Assumptions page and published with every build.
+# -----------------------------------------------------------------------------
+contract_services:
+  activity: Contract labour
+  groups:
+    - name: Labour
+      product_group: CONL
+      note: Labour hire and trades without tools, priced at EPA SCEF 561320.
+    - name: Professional
+      product_group: CONQ
+      note: Consultants, priced at EPA SCEF 541620.
+    - name: Wet hire
+      product_group: WETH
+      note: Plant with operators and no fuel, priced on the blend below.
+  blends:
+    - name: Wet hire
+      product_group: WETH
+      description: CONTRACTORS - WET HIRE
+      equipment_share: 0.5
+      equipment_factor: "Spend-based|EPA SCEF|Construction, Mining, and Forestry Machinery and Equipment Rental and Leasing|USA|kg/USD"
+      operator_factor: "Spend-based|EPA SCEF|Temporary Help Services|USA|kg/USD"
+      factor_source: EPA Supply Chain GHG Emission Factors v1.3, 532412 and 561320.  Split estimated at half and half until the contract rate schedule gives one.
+
+# -----------------------------------------------------------------------------
+# Activity streams
+#
+# The continuity check on Verify expects every stream to run every year from
+# its first to its last, because a stream that stops part way through takes
+# its emissions with it and the total reads as an abatement.  Some streams do
+# not run every year by nature.  One set as intermittent is not faulted for a
+# gap; one with a last_year is faulted for every year it runs past it.
+# -----------------------------------------------------------------------------
+streams:
+  expected:
+    - name: Dredging
+      intermittent: true
+      last_year: 2030
+      factor_source: Operations advice, September 2026.  The dredge does not run every year and is expected to stop by about 2030.
+    - name: Tailings
+      intermittent: false
+      factor_source: Operations advice, September 2026.  Tailings deposition is continuous while the plant runs.
+
+# -----------------------------------------------------------------------------
+# Units
+#
+# A pack sold by mass and reported by volume.  Used only where a line arrives
+# in a count and the item description gives its size in mass, and only for the
+# subactivities named.  The figure is litres per kilogram.  PrepData's own
+# conversions register takes grease at one litre per kilogram (a 450 g
+# cartridge is recorded as 0.45 L), and this follows it so the two programs
+# agree.
+# -----------------------------------------------------------------------------
+units:
+  mass_as_volume:
+    - name: Greases
+      litres_per_kg: 1.0
+      factor_source: PrepData conversions register convention, a 450 g cartridge recorded as 0.45 L
+
+  # A figure recorded in one unit under the heading of another.  The builder
+  # reads it in the unit it is really in, and never writes to the file it came
+  # from.  A correction applies only while the rows it names sit guard_ratio
+  # times or more away from the same stream's typical month outside them, so
+  # once the source is put right the correction stops applying by itself and
+  # Verify says so.  Every correction and whether it applied is published with
+  # the build.
+  corrections:
+    - name: Explosives loaded, Dec-25 operations report
+      activity: Blasting
+      subactivity: Explosives
+      dataset: Actual
+      from: 2025-01-01
+      to: 2025-12-31
+      stated_unit: t
+      actual_unit: kg
+      guard_ratio: 100
+      factor_source: The Dec-25 operations report labels explosives loaded (accounts 10202129570 and 10203129570) in t, and the figures are kilograms.  The FY 2026 report labels the same accounts kg with figures of the same size.
+    - name: Explosives loaded, forecast
+      activity: Blasting
+      subactivity: Explosives
+      dataset: Budget
+      stated_unit: t
+      actual_unit: kg
+      guard_ratio: 100
+      factor_source: The forecast carries the Dec-25 kilogram scale under a tonne heading, about 120,000 a month for Buck Reef West against about 250 t recorded.

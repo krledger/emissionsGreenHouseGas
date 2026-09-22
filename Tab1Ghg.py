@@ -12,7 +12,6 @@ ARCHITECTURE (v2):
 import math
 
 import streamlit as st
-import streamlit.components.v1 as components
 import pandas as pd
 from CalcCalendar import period_filter
 from TabGhgCategories import render_scope3_panel
@@ -86,7 +85,6 @@ def _build_raw_data_summary(df, start_date, end_date):
     return result
 
 
-
 def _build_monthly_detail(df, start_date, end_date):
     """Build monthly detail table for the selected year with NGA factors shown."""
     year_data = period_filter(df, start_date, end_date).copy()
@@ -125,7 +123,7 @@ def _build_monthly_detail(df, start_date, end_date):
         'Description': year_data['Description'],
         'Department': year_data['Department'],
         'CostCentre': year_data['CostCentre'],
-        'NGAFuel': year_data['NGAFuel'],
+        'Emission source': year_data['NGAFuel'],
         'UOM': year_data['UOM'],
         'Quantity': year_data['Quantity'],
         'EF S1 (kgCO2e/unit)': year_data['EF_S1_kgCO2e'],
@@ -354,66 +352,9 @@ def _legend(entries):
     return f'<div class="lg">{items}</div>'
 
 
-
-
 # ---------------------------------------------------------------------
 # CHARTS
 # ---------------------------------------------------------------------
-
-def _chart_trend(payload, width=760, height=250):
-    """Monthly stack by scope, with the prior year total as a dashed line."""
-    months = payload['months']
-    if not months:
-        return '<p class="sub">No monthly detail for the period.</p>'
-
-    left, right, top, bottom = 46, 8, 10, 24
-    plot_w = width - left - right
-    plot_h = height - top - bottom
-
-    stacks = [sum(payload['series'][k][i] or 0 for k in
-                  ('scope1', 'scope2', 'scope3')) for i in range(len(months))]
-    priors = [p for p in payload['prior'] if p is not None]
-    ceiling = _nice_ceiling(max(stacks + priors) if (stacks or priors) else 1)
-
-    def y_of(value):
-        return top + plot_h - (value / ceiling) * plot_h
-
-    parts = []
-    for step in range(5):
-        value = ceiling * step / 4
-        y = y_of(value)
-        parts.append(f'<line x1="{left}" y1="{y:.1f}" x2="{left + plot_w}" '
-                     f'y2="{y:.1f}" style="stroke:{GRID_HEX}" '
-                     f'stroke-width="1"/>')
-        parts.append(_text(left - 6, y + 3, _thousands(value), anchor='end'))
-
-    slot = plot_w / len(months)
-    bar = min(slot * 0.62, 30)
-    for index, label in enumerate(months):
-        x = left + slot * index + (slot - bar) / 2
-        base = top + plot_h
-        for key in ('scope1', 'scope2', 'scope3'):
-            value = payload['series'][key][index] or 0
-            if value <= 0:
-                continue
-            h = (value / ceiling) * plot_h
-            base -= h
-            parts.append(f'<rect x="{x:.1f}" y="{base:.1f}" width="{bar:.1f}" '
-                         f'height="{h:.1f}" rx="4" fill="{SCOPE_HEX[key]}"/>')
-        parts.append(_text(left + slot * index + slot / 2, height - 8, label,
-                           anchor='middle'))
-
-    points = [(left + slot * i + slot / 2, y_of(v))
-              for i, v in enumerate(payload['prior']) if v is not None]
-    if len(points) > 1:
-        path = ' '.join(f'{"M" if i == 0 else "L"}{x:.1f},{y:.1f}'
-                        for i, (x, y) in enumerate(points))
-        parts.append(f'<path d="{path}" fill="none" '
-                     f'style="stroke:{PRIOR_HEX}" stroke-width="1.5" '
-                     f'stroke-dasharray="4 4"/>')
-
-    return (f'<svg viewBox="0 0 {width} {height}" role="img" '
-            f'preserveAspectRatio="xMidYMid meet">{"".join(parts)}</svg>')
 
 
 PHASE_TINT = {
@@ -955,6 +896,39 @@ def _tree_html(payload):
     return ''.join(blocks) + legend
 
 
+def _dashboard_file(page, payload):
+    """The dashboard as a file, to keep or to send.
+
+    The panel is already a whole page: its stylesheet is inside it and it
+    makes no request of anything, so the same markup opens from an email
+    attachment on a machine that has none of this installed and shows
+    exactly what is on the screen.  Only the provenance is added, because a
+    figure that leaves the application has to say which build it came from
+    and a reader cannot see the sidebar.
+    """
+    try:                                    # the reporting application
+        from LoaderPublished import published_at
+        build = published_at() or {}
+    except Exception:                       # pragma: no cover - the Builder
+        build = {}
+    published = str(build.get('BuiltAt', '')).replace('T', ' ')[:16]
+    said = (f"Ravenswood Gold &middot; {_escape(payload.get('period', ''))}"
+            f" &middot; published build {_escape(str(build.get('BuildID', '')))}"
+            f"{', ' + _escape(published) if published else ''}"
+            f" &middot; t CO2-e")
+    stamped = page.replace(
+        '</body>',
+        f'<p class="sub" style="margin-top:18px">{said}</p></body>')
+    period = ''.join(c for c in str(payload.get('period', ''))
+                     if c.isalnum())
+    st.download_button(
+        'Download this dashboard',
+        data=stamped.encode('utf-8'),
+        file_name=f'EmissionsDashboard{period}.html',
+        mime='text/html',
+        help='One page, nothing linked, nothing to install.  Send it on.')
+
+
 def _dashboard_html(payload):
     """The dashboard page.  Self contained: no script, no external request."""
     cards = payload['cards']
@@ -1113,14 +1087,14 @@ def render_dashboard(df, precomputed, projection, period_label,
     # frame.  A narrow window stacks the cards and scrolls, which is the
     # right behaviour on a small screen.
     #
-    # Streamlit deprecates st.components.v1.html in favour of st.iframe, but
-    # st.iframe takes a URL rather than markup, so it is not a replacement
-    # for a page rendered in place.  This call stays until Streamlit offers
-    # one that renders markup in a frame.  The frame matters: the panel
-    # carries its own stylesheet with element selectors, which would reach
-    # the whole application if it were rendered inline.
-    components.html(_dashboard_html(payload), height=DASHBOARD_HEIGHT,
-                    scrolling=True)
+    # st.iframe takes markup as well as a URL (Streamlit 1.63), and replaces
+    # the older html call that Streamlit is removing.  The frame matters: the
+    # panel carries its own stylesheet with element selectors, which would
+    # reach the whole application if it were rendered inline.  The markup is
+    # built here from published figures and never from user input.
+    page = _dashboard_html(payload)
+    st.iframe(page, height=DASHBOARD_HEIGHT)
+    _dashboard_file(page, payload)
 def render_ghg_tab(df, precomputed, projection,
                    start_date=None, end_date=None, period_label='',
                    end_mining_date=None, end_processing_date=None,

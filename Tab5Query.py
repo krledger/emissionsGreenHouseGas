@@ -36,7 +36,9 @@ def render_query_tab(df, precomputed, nger_frame=None,
         credit_escalation: Annual price escalation rate
     """
 
-    _render_emissions_query(df, precomputed.year_factor_map)
+    # The query is over the GHG frame, so it shows the GHG factor map.
+    _render_emissions_query(df, precomputed.ghg_factor_map
+                            or precomputed.year_factor_map)
 
     st.markdown("---")
 
@@ -162,7 +164,11 @@ def _render_emissions_query(df, year_factor_map):
     if resolution == 'Monthly':
         group_cols = ['Year', 'Month'] + category_cols
     else:
-        group_cols = ['FY'] + category_cols
+        # The GHG inventory reports the calendar year.  The factor year is
+        # kept beside it, because published factors change on 1 July and a
+        # calendar year can carry two of them: each row then shows the one
+        # factor that priced it and reconciles exactly.
+        group_cols = ['Year', 'FY'] + category_cols
 
     agg_dict = {
         'Quantity': ('Quantity', 'sum'),
@@ -236,8 +242,9 @@ def _render_emissions_query(df, year_factor_map):
         lead_cols = ['Year', 'Month']
         sort_cols = ['Year', 'Month', 'Description']
     else:
-        lead_cols = ['FY']
-        sort_cols = ['FY', 'Description']
+        agg = agg.rename(columns={'FY': 'FactorYear'})
+        lead_cols = ['Year', 'FactorYear']
+        sort_cols = ['Year', 'FactorYear', 'Description']
 
     trail_cols = ['DataSet', 'Description', 'Department', 'CostCentre',
                   'NGAFuel', 'UOM', 'State', 'NGA_Year',

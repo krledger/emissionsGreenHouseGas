@@ -65,7 +65,6 @@ def _assumption(group, name):
 
 
 NGER_FY_START_MONTH = _assumption('reporting', 'NGER_FY_START_MONTH')
-DEFAULT_FY_START_MONTH = NGER_FY_START_MONTH
 DEFAULT_DISPLAY_YEAR = _assumption('reporting', 'DEFAULT_DISPLAY_YEAR')
 
 FSEI_ELEC = _assumption('facility_intensity', 'FSEI_ELEC')
@@ -88,9 +87,6 @@ DECLINE_PHASE1_START = _assumption('safeguard', 'DECLINE_PHASE1_START')
 DECLINE_PHASE1_END = _assumption('safeguard', 'DECLINE_PHASE1_END')
 DECLINE_PHASE2_START = _assumption('safeguard', 'DECLINE_PHASE2_START')
 DECLINE_PHASE2_END = _assumption('safeguard', 'DECLINE_PHASE2_END')
-DECLINE_RATE = DECLINE_RATE_PHASE1
-DECLINE_FROM = DECLINE_PHASE1_START
-DECLINE_TO = DECLINE_PHASE2_END
 SAFEGUARD_THRESHOLD = _assumption('safeguard', 'SAFEGUARD_THRESHOLD')
 SAFEGUARD_MINIMUM_BASELINE = _assumption('safeguard',
                                          'SAFEGUARD_MINIMUM_BASELINE')
@@ -100,28 +96,23 @@ S58B_EARLIEST_FY = _assumption('section_58b', 'S58B_EARLIEST_FY')
 S58B_LOOKBACK = _assumption('section_58b', 'S58B_LOOKBACK')
 S58B_MIN_COVERED = _assumption('section_58b', 'S58B_MIN_COVERED')
 
-GHG_EXPLOSIVES_EF_T_CO2_PER_T = _assumption(
-    'explosives', 'GHG_EXPLOSIVES_EF_T_CO2_PER_T')
-GHG_EXPLOSIVES_EF_KG_CO2_PER_KG = _assumption(
-    'explosives', 'GHG_EXPLOSIVES_EF_KG_CO2_PER_KG')
-
-DEFAULT_TAX_RATE = _assumption('carbon_market', 'DEFAULT_TAX_RATE')
-DEFAULT_TAX_ESCALATION = _assumption('carbon_market', 'DEFAULT_TAX_ESCALATION')
-DEFAULT_EF2_DECLINE_RATE = _assumption('carbon_market',
-                                       'DEFAULT_EF2_DECLINE_RATE')
 
 # A movement is reported only where the prior period is material against the
 # current total.  Below the threshold a percentage swing is arithmetic on
 # noise and reads as a finding.
 MATERIALITY_THRESHOLD = _assumption('materiality', 'MATERIALITY_THRESHOLD')
+CHART_MINIMUM_SHARE = _assumption('materiality', 'CHART_MINIMUM_SHARE')
 
 WEEKS_PER_YEAR = _assumption('periods', 'WEEKS_PER_YEAR')
 
 GRADE_TOLERANCE = _assumption('verification', 'GRADE_TOLERANCE')
+HEAD_GRADE_TOLERANCE = _assumption('verification', 'HEAD_GRADE_TOLERANCE')
 RECOVERY_TOLERANCE = _assumption('verification', 'RECOVERY_TOLERANCE')
 THROUGHPUT_TOLERANCE = _assumption('verification', 'THROUGHPUT_TOLERANCE')
 POWER_INTENSITY_TOLERANCE = _assumption(
     'verification', 'POWER_INTENSITY_TOLERANCE')
+DIESEL_INTENSITY_TOLERANCE = _assumption(
+    'verification', 'DIESEL_INTENSITY_TOLERANCE')
 
 # The sub-activities that are plant load rather than site services.
 # Grid Power and Site Power are the same draw from two supplies, and
@@ -134,23 +125,9 @@ RECOVERY_PLAUSIBLE_LOW = _assumption('verification', 'RECOVERY_PLAUSIBLE_LOW')
 RECOVERY_PLAUSIBLE_HIGH = _assumption('verification',
                                       'RECOVERY_PLAUSIBLE_HIGH')
 
-IMPORT_SPIKE_MULTIPLE = _assumption('import_checks', 'IMPORT_SPIKE_MULTIPLE')
-IMPORT_SPIKE_MINIMUM = _assumption('import_checks', 'IMPORT_SPIKE_MINIMUM')
-IMPORT_RESTATE_TOLERANCE = _assumption('import_checks',
-                                       'IMPORT_RESTATE_TOLERANCE')
-IMPORT_COST_BAND = _assumption('import_checks', 'IMPORT_COST_BAND')
-IMPORT_COST_SPREAD = _assumption('import_checks', 'IMPORT_COST_SPREAD')
-IMPORT_COST_HISTORY = _assumption('import_checks', 'IMPORT_COST_HISTORY')
-IMPORT_SPIKE_SPREAD = _assumption('import_checks', 'IMPORT_SPIKE_SPREAD')
-IMPORT_PARTIAL_MONTH_DAYS = _assumption('import_checks',
-                                        'IMPORT_PARTIAL_MONTH_DAYS')
-IMPORT_SIZE_BAND = _assumption('import_checks', 'IMPORT_SIZE_BAND')
-IMPORT_ACTIVITY_BAND = _assumption('import_checks', 'IMPORT_ACTIVITY_BAND')
-IMPORT_ACTIVITY_ROWS = _assumption('import_checks', 'IMPORT_ACTIVITY_ROWS')
 
 TRANSITION_SCHEDULE = {int(_year): float(_value) for _year, _value
                        in _ASSUMPTIONS['transition_schedule'].items()}
-
 
 
 # =============================================================================
@@ -159,7 +136,6 @@ TRANSITION_SCHEDULE = {int(_year): float(_value) for _year, _value
 
 
 DEFAULT_YEAR_TYPE = 'CY'
-DEFAULT_DATA_SOURCE = 'Actual'
 
 
 # =============================================================================
@@ -189,16 +165,39 @@ DEFAULT_DATA_SOURCE = 'Actual'
 GRID_SITE_ELEC_DESCRIPTION = 'Site electricity'
 GRID_GRID_ELEC_DESCRIPTION = 'Grid electricity'
 
-# Description constants used in Projections.py for metric extraction
-DESC_GRID_ELECTRICITY = 'Grid electricity'
-DESC_ROM_COSTCENTRE = 'ROM'
-DESC_ROM_KEYWORD = 'Ore'
 
 # NGER diesel classification
 # Per NGER Measurement Determination 2008, on-site mining equipment is
 # stationary energy.  Only road-registered light vehicles are transport.
 DIESEL_TRANSPORT_COSTCENTRES = ['Light Vehicles']
 DIESEL_TRANSPORT_NGAFUEL = 'Diesel oil-Cars and light commercial vehicles'
+
+
+# =============================================================================
+# FORECAST ROLL-UP (2026-09 PrepData item-level forecast)
+# =============================================================================
+# PrepData now forecasts stores item by item: six thousand items across every
+# cost centre and month to the end of the mine life, over two million rows.
+# Stores carry no NGA factor and are priced on spend by product group, so the
+# item is detail no calculation reads.  Carried as it arrives, the Scope 3
+# frame runs to eight million rows and the build does not fit in memory.
+#
+# Forecast rows for these activities are summed to product group, cost
+# centre and month before anything is calculated.  Quantity and value are
+# preserved exactly; only the item description and number are given up, and
+# the description becomes the subactivity so the line still reads as what it
+# is.  Actual rows are never rolled up: a recorded line keeps its item.
+FORECAST_ROLLUP_ACTIVITIES = ('Stores',)
+
+
+# =============================================================================
+# CONTRACT SERVICES AND UNITS
+# =============================================================================
+# Which product group prices each contractor charge, the wet hire blend and
+# the litres a kilogram of grease is taken as are assumptions a person
+# maintains and an auditor is shown, so they live in
+# Reference/ReferenceInputs.yaml under contract_services and units, are
+# edited on the Assumptions page and are published with every build.
 
 
 # =============================================================================
@@ -237,14 +236,14 @@ GRID_ELEC_COMMONNAME = 'Grid electricity'
 
 # Legacy aliases (used in some older code paths)
 
+# The GHG inventory, the basis of the financial disclosure, starts on
+# 1 January of this year.  Separate from the Safeguard start below: the two
+# pipelines share no dates.
+GHG_START_DATE = datetime(int(_assumption('reporting', 'GHG_START_YEAR')), 1, 1)
+
 # Safeguard thresholds and dates
 SAFEGUARD_START_DATE = datetime(2023, 7, 1)
 
-# s10(3): the baseline emissions number is zero for a financial year
-# beginning after 30 June 2049.  FY2050 begins on 1 July 2049, so FY2050 is
-# the first year that qualifies and the last year carrying a baseline is
-# FY2049.  The model horizon reaches this.
-SAFEGUARD_DATE = datetime(2023, 7, 1)
 CREDIT_START_DATE = datetime(2023, 7, 1)
 # SMC_EXIT_PERIOD_YEARS removed - s58B lookback replaces hardcoded timer
 
@@ -259,7 +258,6 @@ CREDIT_START_DATE = datetime(2023, 7, 1)
 #
 # h increases each year, shifting from FSEI toward Default EI.
 # Per CER: transition increases from 10% per year to 20% from FY2027-28.
-
 
 
 def get_transition_proportion(fy):
@@ -285,7 +283,6 @@ def get_transition_proportion(fy):
 # Two conditions for below-threshold facilities to opt in:
 #   1. Date gate: FY must begin after 30 June 2028 (earliest = FY2029)
 #   2. Coverage history: facility covered >= 3 of previous 5 FYs
-
 
 
 # =============================================================================
@@ -404,10 +401,6 @@ REGION_GLOBAL = 'Global'
 REGION_UK = 'United Kingdom'
 REGION_UNSTATED = ''
 
-# The grids the National Greenhouse Accounts publish separately.  A region
-# narrower than a country, and the reason electricity carried a state.
-NGA_GRIDS = ('NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'NWIS', 'DKIS',
-             'National')
 
 _REGION_BY_SET = {
     'NgaFactors': REGION_AUSTRALIA,
@@ -418,19 +411,6 @@ _REGION_BY_SET = {
     'DEFRA': REGION_UK,
     'worldsteel': REGION_GLOBAL,
 }
-
-
-def factor_region(source, stated=''):
-    """Where a factor was published for.
-
-    A stated region wins, because a company factor is only as good as what
-    somebody says about it - a supplier declaration for Chinese media is
-    published for China whoever compiled it.  Otherwise it follows the
-    publication, which is a property of the publication and not a guess.
-    """
-    if str(stated or '').strip():
-        return str(stated).strip()
-    return _REGION_BY_SET.get(factor_set(source), REGION_UNSTATED)
 
 
 # Class says which publication governs a factor, and that decides whether it
@@ -558,27 +538,6 @@ def factor_class(source):
 # separators appear in the registers; the em dash is the EPA convention and
 # the comma everything else.
 _NAME_SEPARATORS = (' \u2014 ', ' - ', ', ')
-
-
-def factor_name(source, fallback=''):
-    """The factor's own name, with the publication taken off the front.
-
-    "EPA SCEF - Iron Foundries" is a publication and a name in one field, and
-    reading it as either alone loses half of it.  Where the string carries no
-    name of its own - the capital bands all cite the same publication and
-    differ only in the figure - the fallback is used, which is the asset
-    class or the product group the row already names.
-    """
-    text = str(source or '').strip()
-    if not text:
-        return str(fallback or '').strip()
-    publication = factor_set(text)
-    for separator in _NAME_SEPARATORS:
-        if separator in text:
-            head, tail = text.split(separator, 1)
-            if publication and factor_set(head) == publication:
-                return tail.strip()
-    return str(fallback or '').strip() or text
 
 
 def factor_is_regulated(source):
@@ -714,7 +673,13 @@ def canonical_department(name):
     return DEPARTMENT_ALIASES.get(text, text)
 
 
-GHG_EXPLOSIVES_SOURCE = 'AGO 2004, Table 11, ANFO detonation'
+# Emission sources the GHG Protocol counts and the National Greenhouse
+# Accounts do not price, and the factor register row that prices each.  The
+# source is the line's CommonName.  The number lives in the register and
+# nowhere else, so there is one place to read it, change it and cite it.
+GHG_SOURCE_FACTORS = {
+    'Explosives': 'Industry|AGO|ANFO detonation|Australia|t CO2-e per t',
+}
 
 
 # =============================================================================
@@ -724,52 +689,10 @@ GHG_EXPLOSIVES_SOURCE = 'AGO 2004, Table 11, ANFO detonation'
 DEFAULT_CARBON_CREDIT_PRICE = 35.0
 DEFAULT_CREDIT_ESCALATION = 0.03
 
-DEFAULT_TAX_START_DATE = datetime(2029, 7, 1)
-
 
 # =============================================================================
 # COST CENTRE CATEGORY MAP (display grouping)
 # =============================================================================
-
-CATEGORY_MAP = {
-    'Supplemental Power Supply': 'Power',
-    'Site Power Generation': 'Power',
-    'Hauling': 'Mining',
-    'Loading': 'Mining',
-    'Drilling - Production': 'Mining',
-    'Blasting': 'Mining',
-    'Supplementary Load and Haul': 'Mining',
-    'Rehandling': 'Fixed',
-    'Mobile Equipment': 'Fixed',
-    'Grade Control': 'Mining',
-    'Geotechnical': 'Fixed',
-    'Crushing - Fixed': 'Processing',
-    'Crushing - Supplemental': 'Processing',
-    'New Crusher': 'Processing',
-    'Nolans South Crusher': 'Processing',
-    'Milling': 'Processing',
-    'Tailings Disposal': 'Processing',
-    'Light Vehicles': 'Fixed',
-    'Management Services': 'Fixed',
-    'Operations Administration': 'Fixed',
-    'Exploration and Development': 'Fixed',
-    'Environment': 'Fixed',
-    'Rehabilitation': 'Fixed',
-    'Gold Room': 'Processing',
-    'Village and Housing': 'Fixed',
-    'Leach & Adsorption': 'Processing',
-    'Laboratory': 'Processing',
-    'Supp Crushing Mobile Equipment': 'Processing',
-    'Stores & Supply': 'Fixed',
-    'Mobile Equipment Workshop': 'Fixed',
-    'Infrastructure': 'Fixed',
-    'NPE Dredge': 'Mining',
-    'Projects and Work Orders': 'Fixed',
-    'Brisbane Office': 'Admin',
-    'Residential': 'Admin',
-    'Stuart Office': 'Admin',
-    'Suhrs Creek Rd': 'Admin',
-}
 
 
 # =============================================================================
@@ -783,35 +706,8 @@ DARK_GOLDENROD = '#AE8B0F'
 SEPIA = '#734B1A'
 CAFE_NOIR = '#39250B'
 GRID_GREEN = '#2A9D8F'
-BASELINE_BLACK = '#000000'
-
-# Legacy palette (Tab 4 and export)
-COLORS = {
-    'scope1': '#2C3E50',
-    'scope2': '#3498DB',
-    'scope3': '#95A5A6',
-    'actual_intensity': '#E74C3C',
-    'baseline': '#34495E',
-    'power': '#F39C12',
-    'mining': '#E67E22',
-    'processing': '#16A085',
-    'fixed': '#7F8C8D',
-    'credits': '#27AE60',
-    'deficit': '#C0392B',
-    'tax': '#C0392B',
-    'rom': '#95A5A6',
-    'smc': '#27AE60',
-    'base': '#2C3E50',
-    'npi': '#3498DB',
-}
 
 
 # =============================================================================
 # FILE PATHS
 # =============================================================================
-
-DEFAULT_PATHS = {
-    'actual': 'OperationsMetricsActual.csv',
-    'budget': 'OperationsMetricsBudget.csv',
-    'nga': 'Data/NgaSource/NationalGreenhouseAccountFactors2026.xlsx',
-}

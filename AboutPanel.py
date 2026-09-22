@@ -80,7 +80,9 @@ _DATE_PATTERNS = (
 )
 _VERSION_RE = re.compile(r"\[?v?(\d+(?:\.\d+){0,3}[A-Za-z0-9.\-]*)\]?")
 _STATUS_RE = re.compile(r"^\s*\*\*Status:\*\*\s*(.+?)\s*$", re.MULTILINE)
-_IMPACT_RE = re.compile(r"^\s*\*\*Impact:\*\*\s*(.+?)\s*$", re.MULTILINE)
+# The impact runs to the end of its paragraph, which may wrap over several lines.
+_IMPACT_RE = re.compile(r"^\s*\*\*Impact:\*\*\s*(.+?)\s*(?:\n\s*\n|\Z)",
+                        re.MULTILINE | re.DOTALL)
 _DATE_RE = re.compile(
     r"(\d{4}[-/]\d{1,2}[-/]\d{1,2})"
     r"|(\d{1,2}[-/]\d{1,2}[-/]\d{4})"
@@ -195,7 +197,13 @@ def parse_changelog(text: str) -> list[Release]:
         status_match = _STATUS_RE.search(body)
         status = status_match.group(1) if status_match else ""
         impact_match = _IMPACT_RE.search(body)
-        impact = impact_match.group(1) if impact_match else ""
+        impact = " ".join(impact_match.group(1).split()) if impact_match else ""
+        # Status and impact are shown above the detail, so they are taken out
+        # of it rather than repeated.
+        for match in sorted((m for m in (status_match, impact_match) if m),
+                            key=lambda m: m.start(), reverse=True):
+            body = body[:match.start()] + body[match.end():]
+        body = body.strip()
         releases.append(Release(heading, version, date, body, status, impact))
 
     for line in text.splitlines():

@@ -124,6 +124,9 @@ SYNONYMS = {
     'megawatt hour': 'MWh', 'megawatt hours': 'MWh', 'mwh': 'MWh',
     'gigajoule': 'GJ', 'gigajoules': 'GJ', 'gj': 'GJ',
     'ounce': 'oz', 'ounces': 'oz', 'troy ounce': 'oz', 'troy ounces': 'oz',
+    # Hours.  A driver of productivity, never converted, so it is a spelling
+    # only and carries no entry in UNITS.  PrepData writes 'h'.
+    'hrs': 'h', 'hr': 'h', 'hour': 'h', 'hours': 'h',
     # Case only, so a unit written in the wrong case is not read as another.
     'kg': 'kg', 't': 't', 'g': 'g', 'm': 'm', 'm3': 'm3', 'km': 'km',
     'oz': 'oz', 'mj': 'MJ', 'tj': 'TJ', 'gwh': 'GWh', 'ml': 'mL',

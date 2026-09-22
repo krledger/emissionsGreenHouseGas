@@ -4,30 +4,20 @@ Reads the Scope 3 inputs distributed by PrepData.
 
 Last updated: 2026-09-02
 
-Nothing here calculates, and nothing here is a value.  This model holds no
-Scope 3 factor and no Scope 3 parameter of its own: both files below are
-produced by PrepData, distributed alongside the physicals and requested by
-Data/PrepData.txt, exactly as LOM.yaml and ReferenceFx.csv are.  One register
-governs every consumer, so a factor cannot be corrected in one program and
-left stale in another.
+Nothing here calculates.  The Scope 3 factors and parameters are owned by
+this program and edited through the Emissions Data Builder:
 
-    Data/Scope3Factors.csv      the factor table.  One flat file carrying
-                                every Scope 3 factor with its unit, dollar
-                                year, source and reference, built by
-                                PrepData/BuildScope3Factors.py from the
-                                registers in PrepData/Scope3/, exactly as
-                                NgaFactors.csv is built from the National
-                                Greenhouse Account workbooks
-    Data/ReferenceInputs.yaml      assessment parameters and the exclusion
-                                register: the roster, the travel pattern, the
-                                waste streams, the currency basis and the
-                                projection rule
+    Reference/Factors.csv          every factor, by release (LoaderFactorTable)
+    Reference/Items.csv            what each factor applies to (LoaderItems)
+    Reference/ReferenceInputs.yaml assessment parameters and the exclusion
+                                   register: the roster, the travel pattern,
+                                   the waste streams, the currency basis and
+                                   the projection rule
+    Reference/*.csv                the capital and spend registers named in
+                                   the parameter file
 
-    Data/ReferenceFx.csv        quarterly AUD/USD from PrepData
-
-The capital goods register and the supplier spend classification are named in
-the parameter file and read from Data/ where PrepData has distributed them.  A
-register that is absent is reported; nothing falls back to a value held here
+Only the exchange rates come from PrepData (ReferenceFx.csv).  A register
+that is absent is reported; nothing falls back to a value held here.
 
 Factor strings
 --------------
@@ -80,14 +70,97 @@ def reference_path(name):
     return os.path.join(REFERENCE_DIR, name)
 
 
+_SETTINGS = {'stamp': None, 'config': {}}
+
+
+def load_settings(config_path=None):
+    """The parameter file, read once until it changes.
+
+    For the loaders that need one setting from it before the reference as a
+    whole is built.  Missing or unreadable reads as empty, and load_reference
+    is where that is reported.
+    """
+    path = config_path or CONFIG_PATH
+    stamp = (path, os.path.getmtime(path)) if os.path.exists(path) else None
+    if stamp != _SETTINGS['stamp']:
+        try:
+            with open(path, 'r', encoding='utf-8') as handle:
+                _SETTINGS['config'] = yaml.safe_load(handle) or {}
+        except Exception:
+            _SETTINGS['config'] = {}
+        _SETTINGS['stamp'] = stamp
+    return _SETTINGS['config']
+
+
+def blended_factors(config, factors=None):
+    """Product groups priced on a blend of two published factors.
+
+    Each blend in contract_services.blends is its equipment share at one
+    factor and the rest at the other, both read from Reference/Factors.csv at
+    their latest release.  Returns (rows, errors), rows as the category 1
+    factor table carries them.
+    """
+    import LoaderFactorTable
+    blends = ((config or {}).get('contract_services', {}) or {}) \
+        .get('blends', []) or []
+    if not blends:
+        return [], []
+    table = LoaderFactorTable.load() if factors is None else factors
+    rows, errors = [], []
+    for blend in blends:
+        code = str(blend.get('product_group', '')).strip()
+        name = str(blend.get('name', code))
+        try:
+            share = float(blend.get('equipment_share'))
+        except (TypeError, ValueError):
+            errors.append(f'{name}: equipment_share is not a number.')
+            continue
+        if not 0.0 <= share <= 1.0:
+            errors.append(f'{name}: equipment_share {share} is not between '
+                          f'0 and 1.')
+            continue
+        parts = []
+        for key in ('equipment_factor', 'operator_factor'):
+            found = LoaderFactorTable.resolve(table, str(blend.get(key, '')),
+                                              9999)
+            value = (None if found is None
+                     else pd.to_numeric(found.get('Scope3'), errors='coerce'))
+            if value is None or pd.isna(value):
+                errors.append(f'{name}: {key} is not in Factors.csv.')
+                break
+            parts.append((float(value), str(found.get('Unit', ''))))
+        if len(parts) < 2 or not code:
+            continue
+        (equipment, unit), (operator, _) = parts
+        value = share * equipment + (1.0 - share) * operator
+        rows.append({
+            'Code': code,
+            'Description': blend.get('description', name),
+            'Factor': value,
+            'FactorUnit': unit,
+            'QuantityUOM': None,
+            'FactorSource': (f"{blend.get('factor_source', '')}  "
+                             f"{share:.0%} at {equipment:g} and "
+                             f"{1 - share:.0%} at {operator:g} = "
+                             f"{value:.4g} {unit}.").strip(),
+            'Basis': 'spend',
+            'MatchKey': None,
+            'Excluded': False,
+            'ExcludeReason': None,
+        })
+    return rows, errors
+
+
 def prepdata_path(name):
-    """An input PrepData supplies, which lands in Data.
+    """An input PrepData supplies, read where PrepData keeps it.
 
     The exchange rate table is not a register somebody maintains here; it
-    arrives with the operational data and belongs beside it.  Naming the two
-    folders separately is what stops one file being looked for in both.
+    arrives with the operational data and is read from the same place.
+    Naming the two folders separately is what stops one file being looked
+    for in both.  See PREPDATA_SOURCES in Paths.
     """
-    return os.path.join(DATA_DIR, name)
+    import Paths
+    return Paths.source_for_name(name)
 
 # Marks a product group computed from NGA factors elsewhere in the model.
 IN_CODE_MARKER = 'In-code'
@@ -286,6 +359,14 @@ class Reference:
         """
         from_table = self._group_factors_from_table(1)
         if from_table is not None:
+            # Blends are calculated, not stored, so they are laid over the
+            # table here and replace any row carrying the same code.
+            blends, _ = blended_factors(self.config)
+            if blends:
+                laid = pd.DataFrame(blends).set_index('Code')
+                from_table = pd.concat(
+                    [from_table.drop(index=laid.index, errors='ignore'),
+                     laid.reindex(columns=from_table.columns)])
             return from_table
 
         excluded = self.config.get('category_1', {}).get('excluded_groups', {}) or {}
@@ -362,13 +443,13 @@ class Reference:
     def usd_rate(self, date):
         """AUD to USD of the factor dollar year, for one month.
 
-        Two steps, both stated in ConfigScope3.yaml: the AUD/USD rate for the
+        Two steps, both stated in ReferenceInputs.yaml: the AUD/USD rate for the
         quarter, then the deflator restating the spend year's dollars into the
         factor's dollar year.
         """
         currency = self.config.get('currency', {}) or {}
         mode = currency.get('mode', 'reference_fx')
-        deflator = float(currency.get('deflator_2022_to_spend_year', 1.0) or 1.0)
+        deflator = self._deflator(pd.Timestamp(date).year)
 
         if mode == 'fixed':
             return float(currency.get('fixed_rate_audusd')) * deflator
@@ -380,11 +461,42 @@ class Reference:
             rate = float(currency.get('fixed_rate_audusd'))
         return rate * deflator
 
+    def _deflator(self, spend_year):
+        """Spend year dollars restated to the factor's dollar year.
+
+        Index(factor year) / Index(spend year), on the series named in the
+        parameter file.  Below one once prices have risen: the same goods cost
+        more dollars now than the dollars the factor was measured against, so
+        current spend is brought back before the factor is applied.  The
+        order is the one the factor requires: AUD to USD at the rate of the
+        day, because that is what the purchase cost in US dollars then, and
+        then US dollars of that year to US dollars of the factor year on a
+        US index.
+
+        A year missing from the index stops the build.  Deflating by
+        something plausible is how a wrong figure gets published.
+        """
+        currency = self.config.get('currency', {}) or {}
+        if not currency.get('deflate_to_factor_year', False):
+            return 1.0
+        cache = self.__dict__.setdefault('_deflators', {})
+        if spend_year not in cache:
+            from LoaderLookups import deflator as index_ratio
+            series = currency.get('price_index_series', 'US CPI-U')
+            base = int(currency.get('factor_dollar_year', 2022))
+            ratio = index_ratio(spend_year, base, series=series)
+            if ratio is None:
+                raise ValueError(
+                    f'Reference/PriceIndex.csv holds no {series} index for '
+                    f'{spend_year} or {base}, so spend in {spend_year} cannot '
+                    f'be restated to {base} dollars.')
+            cache[spend_year] = ratio
+        return cache[spend_year]
+
     def currency_note(self):
         """One line describing the conversion in force."""
         currency = self.config.get('currency', {}) or {}
         mode = currency.get('mode', 'reference_fx')
-        deflator = float(currency.get('deflator_2022_to_spend_year', 1.0) or 1.0)
         year = currency.get('factor_dollar_year', 2022)
         if mode == 'fixed':
             base = f"fixed AUD/USD {currency.get('fixed_rate_audusd')}"
@@ -392,7 +504,11 @@ class Reference:
             actual_to = self.fx.actual_to()
             stamp = f", actual to {actual_to:%b %Y}" if actual_to is not None else ''
             base = f'quarterly AUD/USD from ReferenceFx.csv{stamp}'
-        tail = 'no deflator applied' if deflator == 1.0 else f'deflator {deflator:.4f}'
+        if currency.get('deflate_to_factor_year', False):
+            series = currency.get('price_index_series', 'US CPI-U')
+            tail = f'spend restated to {year} dollars on {series}'
+        else:
+            tail = 'no deflator applied'
         return f'{base}; factors in USD{year}; {tail}'
 
 
@@ -477,11 +593,14 @@ def load_reference(config_path=None):
     # every spend based factor is converted at whatever the fallback rate is,
     # which is a difference of tens of thousands of tonnes and no warning on
     # the face of the result.
+    errors.extend(blended_factors(config)[1])
+
     fx_relative = (config.get('meta', {}) or {}).get('reference_fx', 'ReferenceFx.csv')
     fx_frame = _read_csv(fx_relative, locate=prepdata_path)
     if fx_frame is None:
         errors.append(
-            f'reference_fx: {fx_relative} was not found in Data.  Spend based '
+            f'reference_fx: {fx_relative} was not found at '
+            f'{prepdata_path(fx_relative)}.  Spend based '
             f'factors are converted at the fallback rate and the Scope 3 '
             f'total is not reliable.')
     fx = FxTable(fx_frame)
